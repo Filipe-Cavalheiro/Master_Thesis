@@ -1,0 +1,55 @@
+%!TEX root = ../template.tex
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 1-Introduction.tex
+%% NOVA thesis document file
+%%
+%% Chapter with introduction
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\typeout{NT FILE 1-Introduction.tex}%
+
+\chapter{Introduction}
+\label{cha:introduction}
+
+\prependtographicspath{{5-Figures/Covers/}}
+
+% epigraph configuration
+\epigraphfontsize{\small\itshape}
+\setlength\epigraphwidth{12.5cm}
+\setlength\epigraphrule{0pt}
+
+\epigraph{
+  This work is licensed under the \href{https://www.latex-project.org/lppl/lppl-1-3c/}{\LaTeX\ Project Public License v1.3c}.
+  To view a copy of this \ntindex[Template!]{license}, visit the \href{https://www.latex-project.org/lppl/}{LaTeX project public license}.
+}
+
+% \section{Welcome to the \novathesis\ Template}
+% \label{sec.1:if_you_use_this_template}
+\section{Motivation} \label{sec.1:Motivation}
+
+\ntindex[Template]{}
+
+The template was born at the \gls{DEEC} \gls{CLF} of  \gls{FCT} of \gls{NOVA}, Portugal.  But the user base grew… initially grew to other Departments of FCT-NOVA, then to other Schools of NOVA, and later to other Schools of other Universities.  Currently more than~25 Schools are natively supported by the template.  The full list of supported Schools can be founf at the
+\href{https://github.com/joaomlourenco/novathesis}{Project's GitHub page}.
+  
+\section{Problem Statement} \label{sec.1:Problem Statement}
+
+The guaranteed capture of an agent—such as a drone, ship, or aircraft—has been a subject of research for over a century, dating back to early work in game theory \cite{game_theory_1925}. Closely related is the problem of determining optimal interception trajectories for both stationary and moving targets. These problems arise in a wide range of applications, including surveillance, defense, and autonomous robotics.
+
+Despite extensive research, most existing capture and interception strategies are formulated in two-dimensional (2D) environments. In particular, current multi-agent capture and encirclement methods predominantly focus on planar pursuit scenarios, with the majority of implementations targeting unmanned aerial vehicles (UAVs). Representative examples include circular formation control and encirclement strategies in 2D space \cite{2D_circle_formation_survey, 2D_circle_formation_survey_phase_spliting, 2D_circle_formation_phase_spliting, 2D_encirclement_guaranteed_sectors, 2D_circle_formation_phase_spliting_3_and_other_methods}. 
+
+This emphasis on 2D pursuit limits the applicability of existing approaches to fully three-dimensional environments, where altitude, spatial constraints, and maneuverability play a critical role. Addressing these limitations motivates the need for capture strategies that explicitly account for three-dimensional motion and coordination.
+
+\section{Proposed solution} \label{sec.1:Proposed solution}
+
+In this thesis, the focus is on guaranteeing encirclement in a three-dimensional (3D) environment. Specifically, the work addresses both the navigation of agents to desired positions around a target and the generation of collision-free trajectories during this process. The objective is to ensure safe and coordinated motion while achieving and maintaining an encirclement configuration in 3D space.
+
+At present, the encirclement strategy is formulated on an $\mathrm{SO}(2)$ manifold, corresponding to a two-circle representation around the target. While this constraint simplifies the problem and enables rigorous analysis, the proposed framework is designed with extensibility in mind. Future extensions aim to generalize the approach to arbitrary continuous and fully differentiable surfaces, allowing encirclement on more complex manifolds.
+
+\section{Report Organization} \label{sec.1:Report organization}
+
+Chapter~\ref{cha:State of the art} presents methods for achieving optimal and evenly spaced distributions of points on the two-sphere. These methods are used to define desired agent configurations around the target.
+
+Chapter~\ref{cha:Results and timeline} describes the outer-loop control strategy responsible for generating collision-free trajectories that guide each agent from its initial position to the desired location on the two-sphere.
+
+Chapter~4 discusses the inner-loop control architecture, based on the Mellinger controller, which enables a drone to accurately track the reference trajectories produced by the outer loop.

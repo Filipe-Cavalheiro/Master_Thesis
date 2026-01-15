@@ -1,0 +1,424 @@
+%!TEX root = ../template.tex
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 3-Background_Work.tex
+%% NOVA thesis document file
+%%
+%% Chapter with the template manual
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\typeout{NT FILE 3-Background_Work.tex}%
+
+\chapter{Background work}
+\label{cha.3:Background work}
+
+\glsresetall
+
+\section{Introduction} \label{sec.3:Introduction}
+
+Multiple themes are needed for the understading of this thesis, these include the distinction of decentralized and centralized systems \ref{sec.3:Centralized and decentralized systems}, different ways of spacing agents in SO(2) \ref{sec.3:Fibonacci Lattice}, mellinger controller, lyapunov theory \ref{sec.3:Lyapunov Stability and Lyapunov-Based Control}, and consensus algorithms/distributed models and algorithms \ref{sec.3:Consensus-Based Coordination}. 
+
+This thesis builds upon the current two-dimensional and three-dimensional state of the art in decentralized multi-agent control \ref{sec.3:Currently deleloped models}, combining geometric modeling, Lyapunov stability analysis, consensus-based coordination, and practical controller implementations. Emphasis is placed not only on theoretical development but also on the realization of these methods in implementable control architectures.
+
+\section{Centralized and decentralized systems \textbf{[100\% CHAT GPT!!!]}} \label{sec.3:Centralized and decentralized systems}
+
+As discussed in \cite{surver_centralized_decentralized}, the classification of multi-agent systems into \emph{centralized} and \emph{decentralized} categories is often ambiguous and potentially misleading. The ambiguity primarily stems from the fact that these terms are used with different meanings across the literature, depending on the specific assumptions, architectures, and problem formulations adopted by different authors. As a result, such a binary classification does not always provide meaningful insight into the fundamental properties or limitations of formation control strategies.
+
+A common interpretation associates centralized control with the presence of a global coordinator that collects information from all agents, computes control or coordination commands, and then distributes them back to the agents. Under this definition, a decentralized system is one in which no such global coordinator exists and each agent computes its control input using only locally available information. While this distinction is conceptually simple, it turns out to be of limited usefulness when surveying formation control algorithms. Indeed, under this criterion, the vast majority of formation control schemes proposed in the literature can be labeled as decentralized, since they do not explicitly rely on a centralized controller. Consequently, the centralized-decentralized dichotomy fails to differentiate effectively between fundamentally different approaches.
+
+Furthermore, the term \emph{decentralized} itself is used in a variety of subjective and sometimes conflicting ways. In some works, decentralization refers to the use of local feedback laws based solely on neighbor-to-neighbor interactions. In others, it refers to the absence of absolute position measurements, the lack of a global reference frame, or scalability with respect to the number of agents. In certain cases, limited forms of coordination, such as leader-follower architectures or broadcast signals from a coordinating unit, are still described as decentralized. This lack of consistency makes it difficult to draw precise conclusions when comparing results based purely on the centralized versus decentralized terminology.
+
+To avoid these issues, the survey in \cite{surver_centralized_decentralized} deliberately refrains from categorizing formation control schemes according to their level of centralization. Instead, it proposes a classification based on more objective and technically meaningful criteria, namely the \emph{sensing capabilities} of individual agents and the \emph{interaction topology} of the multi-agent system. These two aspects are directly tied to the information available to each agent and the mathematical structure of the control problem, and thus provide a clearer basis for comparison.
+
+From the sensing perspective, formation control schemes can be distinguished by the type of variables that agents are able to measure. Some approaches require agents to sense their absolute positions with respect to a global coordinate system, which typically implies access to GPS or an equivalent localization infrastructure. Other approaches rely only on relative measurements, such as relative positions or distances to neighboring agents, which can be obtained using onboard sensors without a shared global reference frame. This distinction has a direct impact on the practical deployability of a control strategy, especially in environments where global positioning is unavailable or unreliable.
+
+From the interaction topology perspective, the classification focuses on what variables are actively controlled and how agents must interact to achieve the desired formation. For instance, if agents directly control their absolute positions, interactions among agents may not be strictly necessary. In contrast, if agents control relative positions or inter-agent distances, then the structure of the interaction graph becomes crucial. Properties such as connectivity, existence of a spanning tree, rigidity, or persistence determine whether the desired formation can be achieved and maintained.
+
+Based on these considerations, formation control schemes are more informatively categorized into position-based, displacement-based, and distance-based control. Position-based control requires agents to sense and regulate their absolute positions with respect to a global coordinate system. Displacement-based control assumes that agents can sense relative positions of their neighbors in a common orientation frame, allowing them to regulate relative displacements. Distance-based control requires only measurements of relative distances or relative positions expressed in local coordinate frames, and the desired formation is specified in terms of inter-agent distances, making it invariant to global translations and rotations.
+
+This classification also clarifies the use of commonly employed terms such as \emph{local} and \emph{relative}. The term \emph{relative} can be precisely associated with sensing variables expressed in local coordinate frames rather than a global one, while the term \emph{local} may refer either to limited interaction ranges, neighbor-based information exchange, or the absence of a global coordinator. By explicitly characterizing sensing requirements and interaction topology, these notions can be unambiguously defined without resorting to the vague notion of decentralization.
+
+In summary, rather than relying on the potentially confusing centralized-decentralized dichotomy, this thesis adopts the classification framework proposed in \cite{surver_centralized_decentralized}, which emphasizes sensing capabilities and interaction topology. This approach provides a more precise and technically grounded basis for analyzing and comparing formation control strategies, and it better reflects the fundamental trade-offs between information availability, inter-agent communication, and achievable formation objectives.
+
+\section{Agent spacing introduction} \label{sec.3:Agent spacing introduction}
+In this section, several methods for distributing points on a manifold are discussed. The primary objective is to achieve the most uniform spacing possible between agents. Such uniformity allows for more efficient use of each agent's reachability set at any given time. In other words, minimizing overlap between the reachability regions of different agents maximizes the collective coverage and effectiveness of the multi-agent system.
+
+Three different methods will be discusses including, lattitude and longitude, fibonnaci sphere, thomson minimum energy sphere and poisson disk sampling.
+
+The sections \ref{sec.3:Latitude and longitude} and \ref{sec.3:Fibonacci Lattice} are both heavly inspired and influenced by \cite{Latitude_Longitude_vs_fibonacci}. Being the order of explanations at times very similar.
+
+\subsection{Latitude and Longitude} \label{sec.3:Latitude and longitude}
+
+The latitude--longitude lattice consists of points located at the intersections of a grid of meridians and parallels, separated by equal angular increments in latitude and longitude. This arrangement is commonly referred to as the \emph{latitude--longitude grid} or the \emph{equal-angle grid}. Due to the convergence of meridians toward the poles, the density of points increases with latitude, resulting in significant anisotropy.
+
+The total number of points, denoted by $P$, depends on the angular spacing $\delta$ between adjacent grid lines. If the sphere is divided into $k$ equal angular intervals in latitude, so that $\delta = 180^\circ / k$ with $k = 1, 2, \ldots$, then the total number of grid points is
+\begin{equation}
+P = 2k(k - 1) + 2 .
+\end{equation}
+This expression accounts for the $2k$ meridians and the $k - 1$ parallels, together with the two poles.
+
+\subsection{Fibonacci Lattice} \label{sec.3:Fibonacci Lattice}
+
+The use of the fibonacci lattice named after the Fibonacci ration that was discover in ancient India \cite{fibonacci_history} comes due to the fact that 
+
+Each term of the Fibonacci sequence, from the third onward, is the sum of the two preceding terms:
+\[
+0, 1, 1, 2, 3, 5, 8, 13, 21, \ldots
+\]
+Given two consecutive terms $F_i$ and $F_{i+1}$, the Fibonacci ratio is defined as $F_i/F_{i+1}$. As first proved by Robert Simson in 1753 \cite{fibonacci_to_golden_ratio_1} \cite{fibonacci_to_golden_ratio_2}, this ratio rapidly converges, as $i \to \infty$, to the golden ratio
+\begin{equation}
+  \varphi = 1 + \varphi^{-1} = \frac{1 + \sqrt{5}}{2} \simeq 1.618
+  \label{eq:golden ratio}
+\end{equation}
+
+The Fibonacci lattice differs from other spiral lattices on the sphere in that the longitudinal rotation between consecutive points along the generating spiral is the \emph{golden angle},
+
+\begin{equation*}
+  360^\circ \left(1 - \varphi^{-1}\right) = 360^\circ \varphi^{-2} \simeq 137.5^\circ  
+\end{equation*}
+
+or, equivalently, its complementary angle,
+
+\begin{equation*}
+  360^\circ \varphi^{-1} \simeq 222.5^\circ
+\end{equation*}
+
+In some lattice constructions, the golden ratio $\varphi$ is replaced by a rational approximant given by a Fibonacci ratio. which is our case.
+
+The golden angle optimizes packing efficiency in spiral lattices. This property arises because the golden ratio is the most irrational number, thereby avoiding periodic or near-periodic alignments in the spiral structure. As a result, lattice points do not cluster, and spatial uniformity is preserved.
+
+When a Fibonacci ratio is employed, the total number of lattice points is $F + 1$, where $F > 1$ is a Fibonacci number. In contrast, the lattice used here is based directly on the golden ratio and admits any \b{odd number of points}.
+
+To construct the lattice, let $N$ be a natural number and let the integer index $i$ range from $-N$ to $+N$. The total number of points is
+
+\begin{equation}
+P = 2N + 1 .
+\end{equation}
+
+The spherical coordinates (in radians) of the $i$th point are given by
+\begin{align}
+\text{lat}_i &= \arcsin\!\left(\frac{2i}{2N + 1}\right), \\
+\text{lon}_i &= 2\pi i \varphi^{-1} .
+\label{eq.2:fibonacci_lat_lon}
+\end{align}
+
+\subsection{Thomson minimum energy sphere} \label{sec.3:Thomson minimum energy sphere}
+
+In 1904, J. J. Thomson proposed a model for the atom in which electrons were thought to be evenly distributed within a positively charged sphere. In this model, each electron experiences repulsive forces from the others and is constrained to remain on the surface of the sphere. This concept led to what is now known as the Thomson problem, which seeks the arrangement of $N$ electrons on the surface of a unit sphere that minimizes their total electrostatic potential energy, given that they repel each other according to Coulomb's law. Thomson introduced this problem while developing his atomic model, later called the plum pudding model, reflecting the understanding that negatively charged electrons exist within a neutrally charged atom.\cite{thomson_min_energy_sphere}
+
+The Thomson problem can be formulated mathematically as the minimization of the total Coulomb energy of $N$ point charges constrained to lie on the unit sphere. Let $\mathbf{x}_i \in \mathbb{R}^3$ denote the Cartesian coordinates of the $i$-th point on the sphere, such that $\|\mathbf{x}_i\|_2 = 1$ for all $i = 1, \dots, N$. The total electrostatic potential energy is given by
+
+\begin{equation}
+E(\mathbf{X}) = \sum_{i=1}^{N} \sum_{j=i+1}^{N} \frac{1}{\|\mathbf{x}_i - \mathbf{x}_j\|_2},
+\end{equation}
+
+where $\mathbf{X} = [\mathbf{x}_1^\top, \mathbf{x}_2^\top, \dots, \mathbf{x}_N^\top]^\top \in \mathbb{R}^{N \times 3}$ is the matrix of all point coordinates, and $\|\mathbf{x}_i - \mathbf{x}_j\|_2$ is the Euclidean distance between points $i$ and $j$. The goal of the Thomson problem is to find
+
+\begin{equation}
+\mathbf{X}^* = \arg \min_{\mathbf{X} \in (\mathbb{S}^2)^N} E(\mathbf{X}),
+\end{equation}
+
+where $\mathbb{S}^2 = \{\mathbf{x} \in \mathbb{R}^3 : \|\mathbf{x}\|_2 = 1\}$ denotes the unit sphere.
+
+\subsubsection{Numerical approach}
+
+The implementation was made using a gradient-based iterative solver, using a continuous optimization approach with steps projected onto the tangent plane of the sphere at each point. The key steps are as follows:
+
+\begin{enumerate}
+    \item \textbf{Initialization:} Points are initialized randomly on the unit sphere by normalizing random Gaussian vectors:
+    \begin{equation}
+    \mathbf{x}_i \leftarrow \frac{\mathbf{r}_i}{\|\mathbf{r}_i\|_2}, \quad \mathbf{r}_i \sim \mathcal{N}(\mathbf{0}, \mathbf{I}_3).
+    \end{equation}
+
+    \item \textbf{Force computation:} The repulsive Coulomb force on each point is computed as
+    \begin{equation}
+    \mathbf{F}_i = \sum_{j \neq i} \frac{\mathbf{x}_i - \mathbf{x}_j}{\|\mathbf{x}_i - \mathbf{x}_j\|_2^3}.
+    \end{equation}
+    This force is then projected onto the tangent plane of the sphere at $\mathbf{x}_i$ to ensure that the points remain on the surface:
+    \begin{equation}
+    \mathbf{F}_i^{\text{tangent}} = \mathbf{F}_i - (\mathbf{F}_i \cdot \mathbf{x}_i)\, \mathbf{x}_i.
+    \end{equation}
+
+    \item \textbf{Adaptive step update:} Points are moved along the tangent force direction with an adaptive step size $\alpha$ that decreases with iteration count:
+    \begin{equation}
+    \mathbf{x}_i \leftarrow \frac{\mathbf{x}_i + \alpha \mathbf{F}_i^{\text{tangent}}}{\|\mathbf{x}_i + \alpha \mathbf{F}_i^{\text{tangent}}\|_2}.
+    \end{equation}
+    To prevent stagnation in local minima, a small random jitter may be added occasionally:
+    \begin{equation}
+    \mathbf{x}_i \leftarrow \frac{\mathbf{x}_i + \mathbf{J}_i}{\|\mathbf{x}_i + \mathbf{J}_i\|_2}, \quad \mathbf{J}_i \sim \mathcal{N}(\mathbf{0}, \sigma^2 \mathbf{I}_3), \ \sigma \ll 1.
+    \end{equation}
+
+    \item \textbf{Convergence:} The iteration continues until the maximum displacement of any point between iterations falls below a specified tolerance, i.e.,
+    \begin{equation}
+    \max_i \|\mathbf{x}_i^{(k+1)} - \mathbf{x}_i^{(k)}\|_2 < \text{Tol}.
+    \end{equation}
+\end{enumerate}
+
+\subsection{Poisson Disk sampling} \label{sec.3:Poisson sampling disk}
+
+Poisson disk sampling is a stochastic sampling technique that enforces a minimum distance between samples, producing distributions that are both random and well-spaced. Formally, a Poisson disk distribution is defined such that no two samples are closer than a user-defined distance \( r \). This property avoids clustering while preserving randomness, resulting in so-called \emph{blue noise} characteristics, which are highly desirable for a very isotropous distributing of agents.
+
+Poisson disk samples are generated using the fast algorithm proposed by Bridson\cite{poisson_sampling_disk}. The method improves efficiency by restricting candidate samples to a neighborhood around existing points. A background grid is used to accelerate distance queries, with the cell size chosen as \( r / \sqrt{n} \) in an \( n \)-dimensional domain, ensuring that each cell contains at most one sample.
+
+The algorithm starts by placing an initial random sample in the domain and adding it to an active list. While this list is not empty, a sample is selected and up to \( k \) candidate points are generated uniformly in the spherical annulus between radii \( r \) and \( 2r \). If a candidate is at least distance \( r \) from all existing samples, it is accepted and added to the active list. If no valid candidate is found after \( k \) attempts, the sample is removed from the active list.
+
+Because each iteration either adds or removes a sample and the number of candidate attempts is bounded by a constant, the overall computational complexity of the algorithm is \( O(N) \), being \( N \) the total number of samples. A key advantage of this approach is that it generalizes naturally to arbitrary dimensions, making it well suited for multi-dimensional sampling problems.
+
+For multi-agent coverage problems, a fixed number of agents \( N \) is often required. Standard Poisson disk sampling does not guarantee an exact number of points. To address this, a gradient-based iterative solver can be applied after initial sampling to adjust point positions while maintaining the minimum separation distance. This refinement ensures that exactly \( N \) agents are placed with uniform spacing, and the low runtime of the algorithm makes this approach practical for real-time or large-scale deployments.
+
+Figure~\ref{fig.3:methods_points_on_sphere} compares the distributions obtained from Poisson disk sampling with other methods discussed in the next chapter, illustrating its effectiveness in producing well-spaced points on the sphere. Being the run time shown in Figure~\ref{fig.3:comparing_methods_box_shape}.
+
+
+\section{Lyapunov Stability and Lyapunov-Based Control \textbf{[50\% CHAT GPT!!!]}} \label{sec.3:Lyapunov Stability and Lyapunov-Based Control}
+
+Lyapunov theory provides a rigorous framework for analyzing the stability of nonlinear dynamical systems and for synthesizing stabilizing control laws without requiring explicit solutions of the system equations. In this work, Lyapunov-based methods are employed to analyze and guarantee the stability of a reduced-attitude control system evolving on nonlinear manifolds.
+
+\subsection{System Description}
+
+Consider a nonlinear dynamical system of the form
+\begin{equation}
+    \dot{\mathbf{x}} = \mathbf{f}(\mathbf{x}, \mathbf{u}),
+\end{equation}
+where $\mathbf{x} \in \mathbb{R}^n$ denotes the system state and $\mathbf{u} \in \mathbb{R}^m$ is the control input.  
+An equilibrium point $\mathbf{x}_e$ satisfies $\mathbf{f}(\mathbf{x}_e, \mathbf{u}_e) = \mathbf{0}$ and can be shifted to the origin via an appropriate change of variables.
+
+\subsection{Lyapunov Stability and Control}
+
+Let $V : \mathbb{R}^n \rightarrow \mathbb{R}$ be a continuously differentiable, positive-definite function with $V(\mathbf{0}) = 0$.  
+If its time derivative along system trajectories satisfies
+\begin{equation}
+    \dot{V}(\mathbf{x}) \le 0,
+\end{equation}
+then the equilibrium is Lyapunov stable. If $\dot{V}(\mathbf{x}) < 0$ for all $\mathbf{x} \neq \mathbf{0}$, asymptotic stability is ensured.
+
+In Lyapunov-based control, the control law $\mathbf{u}(\mathbf{x})$ is designed such that the closed-loop dynamics yield a non-increasing Lyapunov function, guaranteeing stability by construction. This approach is particularly suitable for nonlinear systems evolving on manifolds, such as rigid-body attitude dynamics.
+
+\subsection{Reduced Attitude Representation}
+
+The attitude configuration of the rigid body is described by the unit vector
+\begin{align}
+q = Q e_3,
+\end{align}
+where \( Q \in SO(3) \) is the rotation matrix mapping vectors from the body frame \( I_b \) to the inertial frame \( I_R \), and \( e_3 = [0\;0\;1]^T \).
+The configuration space is therefore the two-sphere
+\begin{align}
+S^2 = \left\{ q \in \mathbb{R}^3 \mid q^T q = 1 \right\}.
+\end{align}
+
+The kinematics of the reduced attitude evolve on \( S^2 \) according to
+\begin{align}
+\dot{q} = S(\omega) q,
+\end{align}
+where \( \omega \in \mathbb{R}^3 \) is the angular velocity expressed in the inertial frame and \( S(\cdot) \) denotes the skew-symmetric operator.
+
+The rotational dynamics of the rigid body are given by
+\begin{align}
+J \dot{\omega} = u - c \omega - S(\omega) J \omega + \tau,
+\end{align}
+where \( J \) is the inertia matrix, \( c > 0 \) is a viscous damping coefficient, \( \tau \) represents external disturbances, and \( u \) is the control moment generated by the outer loop.
+
+\subsection{Attitude Error Function on SO(2)}
+
+Classical reduced attitude controllers frequently employ the error function
+\begin{align}
+\phi_r(q, q_d) = 1 - q^T q_d,
+\qquad
+e_r = S(q_d) q,
+\end{align}
+which exhibits degraded performance for large initial attitude errors, particularly when the relative angle exceeds \( \pi/2 \). In such cases, the magnitude of the error vector decreases as the misalignment increases, reducing the control authority and slowing convergence.
+
+To address this limitation, an alternative error function inspired by \cite{lyapunov_outer_loop_control} is adopted:
+\begin{align}
+\phi_r(q, q_d) =
+2 - \frac{2}{\sqrt{2}} \sqrt{1 + q^T q_d}.
+\end{align}
+
+This function is smooth and positive definite about \( q = q_d \), and avoids maximizing the error near the antipodal configuration. As a result, large-angle attitude errors are handled more effectively, as shown in Figure~\ref{fig.2:Comparison between error calculations}
+
+% Subfigures 
+\begin{figure}
+\centering
+\begin{subfigure}{.45\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{5-Figures/Chapter2/lyapunov/old_error.png}
+  \caption{Standard method}
+  \label{fig:sub1}
+\end{subfigure}%
+\begin{subfigure}{.45\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{5-Figures/Chapter2/lyapunov/new_error.png}
+  \caption{Proposed method in \cite{lyapunov_outer_loop_control}}
+  \label{fig:sub2}
+\end{subfigure}
+\caption{Comparison between error calculations}
+\label{fig.2:Comparison between error calculations}
+\end{figure}
+
+The corresponding configuration error vector is defined as
+\begin{align}
+e_q(q, q_d, Q) =
+\frac{1}{\sqrt{2}\,\sqrt{1 + q^T q_d}}\,
+Q^T S(q_d) q,
+\end{align}
+which lies in the tangent space \( T_q S^2 \).
+This formulation ensures that the magnitude of the configuration error varies proportionally with the angular separation between \( q \) and \( q_d \), leading to uniform controller response across the sphere.
+
+\subsection{Angular Velocity Error}
+
+The angular velocity tracking error is defined by
+\begin{align}
+e_\omega = \omega - \omega_d,
+\end{align}
+where \( \omega_d \) is the desired angular velocity associated with the reference pointing direction \( q_d \).
+
+\subsection{Control Law}
+
+Using the above error definitions, the control moment is chosen as
+\begin{align}
+u =
+Q^T\left(
+- K_r Q e_q
+- K_\omega e_\omega
+\right)
++ S(\omega) J \omega
++ c \omega
+- \tau,
+\end{align}
+where \( K_r \in \mathbb{R}^{3\times3} \) and \( K_\omega \in \mathbb{R}^{3\times3} \) are positive-definite gain matrices.
+
+The first term stabilizes the configuration and angular velocity errors on \( S^2 \), while the remaining terms cancel the rigid-body nonlinearities, viscous damping, and external disturbances. This results in closed-loop error dynamics that are independent of the inertia matrix.
+
+\subsection{Stability Properties}
+
+Consider the Lyapunov candidate function
+\begin{align}
+V = \frac{1}{2} e_\omega^T J e_\omega + K_r \phi_r(q, q_d).
+\end{align}
+
+The time derivative of \( V \) along the closed-loop trajectories satisfies
+\begin{align}
+\dot{V} = - e_\omega^T K_\omega e_\omega \le 0,
+\end{align}
+showing that all system signals remain bounded and that the equilibrium
+\(
+(q,\omega) = (q_d,\omega_d)
+\)
+is asymptotically stable on \( S^2 \), excluding the antipodal configuration.
+
+Importantly, the proposed error function eliminates the loss of control authority observed in classical formulations, resulting in improved convergence behavior for large initial attitude errors.
+
+\subsection{Implementation and Simulation}
+
+The proposed controller was implemented and evaluated through numerical simulations. The rigid body is initialized with a non-zero angular velocity and a large pointing error. A step change in the desired pointing direction is introduced during the simulation to evaluate transient performance.
+
+The results in Figure~\ref{fig.2:lyapunov_example_results} demonstrate smooth convergence of the pointing direction on \( S^2 \), monotonic decrease of the attitude error function, and asymptotic regulation of the angular velocity. These results confirm the theoretical stability analysis and highlight the advantages of the proposed geometric formulation. A more extensive explanations and formula deduction can be found in the original referenced paper \cite{lyapunov_outer_loop_control}.
+
+\begin{figure}[H]
+\centering
+
+\begin{minipage}{\textwidth}
+\centering
+\includegraphics[width=0.45\textwidth]{5-Figures/Chapter2/lyapunov/Attitude_error.png}\hfill
+\includegraphics[width=0.45\textwidth]{5-Figures/Chapter2/lyapunov/configuration error vector.png}
+\end{minipage}
+
+\vspace{0.5cm}
+
+\begin{minipage}{\textwidth}
+\centering
+\includegraphics[width=0.45\textwidth]{5-Figures/Chapter2/lyapunov/angular velocity error.png}\hfill
+\includegraphics[width=0.45\textwidth]{5-Figures/Chapter2/lyapunov/traking trajectory.png}
+\end{minipage}
+
+\caption{Lyapunov example results}
+\label{fig.2:lyapunov_example_results}
+\end{figure}
+
+\section{Consensus-Based Coordination  \textbf{[100\% CHAT GPT!!!]} \textbf{[MISSING CITATIONS]}} \label{sec.3:Consensus-Based Coordination}
+
+Consensus-based coordination is a fundamental approach in multi-agent systems, where a group of agents cooperatively achieves a common objective through local interactions.
+Typical applications include formation control, distributed estimation, flocking, and cooperative robotics.
+The key idea is that global coordination emerges from simple local interaction rules defined by the communication network.
+
+\subsection{Graph-Theoretic Representation}
+
+The interaction topology of a multi-agent system is commonly modeled using graph theory.
+Let the communication network be represented by a graph
+\begin{equation}
+    \mathcal{G} = (\mathcal{V}, \mathcal{E}),
+\end{equation}
+where $\mathcal{V} = \{1,2,\dots,N\}$ is the set of nodes (agents) and $\mathcal{E} \subseteq \mathcal{V} \times \mathcal{V}$ is the set of edges representing information exchange.
+
+If information flow between agents is bidirectional, the graph is undirected; otherwise, it is directed.
+The connectivity properties of $\mathcal{G}$ play a crucial role in determining whether consensus can be achieved.
+
+\subsection{Adjacency Matrix}
+
+The \textit{adjacency matrix} $\mathbf{A} \in \mathbb{R}^{N \times N}$ characterizes the local interactions among agents.
+Its elements are defined as
+\begin{equation}
+    a_{ij} =
+    \begin{cases}
+        w_{ij} > 0, & \text{if agent $j$ sends information to agent $i$}, \\
+        0, & \text{otherwise},
+    \end{cases}
+\end{equation}
+where $w_{ij}$ denotes the weight of the communication link.
+For undirected graphs, $\mathbf{A}$ is symmetric.
+
+The adjacency matrix determines which agents influence each other and with what relative strength.
+However, it does not explicitly capture the notion of disagreement between agents, which is central to consensus dynamics.
+
+\subsection{Laplacian Matrix}
+
+The \textit{graph Laplacian matrix} encodes both the adjacency structure and the degree of each node.
+It is defined as
+\begin{equation}
+    \mathbf{L} = \mathbf{D} - \mathbf{A},
+\end{equation}
+where $\mathbf{D} = \text{diag}(d_1, \dots, d_N)$ is the degree matrix with
+\begin{equation}
+    d_i = \sum_{j=1}^{N} a_{ij}.
+\end{equation}
+
+The Laplacian matrix plays a central role in consensus analysis.
+It has the following important properties:
+\begin{itemize}
+    \item $\mathbf{L}\mathbf{1} = \mathbf{0}$, where $\mathbf{1}$ is the vector of all ones.
+    \item All eigenvalues of $\mathbf{L}$ are non-negative.
+    \item The multiplicity of the zero eigenvalue equals the number of connected components of the graph.
+\end{itemize}
+
+For undirected and connected graphs, $\mathbf{L}$ has a single zero eigenvalue, which is a necessary and sufficient condition for consensus.
+
+\subsection{Consensus Algorithms}
+
+Consider a group of $N$ agents, each with scalar state $x_i \in \mathbb{R}$.
+A standard continuous-time consensus protocol is given by
+\begin{equation}
+    \dot{x}_i = \sum_{j=1}^{N} a_{ij} (x_j - x_i),
+\end{equation}
+which can be written in compact form as
+\begin{equation}
+    \dot{\mathbf{x}} = -\mathbf{L}\mathbf{x}.
+\end{equation}
+
+This dynamics drives the agents toward a common value by reducing the disagreement between neighboring states.
+If the communication graph is connected, all states converge to a consensus value
+\begin{equation}
+    \lim_{t \to \infty} x_i(t) = x^\ast, \quad \forall i.
+\end{equation}
+
+For undirected graphs, the consensus value corresponds to the average of the initial states.
+The convergence rate is influenced by the second smallest eigenvalue of the Laplacian, known as the \textit{algebraic connectivity}.
+
+\subsection{Extensions and Remarks}
+
+Consensus algorithms can be extended to higher-order agent dynamics, time-varying topologies, directed graphs, and delayed communication.
+Despite these complexities, the Laplacian matrix remains the fundamental tool for analyzing stability and convergence.
+As a result, consensus-based coordination provides a scalable and fully distributed framework for multi-agent control systems.
+
+\subsection{Summary}
+
+Consensus-based coordination relies on local interactions defined by a communication graph to achieve global agreement.
+The adjacency and Laplacian matrices provide compact representations of the network structure and are essential for the design and analysis of consensus algorithms.
+Their spectral properties directly determine the existence, speed, and robustness of consensus.

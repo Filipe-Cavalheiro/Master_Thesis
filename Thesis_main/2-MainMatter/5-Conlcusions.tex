@@ -1,0 +1,99 @@
+%!TEX root = ../template.tex
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 5-Conlcusions.tex
+%% NOVA thesis document file
+%%
+%% Chapter with the template manual
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\typeout{NT FILE 5-Conlcusions.tex}%
+
+\chapter{Timeline and Conclusions}
+\label{cha:Timeline and Conclusions}
+
+\glsresetall
+
+\section{Timeline} \label{sec.5:Timeline}
+The timeline for the thesis is shown in Figure~\ref{fig.5:Monthly view}. On a monthly basis, one week per month is reserved for writing the thesis. If the writing task requires less than one week, the remaining time can be allocated to subsequent tasks.  
+
+From a broader project perspective, shown in Figure~\ref{fig.5:Project view}, there are three periods during which the primary focus is on writing, either for the preparation of papers or for the final thesis writing phase. As before, if less time is required for writing, the schedule can be adjusted flexibly depending on the needs of the project at that time.
+
+\begin{figure}[H]
+    \begin{center}
+    \begin{ganttchart}[y unit title=0.4cm,
+    y unit chart=0.5cm,
+    vgrid,hgrid, 
+    title label anchor/.style={below=-1.6ex},
+    title left shift=.05,
+    title right shift=-.05,
+    title height=1,
+    progress label text={},
+    bar height=0.7,
+    group right shift=0,
+    group top shift=.6,
+    group height=.3]{1}{20}
+    %labels
+    \gantttitle{Week 1}{5}
+    \gantttitle{Week 2}{5}
+    \gantttitle{Week 3}{5}
+    \gantttitle{Week 4}{5}\\
+    %tasks
+    \ganttbar{task at hand}{1}{15} \\
+    \ganttbar{write thesis}{16}{20}
+    
+    %relations 
+    \ganttlink{elem0}{elem1} 
+    \end{ganttchart}
+    \end{center}
+    \caption{Monthly view}
+    \label{fig.5:Monthly view}
+\end{figure}
+
+\begin{figure}[H]
+    \hspace{-2.8cm}
+    \begin{ganttchart}[y unit title=0.4cm,
+    y unit chart=0.5cm,
+    vgrid,hgrid, 
+    title label anchor/.style={below=-1.6ex},
+    title left shift=.05,
+    title right shift=-.05,
+    title height=1,
+    progress label text={},
+    bar height=0.7,
+    group right shift=0,
+    group top shift=.6,
+    group height=.3]{1}{32}
+    %labels
+    \gantttitle{Feb.}{4}
+    \gantttitle{Mar.}{4}
+    \gantttitle{Apr.}{4}
+    \gantttitle{May}{4}
+    \gantttitle{June}{4}
+    \gantttitle{July}{4}
+    \gantttitle{Aug.}{4}
+    \gantttitle{Sept.}{4}\\
+    %tasks
+    \ganttbar{agent to nearest point}{1}{4} \\
+    \ganttbar{Paper 1}{5}{8} \\
+    \ganttbar{Consensus}{9}{12} \\
+    \ganttbar{Poisson disk sampling}{13}{16} \\
+    \ganttbar{Other SO(2) Manifolds}{17}{20} \\
+    \ganttbar{Paper 2}{21}{24} \\
+    \ganttbar{IRL testing}{25}{28} \\
+    \ganttbar{write thesis}{29}{32}
+    
+    %relations 
+    \ganttlink{elem0}{elem1} 
+    \ganttlink{elem0}{elem2} 
+    \ganttlink{elem2}{elem3} 
+    \ganttlink{elem3}{elem4} 
+    \ganttlink{elem4}{elem5} 
+    \ganttlink{elem4}{elem6} 
+    \ganttlink{elem6}{elem7} 
+    \end{ganttchart}
+    \caption{Project view}
+    \label{fig.5:Project view}
+\end{figure}
+
+
+\section{Conclusions}
