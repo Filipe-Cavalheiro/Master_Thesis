@@ -5,7 +5,7 @@
 % Summary: simulate simple dynamic system model of a drone
 clear; clc; close all;
 drone_init;
-clearvars iD
+clearvars iD;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Fibonacci sphere values
@@ -58,12 +58,11 @@ for iD = 1:Param.nD
     
     % desired values
     if Param.nD >= 3
-
         q_d{iD} = (fib_ref_points(:,iD) / norm(fib_ref_points(:,iD)))*Param.sphere_radius;
     else
         q_d{iD} = [0; 1; 0];
     end
-    omega_d{iD} = [0; 0; 0];
+    omega_d{iD} = [0; 1; 0];
 end
 
 % Storage
@@ -87,7 +86,7 @@ for k = 1:Nsim
         % --- Configuration error vector (Eq. 12)
         q_hat   = q{iD}   / Param.sphere_radius;
         qd_hat  = q_d{iD} / Param.sphere_radius;
-        e_q{iD} = (1 / (sqrt(2) * sqrt(1 + (q_hat' * qd_hat)))) * Q' * S(q_d{iD}) * q{iD};
+        e_q{iD} = (1 / (sqrt(2) * sqrt(1 + (q_hat' * qd_hat)))) * Q' * S(qd_hat) * q_hat;
     
         % --- Angular velocity error
         e_w{iD} = omega{iD} - omega_d{iD};

@@ -10,7 +10,7 @@ Param.Tend = 10;
 Param.dTi = 0.01;  % inner-loop and simulation sampling period
 Nsim = round(Param.Tend/Param.dTi)+1;
 Param.g = 9.81;     % earth gravity
-Param.nD = 3; % number of drones
+Param.nD = 9; % number of drones
 Param.sphere_radius = 5;  % sphere radius
 
 % reference parameters

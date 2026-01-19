@@ -4,7 +4,7 @@ clear; clc; %close all;
 % for j = 1:100
 %     start = clock;
     % Number of points
-    P = 1001;                  
+    P = 9;                  
     N = floor((P-1)/2);         % Since P = 2N + 1 works best for odd P
     
     % Sphere radius
@@ -74,5 +74,5 @@ set(gcf, 'Color', 'w');          % white background
 set(gca, 'Position', [0 0 1 1]); % fill figure
 view(3);
 
-exportgraphics(gcf, 'fibonacci_sphere_top.png', 'ContentType', 'vector');
+%exportgraphics(gcf, 'fibonacci_sphere_top.png', 'ContentType', 'vector');
 hold off;
