@@ -8,13 +8,283 @@
 
 \typeout{NT FILE 2-State_of_the_art.tex}%
 
-\chapter{State of the art}
-\label{cha:State of the art}
+\chapter{State of the art} \label{cha:State of the art}
 
 \glsresetall
 
 \section{Introduction} \label{sec.2:Introduction}
 
-\section{Known currently developed models} \label{sec.2:Currently deleloped models}
+The coordinated control of multiple autonomous agents has attracted tremendous research attention due to its wide-ranging applications in robotics, aerospace, and environmental monitoring. The following is the currently known methods for multiple agent encirclement in 2D and 3D spaces. Starting with some contextualization of most commonly used problem statements and control methods. 
 
-\cite{Wang_2021}, \cite{electronics10232959}, \cite{https://doi.org/10.1155/2018/9162358}, \cite{KIM20071426}, \cite{WANG2025105019}, \cite{1284730}.
+\subsection{Scope and Organization [remove?]}
+
+This chapter covers circular formation control for multi-agent systems with emphasis on:
+
+\begin{itemize}
+    \item Problem Classification \ref{sec.2:Problem Classification}: which type of environment and target is being used
+    \item Control methodologies \ref{sec.2:Fundamental Control Methodologies}: cyclic pursuit, leader-follower, behavior-based, artificial potential, and virtual structure approaches
+    \item Measurement techniques \ref{sec.2:Measurement-Based Classification}: position, distance, bearing, and range-based sensing
+    \item Centralized and decentralized systems \ref{sec.2:Centralized and decentralized systems}
+\end{itemize}
+
+The remainder of this chapter is organized as follows. Section 2 presents the problem formulation and classification. Section 3 reviews fundamental control methodologies. Section 4 discusses measurement-based approaches. Section 5 covers stability and convergence analysis. Section 6 addresses practical constraints and robustness. Section 7 presents recent advances including encirclement-guaranteed strategies. Section 8 discusses applications and future directions.
+
+\section{Problem Classification} \label{sec.2:Problem Classification}
+Different papers use different methodology to describe not only the solutions but also the problem at hand in Table~\ref{tab.2:circular_formation_classification} the most common problem definitions can be seen, this table was created with based on the reviewed papers including a survey of said multiple methods and environment definitions \cite{Litimein2021}.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Classification of Circular Formation Problems}
+    \label{tab.2:circular_formation_classification}
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabular}{|p{3.5cm}|p{11cm}|}
+        \hline
+        \textbf{Type} & \textbf{Description} \\
+        \hline
+
+        \multicolumn{2}{|l|}{\textbf{Problem Definition}} \\
+        \hline
+        Encirclement &
+        The evader/target lies inside the convex hull formed by the pursuers' positions. \\
+        Circular Motion &
+        All agents move on a common circular trajectory of radius $R$ around a center $c$. \\
+        Phase Distribution &
+        Specifies the angular positions of agents around the circle. \\
+        \hline
+
+        \multicolumn{2}{|l|}{\textbf{Control Architecture}} \\
+        \hline
+        Centralized Circular Formation &
+        A central coordinator has global information and computes control inputs for all agents. \\
+        Distributed Circular Formation &
+        Due to definition variance between papers Section~\ref{sec.2:Centralized and decentralized systems} has a more complete definition. \\
+        \hline
+
+        \multicolumn{2}{|l|}{\textbf{Target Specification}} \\
+        \hline
+        Fixed Target &
+        The center of the circular trajectory is specified and stationary. \\
+        Moving Target &
+        The center moves with known or unknown dynamics. \\
+        Multiple Targets &
+        Agents encircle multiple targets simultaneously. \\
+        \hline
+
+        \multicolumn{2}{|l|}{\textbf{Spacing Distribution}} \\
+        \hline
+        Even Distribution &
+        Agents are equally spaced with $\delta\theta_i = 2\pi/n$ for all $i$. \\
+        Arbitrary Distribution &
+        Agents achieve prescribed non-uniform spacing for mission-specific requirements. \\
+        \hline
+
+        \multicolumn{2}{|l|}{\textbf{Formation Dynamics}} \\
+        \hline
+        Static &
+        Radius, angular speed, and spacing remain constant. \\
+        Dynamic &
+        One or more parameters (radius, speed, spacing) vary over time. \\
+        \hline
+    \end{tabular}
+\end{table}
+
+
+\section{Fundamental Control Methodologies} \label{sec.2:Fundamental Control Methodologies}
+
+This section reviews the primary control approaches for circular formation: cyclic pursuit, leader-follower, behavior-based, artificial potential, and virtual structure methods.
+
+\subsection{Cyclic Pursuit}
+
+Cyclic pursuit is one of the earliest and most elegant approaches to circular formation control, despite working best in a \gls{2D} environment. In this strategy, agent $i$ pursues agent $i+1$ (modulo $n$), resulting in a ring communication topology. The pursuit can be defined either in terms of linear Cartesian distance or, more commonly, angular distance. Depending on the target specification, the control law may or may not explicitly account for the motion of the target.
+
+This approach offers several advantages. It requires minimal communication being even sometimes considered communication free using distance measurements instead, with only $n$ communication links for $n$ agents, and enables fully distributed control without the need for a designated leader. Under appropriate conditions, cyclic pursuit guarantees convergence of all agents to the centroid of the formation and exhibits inherent robustness to disturbances. Note that the centroid needs not be a explicitly defined target being it possible via consensus all agents reach the same centroid definition without explicitly initial agreement.
+
+However, cyclic pursuit also presents several limitations. Without additional control terms or constraints, all agents tend to converge to a single point rather than maintaining a desired circular formation. Moreover, achieving specific formation shapes or prescribed inter-agent spacing is difficult without modifying the basic pursuit law. Finally, the presence of closed-loop interactions may introduce feedback loops that complicate stability and convergence analysis.
+
+\subsection{Leader--Follower Approach}
+
+In leader--follower strategies, one or more agents act as leaders that define the desired circular trajectory, while the remaining agents, referred to as followers, regulate their motion to track the leader or leaders while maintaining appropriate relative spacing. The leader may represent a physical target or a virtual reference point, and the resulting formation behavior is largely dictated by the leader's trajectory.
+
+In the single-leader formulation, followers are driven toward circular motion around the leader while simultaneously adjusting their relative positions with respect to neighboring agents in order to achieve the desired angular distribution. The control structure typically combines a radial-tangential component that induces convergence to a circular orbit of prescribed radius with an additional spacing regulation mechanism. Proper parameter selection allows the formation to converge to a stable limit cycle corresponding to the desired circular motion.
+
+The framework naturally extends to scenarios involving multiple leaders or targets. In such cases, followers may regulate their motion based on a weighted combination of leader positions, together with additional formation-maintenance terms. This enables coordinated encirclement of multiple targets or the use of virtual leaders to shape more complex formations, provided that suitable weighting and communication structures are in place.
+
+Leader--follower approaches are widely adopted due to their intuitive formulation and ease of implementation, and they allow explicit specification of formation geometry. They are particularly effective in scenarios involving moving targets, as the formation can directly track the leader's motion. However, these methods are inherently sensitive to failures or loss of connectivity involving the leader, since the leader represents a critical information source. If leader information becomes unavailable or unreliable, formation coherence may degrade or collapse
+
+\subsection{Artificial Potential Functions}
+
+Artificial potential function methods achieve circular formations by defining scalar fields whose gradients drive agents toward desired configurations. Agents follow control laws derived from these potentials, typically using gradient-based mechanisms, so that the resulting closed-loop behavior leads to convergence toward a specified circular trajectory.
+
+A common approach within this framework is the vector field design methodology, in which a guidance field is constructed such that following its flow induces circular motion. The desired circle is designed to be a stable limit cycle of the resulting dynamical system, ensuring that agents converge to and remain on the circular orbit. This is often accomplished by combining an attractive component that draws agents toward the target circle with a rotational component that enforces continuous motion along the circumference.
+
+Navigation functions constitute another widely used class of potential-based methods. These functions are carefully constructed to encode both goal-seeking behavior and obstacle avoidance within a single scalar function. By shaping the function to have a unique minimum at the desired position while increasing near obstacles or forbidden regions, agents can be guided toward circular formations while respecting environmental constraints.
+
+Artificial potential function approaches offer several advantages, including a systematic design process grounded in Lyapunov theory and the ability to naturally incorporate obstacle avoidance and safety constraints. When properly designed, they can provide formal guarantees on stability and convergence. However, these methods are sensitive to the specific choice of potential function and may suffer from local minima that trap agents in undesired configurations. Additionally, the computation of gradients and carefully shaped potentials can introduce significant computational overhead, particularly in large-scale multi-agent systems or cluttered environments.
+
+\subsection{Virtual Structure Methods}
+
+Virtual structure methods model the multi-agent formation as a rigid body, in which each agent maintains a fixed position relative to a shared virtual reference frame. In this formulation, agents are assigned predefined roles within the structure and independently regulate their motion toward prescribed relative positions. Because all agents aim to reach the same global objective defined by the virtual structure, explicit inter-agent communication or relative measurements are not strictly required, provided that the virtual structure state is available to all agents.
+
+The virtual structure is characterized by a reference position and orientation, and each agent is associated with a desired offset expressed in the virtual frame. By tracking these time-varying reference positions, agents collectively produce coordinated motion that preserves the formation shape. This representation greatly simplifies the specification of complex formations and enables synchronized maneuvers such as translations, rotations, and circular motion around a target.
+
+Virtual structure approaches offer the advantage of conceptual simplicity, as formation geometry can be directly prescribed and maintained with high precision. Coordinated maneuvers are straightforward to design, and no single physical agent is required to act as a leader. However, these methods typically rely on centralized computation or global knowledge of the virtual structure state, which must be shared with all agents. As a result, they are less flexible than fully distributed approaches and may exhibit reduced robustness to communication delays, estimation errors, or partial information loss.
+
+\section{Measurement-Based Classification} \label{sec.2:Measurement-Based Classification}
+
+The information available to agents significantly impacts controller design. This section categorizes approaches by measurement type.
+
+\begin{table}[htbp]
+\centering
+\caption{Measurement-Based Classification of Multi-Agent Control}
+\label{tab:measurement-based-control}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Measurement Type} & \textbf{Available Information}\\ \hline
+Position-Based & Absolute positions $p_i$ (e.g., via GPS) \\ \hline
+Distance-Based & Distances to neighbors $\|p_i - p_j\|$ \\ \hline
+Bearing-Based & Bearing angles to neighbors $\theta_{ij} = \sphericalangle(p_j - p_i)$ \\ \hline
+RSS Measurements & Signal strength-based distance estimates\\ \hline
+\end{tabular}
+\end{table}
+
+\section{Centralized and decentralized systems} \label{sec.2:Centralized and decentralized systems}
+
+As discussed in \cite{surver_centralized_decentralized}, the classification of multi-agent systems into \emph{centralized} and \emph{decentralized} categories is often ambiguous and potentially misleading. The ambiguity primarily stems from the fact that these terms are used with different meanings across the literature, depending on the specific assumptions, architectures, and problem formulations adopted by different authors. As a result, such a binary classification does not always provide meaningful insight into the fundamental properties or limitations of formation control strategies.
+
+A common interpretation associates centralized control with the presence of a global coordinator that collects information from all agents, computes control or coordination commands, and then distributes them back to the agents. Under this definition, a decentralized system is one in which no such global coordinator exists and each agent computes its control input using only locally available information. While this distinction is conceptually simple, it turns out to be of limited usefulness when surveying formation control algorithms. Indeed, under this criterion, the vast majority of formation control schemes proposed in the literature can be labeled as decentralized, since they do not explicitly rely on a centralized controller. Consequently, the centralized-decentralized dichotomy fails to differentiate effectively between fundamentally different approaches.
+
+Furthermore, the term \emph{decentralized} itself is used in a variety of subjective and sometimes conflicting ways. In some works, decentralization refers to the use of local feedback laws based solely on neighbor-to-neighbor interactions. In others, it refers to the absence of absolute position measurements, the lack of a global reference frame, or scalability with respect to the number of agents. In certain cases, limited forms of coordination, such as leader-follower architectures or broadcast signals from a coordinating unit, are still described as decentralized. This lack of consistency makes it difficult to draw precise conclusions when comparing results based purely on the centralized versus decentralized terminology.
+
+To avoid these issues, the survey in \cite{surver_centralized_decentralized} deliberately refrains from categorizing formation control schemes according to their level of centralization. Instead, it proposes a classification based on more objective and technically meaningful criteria, namely the \emph{sensing capabilities} of individual agents and the \emph{interaction topology} of the multi-agent system. These two aspects are directly tied to the information available to each agent and the mathematical structure of the control problem, and thus provide a clearer basis for comparison.
+
+From the sensing perspective, formation control schemes can be distinguished by the type of variables that agents are able to measure. Some approaches require agents to sense their absolute positions with respect to a global coordinate system, which typically implies access to GPS or an equivalent localization infrastructure. Other approaches rely only on relative measurements, such as relative positions or distances to neighboring agents, which can be obtained using onboard sensors without a shared global reference frame. This distinction has a direct impact on the practical deployability of a control strategy, especially in environments where global positioning is unavailable or unreliable.
+
+From the interaction topology perspective, the classification focuses on what variables are actively controlled and how agents must interact to achieve the desired formation. For instance, if agents directly control their absolute positions, interactions among agents may not be strictly necessary. In contrast, if agents control relative positions or inter-agent distances, then the structure of the interaction graph becomes crucial. Properties such as connectivity, existence of a spanning tree, rigidity, or persistence determine whether the desired formation can be achieved and maintained.
+
+Based on these considerations, formation control schemes are more informatively categorized into position-based, displacement-based, and distance-based control. Position-based control requires agents to sense and regulate their absolute positions with respect to a global coordinate system. Displacement-based control assumes that agents can sense relative positions of their neighbors in a common orientation frame, allowing them to regulate relative displacements. Distance-based control requires only measurements of relative distances or relative positions expressed in local coordinate frames, and the desired formation is specified in terms of inter-agent distances, making it invariant to global translations and rotations.
+
+This classification also clarifies the use of commonly employed terms such as \emph{local} and \emph{relative}. The term \emph{relative} can be precisely associated with sensing variables expressed in local coordinate frames rather than a global one, while the term \emph{local} may refer either to limited interaction ranges, neighbor-based information exchange, or the absence of a global coordinator. By explicitly characterizing sensing requirements and interaction topology, these notions can be unambiguously defined without resorting to the vague notion of decentralization.
+
+In summary, rather than relying on the potentially confusing centralized-decentralized dichotomy, this thesis adopts the classification framework proposed in \cite{surver_centralized_decentralized}, which emphasizes sensing capabilities and interaction topology. This approach provides a more precise and technically grounded basis for analyzing and comparing formation control strategies, and it better reflects the fundamental trade-offs between information availability, inter-agent communication, and achievable formation objectives.
+
+\section{Related Works} \label{sec.2:Related Works}
+
+\subsection{\cite{Wang_2021} Encirclement Guaranteed Cooperative Pursuit with Robust Model Predictive Control.}
+
+\begin{center}
+\footnotesize
+\begin{tabular}{|c|c|}
+\hline
+Problem Definition & Encirclement \\
+Control Architecture & Distributed Circular Formation\\ 
+Target Specification & Moving Target\\
+Spacing Distribution & Arbitrary Distribution \\
+Formation Dynamics & Static \\
+Control Methodologies & Virtual Structure Methods \\
+Measurement Type & known position, unknown velocity\\
+\hline
+\end{tabular}
+\end{center}
+
+
+In \cite{Wang_2021}, an encirclement-guaranteed cooperative pursuit-evasion game is studied in an unbounded two-dimensional space, where multiple pursuers aim to capture a single evader. A key assumption is a severely restricted information structure: the pursuers have access only to the evader's instantaneous position, while the evader's velocity (control input) is completely unknown and is assumed to be chosen adversarially in a min-max sense. The evader therefore always acts optimally to escape, whereas the pursuers must guarantee performance under worst-case behavior.
+
+The primary objective of the pursuers is not only eventual capture, but persistent encirclement, defined as maintaining the evader strictly inside the convex hull of the pursuers' positions at all times. This requirement is motivated by classical pursuit-evasion results, which show that capture is impossible in an unbounded domain without sustained encirclement. The problem thus combines geometric constraints with adversarial uncertainty, making conventional pursuit strategies insufficient.
+
+To address this challenge, the authors propose a robust model predictive control (RMPC) formulation in which the evader's unknown velocity is treated as a bounded disturbance. Although this formulation captures the min-max nature of the game, it leads to bilinear constraints arising from the encirclement condition, rendering the problem computationally intractable in its original form. To overcome this difficulty, a novel encirclement-guaranteed partitioning scheme is introduced. The two-dimensional space is divided into equally sized angular sectors centered at the evader's current position, and it is shown that at least four partitions—and thus a minimum of four pursuers—are required to guarantee encirclement in ($\mathbb{R}^2$).
+
+By ensuring that at least one pursuer remains within each partition at all times, encirclement is maintained regardless of the evader's actions. The resulting constraints are linear and allow the original RMPC problem to be decomposed into multiple independent tube model predictive control (TMPC) problems, each assigned to a pursuer. This decomposition enables a decentralized implementation while preserving robustness to worst-case evader behavior.
+
+To demonstrate the effectiveness of the proposed framework, the authors compare it against two baseline strategies: a direct-charge method, in which pursuers move straight toward the evader, and a Voronoi-based partitioning approach. Simulation results show that both baselines frequently fail to maintain encirclement, allowing the evader to escape, whereas the TMPC-based approach consistently guarantees encirclement and achieves capture. Overall, \cite{Wang_2021} provides a principled and computationally tractable solution to distributed encirclement control of a moving target with unknown dynamics in a two-dimensional setting under adversarial assumptions.
+
+\subsection{\cite{https://doi.org/10.1155/2018/9162358} Circular Formation Control of Multiagent Systems with Any Preset Phase Arrangement.}
+
+\begin{center}
+\footnotesize
+    \begin{tabular}{|c|c|}
+        \hline
+        Problem Definition & Phase Distribution \\
+        Control Architecture & Distance-based (circular topology)\\ 
+        Target Specification & Moving Target\\
+        Spacing Distribution & Arbitrary Distribution\\
+        Formation Dynamics & Static\\
+        Control Methodologies & Cyclic Pursuit\\
+        Measurement Type & all variables are known\\
+        \hline
+    \end{tabular}
+\end{center}
+
+\cite{https://doi.org/10.1155/2018/9162358}  addresses the problem of coordinating multiple agents to form and maintain a circular formation with an arbitrary, preassigned phase distribution. Unlike many classical circular formation works that restrict agents to uniformly spaced configurations, this paper allows uneven angular spacing between agents.
+
+The authors model each agent as a single-integrator system in two-dimensional space, assuming that agent positions are known. The interaction topology is a distance-based cyclic pursuit structure with a ring graph, where each agent only measures relative positions of its two immediate neighbors. 
+The control problem is decomposed into two coupled sub-problems, which represent the first major methodological contribution of the paper.
+
+\begin{enumerate}
+    \item  Circular motion (radius and center control):
+        The authors design a trajectory tracking controller that drives each agent toward a circular motion. This is achieved through a rotated affine transformation, where each agent tracks a virtual rotating reference point on the desired circle. Two cases are studied a known stationary target and all agents encircle the same or circling without a target, where agents first achieve center consensus using a distributed Laplacian-based protocol, and then orbit the emergent common center. 
+    \item Phase arrangement control:
+            To achieve arbitrary phase distributions, the paper incorporates a phase cooperation mechanism built on cyclic pursuit theory. The phase dynamics are governed by a specially constructed weighted Laplacian matrix, which encodes the desired relative angular separations between neighboring agents. This approach generalizes earlier one-dimensional phase arrangement methods to full two-dimensional motion. A key theoretical result is that the phase control law guarantees order preservation, meaning agents do not overtake each other along the circle, while keeping a non uniform circle formation.
+\end{enumerate}
+
+These two components are then integrated into a unified distributed controller, where the angular velocity of each agent's rotating reference trajectory is modulated by the phase control law. This coupling ensures that agents converge to the circle while simultaneously adjusting their angular positions to match the preset phase pattern. The authors further extend the method by introducing a phase reference agent, allowing one designated agent to maintain a specific absolute orientation relative to the target, with all other agents positioned accordingly.
+
+The paper validates its methodology through multiple simulation studies, including formations around fixed and moving targets, target-free formations using center consensus, and formations with designated directional constraints. Across all scenarios, the results demonstrate convergence of both radius and relative phases.
+
+\subsection{\cite{KIM20071426} Cooperative control for target-capturing task based on a cyclic pursuit strategy}
+
+\begin{center}
+\footnotesize
+    \begin{tabular}{|c|c|}
+        \hline
+        Problem Definition & Phase Distribution \\
+        Control Architecture & Distance-based (circular topology)\\ 
+        Target Specification & Moving Target\\
+        Spacing Distribution & Even Distribution\\
+        Formation Dynamics & Static\\
+        Control Methodologies & Cyclic Pursuit\\
+        Measurement Type & all variables are known\\
+        \hline
+    \end{tabular}
+\end{center}
+
+The paper presents a distributed control framework for coordinating multiple agents to capture and enclose a moving target in three-dimensional space. The main motivation of the work is to design a simple, communication-free, and robust cooperative control law that achieves a desired circular formation around a target using only local information. 
+
+Each agent is modeled as a first-order kinematic system in $\mathbb{R}^3$, where the control input directly determines the agent's velocity. The sensing model assumes that each agent can measure its relative position with respect to the target and one neighboring agent according to a cyclic pursuit topology. Due to this interaction structure, no explicit communication between agents is required. The resulting directed ring graph significantly reduces information requirements while still maintaining global coordination properties. The target is allowed to move freely, and the control objective is defined through three primary goals: (i) agents should be evenly spaced in angle around the target, (ii) agents should converge to a desired radial distance from the target, and (iii) agents should converge to a specified elevation angle. Together, these objectives produce a circular orbit in three-dimensional space, noting that the resulting formation lies on a two-dimensional planar slice of the three-dimensional sphere rather than forming a full spherical distribution.
+
+The methodological approach of the paper is structured into multiple analytical components. First, the authors decompose the formation control problem into three independent scalar subsystems governing angular position, radial distance, and elevation angle. Each subsystem is regulated using a simple proportional control law. In particular, the angular dynamics are governed by a cyclic pursuit-based phase controller, which drives the inter-agent angular separations toward uniform spacing. This subsystem is analyzed using tools from linear systems theory and circular matrix analysis. By exploiting the spectral properties of circular matrices, the authors prove that the angular dynamics globally converge to the desired uniform phase distribution.
+
+Second, the radial and elevation dynamics are studied independently using standard stability arguments for linear first-order systems. These dynamics guarantee exponential convergence to the desired radius and elevation angle, respectively. The separation of the formation dynamics into independent subsystems is a key methodological feature of the paper, as it greatly simplifies both controller design and stability analysis while preserving the desired collective behavior.
+
+Third, the paper provides a rigorous theoretical study of safety properties. Using contradiction-based arguments and structural properties of the cyclic pursuit framework, the authors prove that the proposed control law guarantees collision avoidance and preserves the ordering of agents along the circular formation.
+
+Finally, the effectiveness and robustness of the proposed approach are demonstrated through multiple simulation studies, which show that agents successfully converge to the desired circular formation while tracking a moving target.
+
+Despite the promising results, several assumptions limit the practical applicability of the method. For example, the approach assumes perfect sensing capabilities, allowing agents to measure relative positions without error and eliminating the need for communication. Additionally, although the agents operate in three-dimensional space, the cyclic distribution of agents is confined to a two-dimensional planar cross-section of a sphere. As a result, the method does not achieve a true distribution of agents over the two-sphere manifold.
+
+\subsection{\cite{2D_encirclement_guaranteed_sectors} Distributed cooperative pursuit with encirclement guarantee via robust model predictive control}
+
+Wang et al.~\cite{2D_encirclement_guaranteed_sectors} address the cooperative pursuit-evasion problem by explicitly considering encirclement conditions throughout the game. Unlike classical pursuit-evasion formulations that focus solely on capture, this work recognizes the inherent tension between maintaining encirclement and achieving capture, particularly relevant in surveillance and monitoring applications.
+
+\textbf{Problem Formulation.} The authors study an $N$-versus-1 pursuit-evasion game in an unbounded 2D domain where pursuers must simultaneously guarantee two conditions: (i) the evader remains inside the convex hull formed by pursuers' positions (Definition~1), and (ii) eventual capture occurs when a pursuer reaches within capture radius $r_c$ of the evader (Definition~2). Pursuers are modeled with both single integrator (SI) and double integrator (DI) dynamics, while the evader's strategy is treated as unknown disturbance, representing a conservative worst-case assumption.
+
+\textbf{Robust Model Predictive Control Framework.} The central contribution reformulates the pursuit problem as a Robust Model Predictive Control (RMPC) problem. At each discrete time step $t$, pursuers solve:
+\begin{equation}
+\min_{\mathbf{u}_k^i \in \mathcal{U}_p} \sum_{i=1}^{N} \sum_{k=0}^{K} \|\pi_p(\mathbf{x}_k^i) - \mathbf{e}_k\|_2^2
+\end{equation}
+subject to pursuer dynamics $\mathbf{x}_{k+1}^i = \mathbf{A}\mathbf{x}_k^i + \mathbf{B}\mathbf{u}_k^i$, evader dynamics $\mathbf{e}_{k+1} = \mathbf{e}_k + h\mathbf{u}_{e,k}$ with unknown $\mathbf{u}_{e,k} \in \mathcal{U}_e$, and encirclement constraints $\mathbf{e}_k = \sum_i \lambda_k^i \pi_p(\mathbf{x}_k^i)$ with $\sum_i \lambda_k^i = 1, \lambda_k^i \geq 0$. The bilinearity in encirclement constraints and high dimensionality make this centralized problem computationally intractable.
+
+\textbf{Encirclement-Guaranteed Sectors Set (EGSS).} To enable distributed implementation, the authors exploit the geometric property that encirclement is guaranteed if pursuers remain in designated angular sectors around the evader. They formalize this through the EGSS concept: a set of $M$ sectors $\{\mathcal{S}_m\}_{m=1}^M$ guarantees encirclement if any $M$ points drawn from sector interiors have the origin in their convex hull. Theorem~1 provides necessary and sufficient conditions: for sectors $\mathcal{S}_m = (\gamma_1^m, \gamma_2^m)$ indexed counter-clockwise, encirclement holds iff $\gamma_2^{m+1} - \gamma_1^m \leq \pi$ for all adjacent pairs. Construction algorithms solve quadratic programs (QPs) to find feasible EGSS for 3-sector (Eq.~14) and 4-sector partitions (Eq.~13), balancing equal sector sizes while maintaining safety margins $\epsilon$ from pursuer positions.
+
+\textbf{Tube Model Predictive Control Solution.} Each pursuer $i$ assigned to sector $\mathcal{S}_m$ solves a decoupled linear RMPC problem in the evader-centered frame with relative state $\boldsymbol{\varepsilon} = (\mathbf{p} - \mathbf{e}, \mathbf{v})^T$. Using Tube MPC methodology, the approach decomposes dynamics into nominal trajectory $\mathbf{z}$ and deviation $\mathbf{s} = \boldsymbol{\varepsilon} - \mathbf{z}$, with control $\mathbf{u} = \boldsymbol{\nu} + \mathbf{K}\mathbf{s}$. A Robust Positively Invariant Set (RPIS) $\mathcal{Z}$ bounds deviations under worst-case disturbances. The nominal trajectory solves a standard QP with tightened constraints $\mathcal{X}' = \mathcal{X} \ominus \mathcal{Z}$ and $\mathcal{U}' = \mathcal{U}_p \ominus \mathbf{K}\mathcal{Z}$ (Pontryagin differences), ensuring $\boldsymbol{\varepsilon}_k \in \mathbf{z}_k \oplus \mathcal{Z} \subseteq \mathcal{S}_m$ for all possible evader actions.
+
+\textbf{Feasibility Analysis and Trade-offs.} For SI pursuers, feasibility requires maximum velocity $v_{\max} \geq 1.0\|h\mathbf{u}_{e,\max}\|_\infty$, with achievable capture distance approaching zero as time step $h \to 0$. For DI pursuers, inertial effects impose minimum standoff distances proportional to $\|\pi_p(\mathcal{Z})\|$, fundamentally limiting proximity due to finite acceleration $a_{\max}$. The analysis reveals that encirclement and capture requirements are inherently conflicting under unknown evader strategies, with DI dynamics exhibiting minimum achievable distances around 2.13m (3 pursuers) to 0.05m (6 pursuers with aggressive auxiliaries) in numerical experiments.
+
+\textbf{Validation and Performance.} Extensive simulations with 28,000 test cases demonstrate 100\% encirclement maintenance across all scenarios, compared to 0-14.2\% for direct charge and 0-100\% for Voronoi-based strategies. For SI dynamics, capture rates reach 95.7-99.6\% with capture times averaging 7.6-13.9s depending on pursuer count. Gazebo simulations with Turtlebot3 robots validate real-world applicability, achieving 100\% encirclement rate versus 29\% for Voronoi baseline despite model discrepancies. The framework's partial decentralization requires only one-time initialization communication, with subsequent control decisions using only local state and evader position.
+
+This work significantly advances multi-agent pursuit by providing the first tractable distributed solution guaranteeing persistent encirclement for general initial configurations with realistic dynamics, demonstrating superior robustness in safety-critical scenarios where surveillance requirements precede capture objectives.
+
+\subsection{Pursuit/evasion games}
+Despite not being the main focus of the thesis some papers about pursuit evasion game have been searched being most time some type of Model Predictive Control (MPC) and a min-max approach for the pursuer and target, some papers focus more one 1-to-1 interactions \cite{Eklund2012}, it can also be 1-to-1 with different dynamics \cite{Tzannetos2016}, in this case a drone and a ground vehicle. Others focus on a N-to-1 games and study which type of approach is best for the N drones, be it Cooperative Pursuers' Strategy (try to capture in cooperation), Non-Cooperative Pursuers' Strategies (takes into account others but tries to capture alone) or Greedy Pursuers' Strategies (ignores all other agents and tries to capture alone) concludes that for most strategies of evasion a non-cooperative strategy has a better capture chance.
+
+\subsection{two-sphere}
+Despite almost none of the state of art about encirclement being done for the two-sphere \cite{Ghosh2022} talks about navigation on it and as will be shown it is usefull for the thesis.

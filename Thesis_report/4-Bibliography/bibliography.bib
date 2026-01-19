@@ -227,31 +227,6 @@ keywords = {Multi-agent systems, Cooperative robot systems, Distributed control,
 abstract = {This paper studies a methodology for group coordination and cooperative control of n agents to achieve a target-capturing task in 3D space. The proposed approach is based on a cyclic pursuit strategy, where agent i simply pursues agent i+1 modulo n. The distinctive features of the proposed method are as follows. First, no communication mechanism between agents is necessary and thus it is inherently a distributed control strategy. Also, it is a simple robust memoryless control scheme which has self-stability property. Finally, it guarantees a global convergence of all agents to the desired formation. Further, it is also guaranteed that no collision occurs. Simulation examples are given to illustrate the efficacy of the proposed method and the achievement of a desired pursuit pattern in 3D space.}
 }
 
-@article{WANG2025105019,
-title = {Distributed cooperative pursuit with encirclement guarantee via robust model predictive control},
-journal = {Robotics and Autonomous Systems},
-volume = {192},
-pages = {105019},
-year = {2025},
-issn = {0921-8890},
-doi = {https://doi.org/10.1016/j.robot.2025.105019},
-url = {https://www.sciencedirect.com/science/article/pii/S0921889025001058},
-author = {Chen Wang and Hua Chen and Jia Pan and Wei Zhang},
-keywords = {Multi-Agent System, Cooperative control, pursuit-evasion game},
-abstract = {This paper studies a cooperative pursuit-evasion problem with the encirclement guarantee. Inspired by the importance of forming an encirclement of the evader in practical applications such as surveillance, we explicitly consider the encirclement condition throughout the game in the synthesis of a cooperative pursuit strategy. Different from classical pursuit-evasion problems, the studied problem requires a careful balance between the capture and encirclement conditions. To solve this challenging problem, we exploit the geometric nature of the encirclement condition and develop a robust model predictive control (RMPC) based strategy to account for the encirclement and capture requirements jointly. To address the bilinearity of the centralized RMPC problem and to respect the communication constraint, we proposed a novel approach to decouple the pursuit-evasion problem among the pursuers. Such a distributed strategy relies on a novel Encirclement-Guaranteed Sectors Set (EGSS) concept that inner-approximates the original bilinear RMPC problem with a set of decoupled linear RMPC problems. These linear problems can be efficiently solved by Tube Model Predictive Control (TMPC) with only local information. To validate the effectiveness of the proposed framework, we provide extensive simulation experiments with realistic mobile robot models. Comparisons with the baseline Voronoi-based strategy demonstrate the robustness of the proposed approach in guaranteeing encirclement while achieving successful capture.}
-}
-
-@ARTICLE{1284730,
-  author={Zhiyun Lin and Broucke, M. and Francis, B.},
-  journal={IEEE Transactions on Automatic Control}, 
-  title={Local control strategies for groups of mobile autonomous agents}, 
-  year={2004},
-  volume={49},
-  number={4},
-  pages={622-629},
-  keywords={Autonomous agents;Convergence;Robots;Birds;Distributed algorithms;Distributed control;Evolution (biology);Aerospace simulation;Unmanned aerial vehicles;Underwater vehicles},
-  doi={10.1109/TAC.2004.825639}}
-
 @INPROCEEDINGS{lyapunov_outer_loop_control,
 author={Ramp, Michalis and Papadopoulos, Evangelos},
 booktitle={2015 European Control Conference (ECC)}, 
@@ -263,3 +238,54 @@ pages={3238-3243},
 keywords={Angular velocity;Attitude control;Radar tracking;PD control;Aerospace electronics;Quaternions},
 doi={10.1109/ECC.2015.7331033}}
 
+@article{Eklund2012,
+   abstract = {This paper describes a supervisory controller for pursuit and evasion of two fixed-wing autonomous aircraft. Novel contributions of the work include the real-time use of model-predictive control, specifically nonlinear model predictive tracking control, for predictions of the vehicle under control, as well as predictions for the adversarial aircraft. In addition to this inclusion, the evasive controller is a hybrid system, providing switching criteria to change modes to become a pursuer based on the current and future state of the vehicle under control, and that of the adversarial aircraft. Results of the controller for equally matched platforms in actual flight tests against a US Air Force trained F-15 test pilot are given. Extensive simulation analysis of the symmetric games is provided, including regressive analysis based on initial conditions of height advantage, and relative velocity vectors, and in particular the effect of allowing the evading aircraft to switch modes between evader and pursuer during the game. © 2011 IEEE.},
+   author = {J. Mikael Eklund and Jonathan Sprinkle and S. Shankar Sastry},
+   doi = {10.1109/TCST.2011.2136435},
+   issn = {10636536},
+   issue = {3},
+   journal = {IEEE Transactions on Control Systems Technology},
+   keywords = {Nonlinear control systems,optimization,path planning,predictive control,unmanned aerial vehicles (UAVs)},
+   month = {5},
+   pages = {604-620},
+   title = {Switched and symmetric pursuit/evasion games using online model predictive control with application to autonomous aircraft},
+   volume = {20},
+   year = {2012}
+}
+
+@inproceedings{Tzannetos2016,
+   author = {George Tzannetos and Panos Marantos and Kostas J Kyriakopoulos},
+   doi = {10.1109/MED.2016.7535979},
+   booktitle = {2016 24th Mediterranean Conference on Control and Automation (MED)},
+   keywords = {Games;Unmanned aerial vehicles;Mathematical model;Linear programming;Game theory;Vehicle dynamics},
+   pages = {1053-1058},
+   title = {A competitive differential game between an unmanned aerial and a ground vehicle using model predictive control},
+   year = {2016}
+}
+
+@misc{Litimein2021,
+   abstract = {Distributed control solutions to the multi-agent systems in terms of coordination, formation, and consensus problems are extensively studied in the literature. The circular formation control of multi-agent systems becomes one of the most challenging and active research topics in distributed cooperative control. The research potential of circular formation control has grown especially in satellite formation and control. The circular formation control aims to drive a group of agents to move on a circular trajectory around a center with spacing adjustment to avoid the collision. This paper covers the fundamental research in consensus and formation control and the latest developments in the applications of formation control especially in circular formation control and stability analysis. Literature related to various control streams to achieve circular formation is discussed. Algebraic graph theory is used as a building block in problem definition, problem formulation, and solutions. A review of bearing, range, and received signal strength measurements with respect to circular formation control is presented. Leader following, behavior-based, artificial potential function, virtual structure, and cyclic pursuit are the methods discussed most in this context. The stabilization of the collective circular motion with the unicycles approach is also discussed. Further results on circular formation, several applications, and future research directions are presented.},
+   author = {Hamida Litimein and Zhen You Huang and Ameer Hamza},
+   doi = {10.3390/electronics10232959},
+   issn = {20799292},
+   issue = {23},
+   journal = {Electronics (Switzerland)},
+   keywords = {Circular formation,Collective circular motion,Cycle pursuit,Multi-agent systems},
+   month = {12},
+   publisher = {MDPI},
+   title = {A survey on techniques in the circular formation of multi-agent systems},
+   volume = {10},
+   year = {2021}
+}
+
+@inproceedings{Ghosh2022,
+   abstract = {This paper considers the problem of trajectory tracking control on a two sphere. A continuous control strategy for ensuring almost global finite-time stable tracking on a two sphere is presented. Robustness of the control scheme with respect to added external disturbance inputs are evaluated. Then, the finite-control scheme is employed to develop a position tracking controller for an unmanned aerial vehicle (UAV). UAV control is split into a position and attitude control schemes. The position controller produces a desired thrust direction on the two sphere, which is tracked by the finite time reduced attitude tracking control algorithm. The stability is proved analytically and numerical simulations demonstrate the effectiveness of the suggested control algorithm.},
+   author = {Gaurav Ghosh and Rakesh R. Warier},
+   doi = {10.1109/ICC56513.2022.10093301},
+   isbn = {9781665489997},
+   booktitle = {2022 8th Indian Control Conference, ICC 2022 - Proceedings},
+   pages = {308-313},
+   publisher = {Institute of Electrical and Electronics Engineers Inc.},
+   title = {Finite Time Control on Unit Sphere with an Application to Trajectory Tracking Control of UAVs},
+   year = {2022}
+}
