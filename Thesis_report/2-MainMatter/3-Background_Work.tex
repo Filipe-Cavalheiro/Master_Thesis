@@ -9,7 +9,7 @@
 \typeout{NT FILE 3-Background_Work.tex}%
 
 \chapter{Background work}
-\label{cha.3:Background work}
+\label{cha:Background work}
 
 \glsresetall
 
@@ -19,27 +19,7 @@ Multiple themes are needed for the understading of this thesis, these include th
 
 This thesis builds upon the current two-dimensional and three-dimensional state of the art in decentralized multi-agent control \ref{sec.3:Currently deleloped models}, combining geometric modeling, Lyapunov stability analysis, consensus-based coordination, and practical controller implementations. Emphasis is placed not only on theoretical development but also on the realization of these methods in implementable control architectures.
 
-\section{Centralized and decentralized systems \textbf{[100\% CHAT GPT!!!]}} \label{sec.3:Centralized and decentralized systems}
-
-As discussed in \cite{surver_centralized_decentralized}, the classification of multi-agent systems into \emph{centralized} and \emph{decentralized} categories is often ambiguous and potentially misleading. The ambiguity primarily stems from the fact that these terms are used with different meanings across the literature, depending on the specific assumptions, architectures, and problem formulations adopted by different authors. As a result, such a binary classification does not always provide meaningful insight into the fundamental properties or limitations of formation control strategies.
-
-A common interpretation associates centralized control with the presence of a global coordinator that collects information from all agents, computes control or coordination commands, and then distributes them back to the agents. Under this definition, a decentralized system is one in which no such global coordinator exists and each agent computes its control input using only locally available information. While this distinction is conceptually simple, it turns out to be of limited usefulness when surveying formation control algorithms. Indeed, under this criterion, the vast majority of formation control schemes proposed in the literature can be labeled as decentralized, since they do not explicitly rely on a centralized controller. Consequently, the centralized-decentralized dichotomy fails to differentiate effectively between fundamentally different approaches.
-
-Furthermore, the term \emph{decentralized} itself is used in a variety of subjective and sometimes conflicting ways. In some works, decentralization refers to the use of local feedback laws based solely on neighbor-to-neighbor interactions. In others, it refers to the absence of absolute position measurements, the lack of a global reference frame, or scalability with respect to the number of agents. In certain cases, limited forms of coordination, such as leader-follower architectures or broadcast signals from a coordinating unit, are still described as decentralized. This lack of consistency makes it difficult to draw precise conclusions when comparing results based purely on the centralized versus decentralized terminology.
-
-To avoid these issues, the survey in \cite{surver_centralized_decentralized} deliberately refrains from categorizing formation control schemes according to their level of centralization. Instead, it proposes a classification based on more objective and technically meaningful criteria, namely the \emph{sensing capabilities} of individual agents and the \emph{interaction topology} of the multi-agent system. These two aspects are directly tied to the information available to each agent and the mathematical structure of the control problem, and thus provide a clearer basis for comparison.
-
-From the sensing perspective, formation control schemes can be distinguished by the type of variables that agents are able to measure. Some approaches require agents to sense their absolute positions with respect to a global coordinate system, which typically implies access to GPS or an equivalent localization infrastructure. Other approaches rely only on relative measurements, such as relative positions or distances to neighboring agents, which can be obtained using onboard sensors without a shared global reference frame. This distinction has a direct impact on the practical deployability of a control strategy, especially in environments where global positioning is unavailable or unreliable.
-
-From the interaction topology perspective, the classification focuses on what variables are actively controlled and how agents must interact to achieve the desired formation. For instance, if agents directly control their absolute positions, interactions among agents may not be strictly necessary. In contrast, if agents control relative positions or inter-agent distances, then the structure of the interaction graph becomes crucial. Properties such as connectivity, existence of a spanning tree, rigidity, or persistence determine whether the desired formation can be achieved and maintained.
-
-Based on these considerations, formation control schemes are more informatively categorized into position-based, displacement-based, and distance-based control. Position-based control requires agents to sense and regulate their absolute positions with respect to a global coordinate system. Displacement-based control assumes that agents can sense relative positions of their neighbors in a common orientation frame, allowing them to regulate relative displacements. Distance-based control requires only measurements of relative distances or relative positions expressed in local coordinate frames, and the desired formation is specified in terms of inter-agent distances, making it invariant to global translations and rotations.
-
-This classification also clarifies the use of commonly employed terms such as \emph{local} and \emph{relative}. The term \emph{relative} can be precisely associated with sensing variables expressed in local coordinate frames rather than a global one, while the term \emph{local} may refer either to limited interaction ranges, neighbor-based information exchange, or the absence of a global coordinator. By explicitly characterizing sensing requirements and interaction topology, these notions can be unambiguously defined without resorting to the vague notion of decentralization.
-
-In summary, rather than relying on the potentially confusing centralized-decentralized dichotomy, this thesis adopts the classification framework proposed in \cite{surver_centralized_decentralized}, which emphasizes sensing capabilities and interaction topology. This approach provides a more precise and technically grounded basis for analyzing and comparing formation control strategies, and it better reflects the fundamental trade-offs between information availability, inter-agent communication, and achievable formation objectives.
-
-\section{Agent spacing introduction} \label{sec.3:Agent spacing introduction}
+\section{Agent spacing on the two-sphere} \label{sec.3:Agent spacing on the two-sphere}
 In this section, several methods for distributing points on a manifold are discussed. The primary objective is to achieve the most uniform spacing possible between agents. Such uniformity allows for more efficient use of each agent's reachability set at any given time. In other words, minimizing overlap between the reachability regions of different agents maximizes the collective coverage and effectiveness of the multi-agent system.
 
 Three different methods will be discusses including, lattitude and longitude, fibonnaci sphere, thomson minimum energy sphere and poisson disk sampling.
