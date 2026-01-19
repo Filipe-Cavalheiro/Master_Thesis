@@ -7,7 +7,26 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \typeout{NT FILE symbols.tex}%
 
-\glsxtrnewsymbol[sort=mu,description={Mu}]{mu}{\ensuremath{\mu}}
-\glsxtrnewsymbol[description={the numerical value of pi}]{pi}{\ensuremath{\pi}}
-\glsxtrnewsymbol[description={the radius of a circle}]{r}{\ensuremath{r}}
-% \glsxtrnewsymbol[description={Total Angular Momentum}]{jay}{\ensuremath{\vv{J}}}
+%simulation
+\glsxtrnewsymbol[description={time step}]{k}{\ensuremath{k}}
+\glsxtrnewsymbol[description={minimal desired intra distance between agents}]{d_min}{\ensuremath{d_{min}}}
+\glsxtrnewsymbol[description={number of drones}]{N_D}{\ensuremath{N_D}}
+\glsxtrnewsymbol[description={sphere radius}]{R_s}{\ensuremath{R_s}}
+\glsxtrnewsymbol[description={the angents projection on the two-sphere}]{q}{\ensuremath{q}}
+\glsxtrnewsymbol[description={the final desired waypoint on the two-sphere}]{q_d}{\ensuremath{q_d}}
+
+%drone references prob 'q'
+\glsxtrnewsymbol[description={reference drone position}]{p_D_ref}{\ensuremath{p_D^{\mathrm{ref}}}}
+\glsxtrnewsymbol[description={reference drone velocity}]{v_D_ref}{\ensuremath{v_D^{\mathrm{ref}}}}
+\glsxtrnewsymbol[description={reference drone attitude}]{a_D_ref}{\ensuremath{a_D^{\mathrm{ref}}}}
+\glsxtrnewsymbol[description={help prof i do not know}]{phi_D_ref}{\ensuremath{\psi_D^{\mathrm{ref}}}}
+\glsxtrnewsymbol[description={help prof i do not know}]{phi_dot_D_ref}{\ensuremath{\dot{\psi}_D^{\mathrm{ref}}}}
+
+%drone current values
+\glsxtrnewsymbol[description={current drone position}]{p_D}{\ensuremath{p_D}}
+\glsxtrnewsymbol[description={current drone velocity}]{v_D}{\ensuremath{v_D}}
+\glsxtrnewsymbol[description={i dont know}]{phi_D}{\ensuremath{\psi_D}}
+\glsxtrnewsymbol[description={angular velocity}]{omega_D}{\ensuremath{\omega_D}}
+
+%poisson
+\glsxtrnewsymbol[description={number of tries per poisson point}]{P_k}{\ensuremath{P_k}}

@@ -48,7 +48,6 @@ energy = @(Y) sum(1./sqrt(sum((Y(idx_i(mask),:)-Y(idx_j(mask),:)).^2,2)))/2;
 % (divide by 2 because we double-count every pair in mask traversal)
 
 % Main relaxation loop
-prev_max_move = Inf;
 for iter = 1:MaxIter
     % compute pairwise vectors and distances
     diff = permute(X,[1,3,2]) - permute(X,[3,1,2]); % n x n x 3, diff(i,j,:) = X(i,:)-X(j,:)
@@ -96,7 +95,6 @@ for iter = 1:MaxIter
     if max_move < Tol
         break
     end
-    prev_max_move = max_move;
 end
 
 E = energy(X);

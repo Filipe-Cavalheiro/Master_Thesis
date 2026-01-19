@@ -6,7 +6,7 @@ clearvars; clc; close all;
     %start = clock;
     % --- Parameters ---
     R = 5;          % Sphere radius
-    k = 29;         % Number of intervals in latitude (adjust for resolution)
+    k = 2;         % Number of intervals in latitude (adjust for resolution)
     delta = pi/k;   % Angular spacing in radians (180°/k)
     
     % --- Latitude and longitude ---
@@ -68,7 +68,7 @@ set(gca, 'Visible', 'off')
 set(gcf, 'Color', 'w');          % white background
 set(gca, 'Position', [0 0 1 1]); % fill figure
 view(3) 
-exportgraphics(gcf, 'latlon_sphere_normal.png', 'ContentType', 'vector');
+%exportgraphics(gcf, 'latlon_sphere_normal.png', 'ContentType', 'vector');
 hold off;
 
 disp(size(points))

@@ -50,47 +50,46 @@ From a broader project perspective, shown in Figure~\ref{fig.5:Project view}, th
 \end{figure}
 
 \begin{figure}[H]
-    \hspace{-2.8cm}
-    \begin{ganttchart}[y unit title=0.4cm,
-    y unit chart=0.5cm,
-    vgrid,hgrid, 
-    title label anchor/.style={below=-1.6ex},
-    title left shift=.05,
-    title right shift=-.05,
-    title height=1,
-    progress label text={},
-    bar height=0.7,
-    group right shift=0,
-    group top shift=.6,
-    group height=.3]{1}{32}
-    %labels
-    \gantttitle{Feb.}{4}
-    \gantttitle{Mar.}{4}
-    \gantttitle{Apr.}{4}
-    \gantttitle{May}{4}
-    \gantttitle{June}{4}
-    \gantttitle{July}{4}
-    \gantttitle{Aug.}{4}
-    \gantttitle{Sept.}{4}\\
-    %tasks
-    \ganttbar{agent to nearest point}{1}{4} \\
-    \ganttbar{Paper 1}{5}{8} \\
-    \ganttbar{Consensus}{9}{12} \\
-    \ganttbar{Poisson disk sampling}{13}{16} \\
-    \ganttbar{Other SO(2) Manifolds}{17}{20} \\
-    \ganttbar{Paper 2}{21}{24} \\
-    \ganttbar{IRL testing}{25}{28} \\
-    \ganttbar{write thesis}{29}{32}
-    
-    %relations 
-    \ganttlink{elem0}{elem1} 
-    \ganttlink{elem0}{elem2} 
-    \ganttlink{elem2}{elem3} 
-    \ganttlink{elem3}{elem4} 
-    \ganttlink{elem4}{elem5} 
-    \ganttlink{elem4}{elem6} 
-    \ganttlink{elem6}{elem7} 
-    \end{ganttchart}
+    \begin{center}
+        \begin{ganttchart}[
+        x unit = 0.32 cm,
+        y unit title=0.4cm,
+        y unit chart=0.5cm,
+        vgrid,hgrid, 
+        title label anchor/.style={below=-1.6ex},
+        title left shift=.05,
+        title right shift=-.05,
+        title height=1,
+        progress label text={},
+        bar height=0.7,
+        group right shift=0,
+        group top shift=.6,
+        group height=.3]{1}{32}
+        %labels
+        \gantttitle{Feb.}{4}
+        \gantttitle{Mar.}{4}
+        \gantttitle{Apr.}{4}
+        \gantttitle{May}{4}
+        \gantttitle{June}{4}
+        \gantttitle{July}{4}
+        \gantttitle{Aug.}{4}
+        \gantttitle{Sept.}{4}\\
+        %tasks
+        \ganttbar{collision free}{1}{4} \\
+        \ganttbar{Consensus}{5}{12} \\
+        \ganttbar{Poisson disk sampling}{13}{16} \\
+        \ganttbar{Other SO(2) Manifolds}{17}{24} \\
+        \ganttbar{IRL testing}{25}{28} \\
+        \ganttbar{write thesis}{29}{32}
+        
+        %relations 
+        \ganttlink{elem0}{elem1} 
+        \ganttlink{elem1}{elem2} 
+        \ganttlink{elem2}{elem3} 
+        \ganttlink{elem3}{elem4} 
+        \ganttlink{elem4}{elem5}
+        \end{ganttchart}
+    \end{center}
     \caption{Project view}
     \label{fig.5:Project view}
 \end{figure}
@@ -98,12 +97,4 @@ From a broader project perspective, shown in Figure~\ref{fig.5:Project view}, th
 
 \section{Conclusion}
 
-This section has presented a comprehensive overview of circular formation control for multi-agent systems. We reviewed fundamental problem formulations, covering various agent dynamics, formation objectives, and classification schemes. Key control methodologies including cyclic pursuit, leader-follower, behavior-based, artificial potential, and virtual structure approaches were examined in detail.
-
-The section highlighted the importance of measurement types—position, distance, bearing, and range—in shaping control strategies. Theoretical foundations including stability analysis, convergence proofs, and collision avoidance were discussed. Practical considerations such as input constraints, communication limitations, and robustness to disturbances were addressed.
-
-Recent advances in encirclement-guaranteed pursuit strategies using robust model predictive control demonstrate the evolution of the field toward more sophisticated and application-oriented solutions. The ability to handle arbitrary phase distributions, moving targets, and complex constraints significantly expands the applicability of circular formation control.
-
-Looking forward, several exciting research directions remain open. Three-dimensional formations, heterogeneous agent teams, obstacle-rich environments, and security concerns present significant challenges. The integration of learning-based methods with classical control theory offers promising avenues for handling uncertainty and adaptation.
-
-As autonomous systems become increasingly prevalent in aerospace, marine, and ground applications, circular formation control will continue to play a vital role in enabling coordinated multi-agent operations. The theoretical foundations and practical solutions reviewed in this section provide a solid basis for future innovations in this important area.
+This work has presented a comprehensive overview of circular formation control for multi-agent systems. Multiple methods have been tested both position based and displacement based methods. In the end, at the moment with the objective of creating a circular motion around a fixed target of equally distributed drones in \gls{3D} space while having the ability to vary the radius of the sphere but remaining centralized has been achieved. As has been referenced in the timeline \ref{sec.5:Timeline} the rest of this thesis will focus on guaranteeing a collision free path, creating a consensus between drones, expanding the desired formation for other methods beyond the two-sphere and realizing \gls{IRL} testing.

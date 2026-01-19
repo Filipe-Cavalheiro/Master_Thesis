@@ -3,83 +3,88 @@
 %% 3-Background_Work.tex
 %% NOVA thesis document file
 %%
-%% Chapter with the template manual
+%% Chapter with the background work that is not necessary state of the art stuff but necessary for the explanation of the work done chapter.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \typeout{NT FILE 3-Background_Work.tex}%
 
-\chapter{Background work}
+\chapter{Background Work}
 \label{cha:Background work}
 
 \glsresetall
 
-\section{Introduction} \label{sec.3:Introduction}
+\section{Introduction}
+\label{sec.3:Introduction}
 
-Multiple themes are needed for the understading of this thesis, these include the distinction of decentralized and centralized systems \ref{sec.3:Centralized and decentralized systems}, different ways of spacing agents in SO(2) \ref{sec.3:Fibonacci Lattice}, mellinger controller, lyapunov theory \ref{sec.3:Lyapunov Stability and Lyapunov-Based Control}, and consensus algorithms/distributed models and algorithms \ref{sec.3:Consensus-Based Coordination}. 
+Several concepts are required for a proper understanding of this thesis. Some of them have not yet been introduced in the state of the art presented in Chapter~\ref{cha:State of the art}. These include different methods for spacing agents on $\mathbb{S}^2$ (Section~\ref{sec.3:Fibonacci Lattice}), the Mellinger controller (\ref{sec.3:Mellinger controller}), Lyapunov theory (Section~\ref{sec.3:Lyapunov Stability and Lyapunov-Based Control}), and consensus algorithms(Section~\ref{sec.3:Consensus-Based Coordination}).  
 
-This thesis builds upon the current two-dimensional and three-dimensional state of the art in decentralized multi-agent control \ref{sec.3:Currently deleloped models}, combining geometric modeling, Lyapunov stability analysis, consensus-based coordination, and practical controller implementations. Emphasis is placed not only on theoretical development but also on the realization of these methods in implementable control architectures.
+The following sections do not aim to provide a comprehensive treatment of these topics, instead, they present the fundamental concepts and tools necessary to fully understand the work developed in Chapter~\ref{cha:Developed Work}.
 
 \section{Agent spacing on the two-sphere} \label{sec.3:Agent spacing on the two-sphere}
-In this section, several methods for distributing points on a manifold are discussed. The primary objective is to achieve the most uniform spacing possible between agents. Such uniformity allows for more efficient use of each agent's reachability set at any given time. In other words, minimizing overlap between the reachability regions of different agents maximizes the collective coverage and effectiveness of the multi-agent system.
+In this section, several methods for distributing points on a manifold are discussed. The primary objective is to achieve the most uniform spacing possible between agents. Such uniformity allows for more efficient use of each agent's reachability set at any given time. In other words, minimizing overlap between the reachability regions of different agents maximizes the collective coverage and effectiveness of the multi-agent system. For simplicity the two-sphere or unit sphere will be the main manifold considered since the problem at hand is encircling a target, where $\mathbb{S}^2 = \{\mathbf{x} \in \mathbb{R}^3 : \|\mathbf{x}\|_2 = 1\}$ denotes the unit sphere. 
 
-Three different methods will be discusses including, lattitude and longitude, fibonnaci sphere, thomson minimum energy sphere and poisson disk sampling.
+Four different methods will be discusses including, lattitude and longitude, fibonnaci sphere, thomson minimum energy sphere and poisson disk sampling.
 
-The sections \ref{sec.3:Latitude and longitude} and \ref{sec.3:Fibonacci Lattice} are both heavly inspired and influenced by \cite{Latitude_Longitude_vs_fibonacci}. Being the order of explanations at times very similar.
+The sections \ref{sec.3:Latitude and longitude} and \ref{sec.3:Fibonacci Lattice} are both heavly inspired and influenced by \cite{Latitude_Longitude_vs_fibonacci}.
 
 \subsection{Latitude and Longitude} \label{sec.3:Latitude and longitude}
 
 The latitude--longitude lattice consists of points located at the intersections of a grid of meridians and parallels, separated by equal angular increments in latitude and longitude. This arrangement is commonly referred to as the \emph{latitude--longitude grid} or the \emph{equal-angle grid}. Due to the convergence of meridians toward the poles, the density of points increases with latitude, resulting in significant anisotropy.
 
 The total number of points, denoted by $P$, depends on the angular spacing $\delta$ between adjacent grid lines. If the sphere is divided into $k$ equal angular intervals in latitude, so that $\delta = 180^\circ / k$ with $k = 1, 2, \ldots$, then the total number of grid points is
+
 \begin{equation}
-P = 2k(k - 1) + 2 .
+    P = 2k(k - 1) + 2 .
 \end{equation}
-This expression accounts for the $2k$ meridians and the $k - 1$ parallels, together with the two poles.
 
-\subsection{Fibonacci Lattice} \label{sec.3:Fibonacci Lattice}
+This expression accounts for the $2k$ meridians and the $k - 1$ parallels, along with the two poles. A further limitation of this approach is that the total number of agents is constrained by the parameter $k$, which restricts the set of achievable formations. For example, configurations involving 3, 4, or 5 agents, cannot be realized within this framework.
 
-The use of the fibonacci lattice named after the Fibonacci ration that was discover in ancient India \cite{fibonacci_history} comes due to the fact that 
+\subsection{Fibonacci Lattice}
+\label{sec.3:Fibonacci Lattice}
 
-Each term of the Fibonacci sequence, from the third onward, is the sum of the two preceding terms:
+The Fibonacci lattice is named after the Fibonacci ratios, which were discovered in ancient India \cite{fibonacci_history}. The construction is based on the Fibonacci sequence, in which each term from the third onward is the sum of the two preceding terms:
 \[
 0, 1, 1, 2, 3, 5, 8, 13, 21, \ldots
 \]
-Given two consecutive terms $F_i$ and $F_{i+1}$, the Fibonacci ratio is defined as $F_i/F_{i+1}$. As first proved by Robert Simson in 1753 \cite{fibonacci_to_golden_ratio_1} \cite{fibonacci_to_golden_ratio_2}, this ratio rapidly converges, as $i \to \infty$, to the golden ratio
+
+Given two consecutive Fibonacci numbers $F_i$ and $F_{i+1}$, the Fibonacci ratio is defined as $F_{i+1}/F_i$. As first proved by Robert Simson in 1753 \cite{fibonacci_to_golden_ratio_1,fibonacci_to_golden_ratio_2}, this ratio converges rapidly, as $i \to \infty$, to the golden ratio
 \begin{equation}
-  \varphi = 1 + \varphi^{-1} = \frac{1 + \sqrt{5}}{2} \simeq 1.618
-  \label{eq:golden ratio}
+  \varphi = 1 + \varphi^{-1} = \frac{1 + \sqrt{5}}{2} \simeq 1.618 .
+  \label{eq:golden_ratio}
 \end{equation}
 
 The Fibonacci lattice differs from other spiral lattices on the sphere in that the longitudinal rotation between consecutive points along the generating spiral is the \emph{golden angle},
-
 \begin{equation*}
-  360^\circ \left(1 - \varphi^{-1}\right) = 360^\circ \varphi^{-2} \simeq 137.5^\circ  
+  360^\circ \left(1 - \varphi^{-1}\right)
+  = 360^\circ \varphi^{-2}
+  \simeq 137.5^\circ ,
 \end{equation*}
-
 or, equivalently, its complementary angle,
-
 \begin{equation*}
-  360^\circ \varphi^{-1} \simeq 222.5^\circ
+  360^\circ \varphi^{-1} \simeq 222.5^\circ .
 \end{equation*}
 
-In some lattice constructions, the golden ratio $\varphi$ is replaced by a rational approximant given by a Fibonacci ratio. which is our case.
+In some lattice constructions, the golden ratio $\varphi$ is replaced by a rational approximant given by a Fibonacci ratio; this is the case when the total number of points is constrained to be a Fibonacci number. The golden angle optimizes packing efficiency in spiral lattices because the golden ratio is the \emph{most irrational} number, thereby avoiding periodic or near-periodic alignments in the spiral structure. As a result, lattice points do not cluster, and spatial uniformity is preserved.
 
-The golden angle optimizes packing efficiency in spiral lattices. This property arises because the golden ratio is the most irrational number, thereby avoiding periodic or near-periodic alignments in the spiral structure. As a result, lattice points do not cluster, and spatial uniformity is preserved.
-
-When a Fibonacci ratio is employed, the total number of lattice points is $F + 1$, where $F > 1$ is a Fibonacci number. In contrast, the lattice used here is based directly on the golden ratio and admits any \b{odd number of points}.
+When a Fibonacci ratio is employed, the total number of lattice points is $F + 1$, where $F > 1$ is a Fibonacci number. In contrast, the lattice used in this work is based directly on the golden ratio and admits any odd number of points.
 
 To construct the lattice, let $N$ be a natural number and let the integer index $i$ range from $-N$ to $+N$. The total number of points is
-
 \begin{equation}
-P = 2N + 1 .
+P = 2N + 1 
 \end{equation}
+
+This forces the number of agents/points to always be odd.
 
 The spherical coordinates (in radians) of the $i$th point are given by
 \begin{align}
 \text{lat}_i &= \arcsin\!\left(\frac{2i}{2N + 1}\right), \\
 \text{lon}_i &= 2\pi i \varphi^{-1} .
-\label{eq.2:fibonacci_lat_lon}
+\label{eq:fibonacci_lat_lon}
 \end{align}
+
+Each point is assigned a unique latitude, while the longitudinal separation between consecutive points corresponds to the golden angle (or its complement), approximately $222.5^\circ$.
+
+Although not an academic reference, the interactive visualization provided in \href{https://observablehq.com/@meetamit/fibonacci-lattices}{Fibonacci Lattices} offers an intuitive and informative illustration of the Fibonacci lattice structure.
 
 \subsection{Thomson minimum energy sphere} \label{sec.3:Thomson minimum energy sphere}
 
@@ -96,8 +101,6 @@ where $\mathbf{X} = [\mathbf{x}_1^\top, \mathbf{x}_2^\top, \dots, \mathbf{x}_N^\
 \begin{equation}
 \mathbf{X}^* = \arg \min_{\mathbf{X} \in (\mathbb{S}^2)^N} E(\mathbf{X}),
 \end{equation}
-
-where $\mathbb{S}^2 = \{\mathbf{x} \in \mathbb{R}^3 : \|\mathbf{x}\|_2 = 1\}$ denotes the unit sphere.
 
 \subsubsection{Numerical approach}
 
@@ -135,18 +138,39 @@ The implementation was made using a gradient-based iterative solver, using a con
 
 \subsection{Poisson Disk sampling} \label{sec.3:Poisson sampling disk}
 
-Poisson disk sampling is a stochastic sampling technique that enforces a minimum distance between samples, producing distributions that are both random and well-spaced. Formally, a Poisson disk distribution is defined such that no two samples are closer than a user-defined distance \( r \). This property avoids clustering while preserving randomness, resulting in so-called \emph{blue noise} characteristics, which are highly desirable for a very isotropous distributing of agents.
+Poisson disk sampling is a stochastic sampling technique that enforces a minimum distance between samples, producing distributions that are both random and well-spaced. Formally, a Poisson disk distribution is defined such that no two samples are closer than a user-defined distance \gls{d_min}. This property avoids clustering while preserving randomness, resulting in so-called \emph{blue noise} characteristics, which are highly desirable for a very isotropous distributing of agents.
 
-Poisson disk samples are generated using the fast algorithm proposed by Bridson\cite{poisson_sampling_disk}. The method improves efficiency by restricting candidate samples to a neighborhood around existing points. A background grid is used to accelerate distance queries, with the cell size chosen as \( r / \sqrt{n} \) in an \( n \)-dimensional domain, ensuring that each cell contains at most one sample.
+Poisson disk samples are generated using the fast algorithm proposed by Bridson\cite{poisson_sampling_disk}. The method improves efficiency by restricting candidate samples to a neighborhood around existing points. A background grid is used to accelerate distance queries, with the cell size chosen as \( \gls{d_min} / \sqrt{n} \) in an \( n \)-dimensional domain, ensuring that each cell contains at most one sample.
 
-The algorithm starts by placing an initial random sample in the domain and adding it to an active list. While this list is not empty, a sample is selected and up to \( k \) candidate points are generated uniformly in the spherical annulus between radii \( r \) and \( 2r \). If a candidate is at least distance \( r \) from all existing samples, it is accepted and added to the active list. If no valid candidate is found after \( k \) attempts, the sample is removed from the active list.
+The algorithm starts by placing an initial random sample in the domain and adding it to an active list. While this list is not empty, a sample is selected and up to \gls{P_k} candidate points are generated uniformly in the spherical annulus between radii \( r \) and \( 2r \). If a candidate is at least distance \gls{d_min} from all existing samples, it is accepted and added to the active list. If no valid candidate is found after \gls{P_k} attempts, the sample is removed from the active list.
 
 Because each iteration either adds or removes a sample and the number of candidate attempts is bounded by a constant, the overall computational complexity of the algorithm is \( O(N) \), being \( N \) the total number of samples. A key advantage of this approach is that it generalizes naturally to arbitrary dimensions, making it well suited for multi-dimensional sampling problems.
 
-For multi-agent coverage problems, a fixed number of agents \( N \) is often required. Standard Poisson disk sampling does not guarantee an exact number of points. To address this, a gradient-based iterative solver can be applied after initial sampling to adjust point positions while maintaining the minimum separation distance. This refinement ensures that exactly \( N \) agents are placed with uniform spacing, and the low runtime of the algorithm makes this approach practical for real-time or large-scale deployments.
+For a desired fixed number of agents \gls{N_D}, a challenge arises because standard Poisson disk sampling does not guarantee an exact number of generated points. To address this limitation, a gradient-based iterative solver might be cable of adjusting minimum separation distance necessary to guarantee a desired number of agents. This refinement might enable the placement of exactly \gls{N_D} agents with approximately uniform spacing. Owing to its low computational cost, such an approach could be practical for real-time or large-scale deployments. However, it should be noted that this remains a conceptual approach and has neither been proven feasible nor experimentally validated during the development of this thesis.
 
-Figure~\ref{fig.3:methods_points_on_sphere} compares the distributions obtained from Poisson disk sampling with other methods discussed in the next chapter, illustrating its effectiveness in producing well-spaced points on the sphere. Being the run time shown in Figure~\ref{fig.3:comparing_methods_box_shape}.
+Figure~\ref{fig.4:methods_points_on_sphere} compares the distributions obtained from Poisson disk sampling with other methods discussed in the next chapter, illustrating its effectiveness in producing well-spaced points on the sphere. Being the run time shown in Figure~\ref{fig.4:comparing_methods_box_shape}.
 
+\section{Simplified RUAV model}
+As shown in \cite{AlexandraGonalvesRodrigues2023} the complete \gls{RUAV} model is quite complex and non-linear so an approximation of the \gls{RUAV} model is used and since the objective is to control the \gls{RUAV} movements so it follows the target vehicle, the model for the NMPC was simplified. This is possible given that we have a non-linear controller that allows for the combined control of the complete system. This version of the RUAV model becomes simply 
+
+\begin{equation*}
+\begin{aligned}
+    \dot{\gls{p_D}}   &= \gls{v_D} \qquad &
+    \dot{\gls{phi_D}} &= \gls{omega_D}
+\end{aligned}
+\end{equation*}
+
+\section{Mellinger Controller} \label{sec.3:Mellinger controller}
+The nonlinear internal controller used in this work is the Mellinger controller, named after Daniel Mellinger and Vijay Kumar \cite{Mellinger2011}. This controller receives as inputs the desired position \gls{p_D_ref}, velocity \gls{v_D_ref}, and attitude \gls{a_D_ref} \cite{AlexandraGonalvesRodrigues2023, Crazyflie_mellinger}, and computes the required thrust commands for each motor of a quadrotor. 
+
+Figure~\ref{fig.3:mellinger_controller_architecture} illustrates the architecture of the Mellinger controller. Since this controller has been extensively validated in the literature and its detailed design is not the focus of this thesis, no further discussion is provided here.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\textwidth]{5-Figures/Chapter4/controller_architecture/mellinger_controller.png}
+  \caption{Mellinger Controller [ROUBADO DA PATRÍCIA!! TENHO QUE FZR O MEU]}
+  \label{fig.3:mellinger_controller_architecture}
+\end{figure}
 
 \section{Lyapunov Stability and Lyapunov-Based Control \textbf{[50\% CHAT GPT!!!]}} \label{sec.3:Lyapunov Stability and Lyapunov-Based Control}
 
@@ -314,7 +338,7 @@ The results in Figure~\ref{fig.2:lyapunov_example_results} demonstrate smooth co
 \end{figure}
 
 \section{Consensus-Based Coordination  \textbf{[100\% CHAT GPT!!!]} \textbf{[MISSING CITATIONS]}} \label{sec.3:Consensus-Based Coordination}
-
+\todo{This entire section}
 Consensus-based coordination is a fundamental approach in multi-agent systems, where a group of agents cooperatively achieves a common objective through local interactions.
 Typical applications include formation control, distributed estimation, flocking, and cooperative robotics.
 The key idea is that global coordination emerges from simple local interaction rules defined by the communication network.
