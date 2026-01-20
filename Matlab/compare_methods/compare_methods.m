@@ -8,8 +8,9 @@ t4 = load("poisson_disk_execution_times.mat");
 
 % Combine data
 data   = [t1.times'; t2.times'; t3.times'; t4.times'];
-mean(t4.times)
-std(t4.times)
+
+mean(t4.times);
+std(t4.times);
 groups = [ ...
     repmat("latlon",100,1);
     repmat("fibonacci",100,1);
@@ -23,3 +24,12 @@ xlabel('Analysis Method');
 ylabel('Execution Time [Sec]');
 title('Execution Time Distribution per Method');
 grid on;
+
+set(gcf,'Units','centimeters');
+screenposition = get(gcf,'Position');
+
+set(gcf, ...
+    'PaperPosition',[0 0 screenposition(3:4)], ...
+    'PaperSize',[screenposition(3:4)]);
+
+print -dpdf -painters result_fig

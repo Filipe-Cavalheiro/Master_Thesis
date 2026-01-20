@@ -29,9 +29,9 @@ As outlined in Section~\ref{sec.3:Agent spacing introduction}, multiple approach
 Latitude and\\Longitude:
 \end{minipage}%
 \begin{minipage}{0.85\textwidth} % width for the row of sub figures
-\subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Chapter4/latlon_sphere_normal.png}}\hfil
-\subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Chapter4/latlon_sphere_top.png}}\hfil 
-\subfloat[Side]{\includegraphics[width=3cm]{5-Figures/Chapter4/latlon_sphere_side.png}}
+\subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Chapter4/latlon_sphere/latlon_sphere_normal.png}}\hfil
+\subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Chapter4/latlon_sphere/latlon_sphere_top.png}}\hfil 
+\subfloat[Side]{\includegraphics[width=3cm]{5-Figures/Chapter4/latlon_sphere/latlon_sphere_side.png}}
 \end{minipage}
 
 \vspace{0.3cm}
@@ -51,9 +51,9 @@ Fibonacci\\Lattice:
 Thomson\\Minimal Energy:
 \end{minipage}%
 \begin{minipage}{0.85\textwidth}
-\subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Chapter4/thomson_normal.png}}\hfil   
-\subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Chapter4/thomson_top.png}}\hfil
-\subfloat[Side]{\includegraphics[width=3cm]{5-Figures/Chapter4/thomson_side.png}}
+\subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Chapter4/thomson_sphere/thomson_normal.png}}\hfil   
+\subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Chapter4/thomson_sphere/thomson_top.png}}\hfil
+\subfloat[Side]{\includegraphics[width=3cm]{5-Figures/Chapter4/thomson_sphere/thomson_side.png}}
 \end{minipage}
 
 \vspace{0.3cm}
@@ -80,12 +80,20 @@ Poisson Disk\\Sampling:
 \begin{figure}[H]
   \centering
   \captionsetup{justification=centering,margin=2cm}
-  \includegraphics{5-Figures/Chapter4/comparing_methods_box_shape.png}
+  \includegraphics{5-Figures/Chapter4/comparing_methods_box_shape.pdf}
   \caption{Overall runtime comparison of the different methods (100 trials).\\ Computer specification can be found at: \ref{appendix:Computer Specifications}}
   \label{fig.4:comparing_methods_box_shape}
 \end{figure}
 
-As shown in Figure~\ref{fig.4:methods_points_on_sphere}, the four methods produce noticeably different agent distributions. The longitude \& latitude method can be discarded due to its highly non-uniform spacing, which results in clustering near the poles. Thomson's minimal energy method, while producing high-quality uniform distributions, is computationally expensive \ref{fig.4:comparing_methods_box_shape} and therefore impractical for larger numbers of agents (note that only 31 agents where being used).
+\begin{figure}[H]
+  \centering
+  \captionsetup{justification=centering,margin=2cm}
+  \includegraphics[width=\textwidth]{5-Figures/Chapter4/comparing_methods_box_shape_2.pdf}
+  \caption{Overall runtime comparison of the different methods (100 trials).\\ Computer specification can be found at: \ref{appendix:Computer Specifications}}
+  \label{fig.4:comparing_methods_box_shape_2}
+\end{figure}
+
+As shown in Figure~\ref{fig.4:methods_points_on_sphere, comparing_methods_box_shape_2}, the four methods produce noticeably different agent distributions. The longitude \& latitude method can be discarded due to its highly non-uniform spacing, which results in clustering near the poles. Thomson's minimal energy method, while producing high-quality uniform distributions, is computationally expensive \ref{fig.4:comparing_methods_box_shape} and therefore impractical for larger numbers of agents (note that only 31 agents where being used).
 
 This leaves two viable options: the Fibonacci lattice and Poisson disk sampling. The Fibonacci lattice is extremely fast and provides uniform coverage, but it is restricted to distributions on a spherical surface and is less flexible for arbitrary domains. Poisson disk sampling, in contrast, is more versatile and can be applied to arbitrary geometries, but it requires more computation and a gradient-based refinement step to achieve a fixed number of agents being the necessary separation distance initially unknown. Each method thus presents a trade-off between computational efficiency, uniformity, and flexibility. Due to the simplicity of the Fibonacci Lattice, it was chosen at the current time but with the development of the research it may be possible to generalize into any manifold making then necessary the transition to the Poisson Disk sampling.
 
@@ -201,7 +209,7 @@ Figure~\ref{fig.4:solver_solution} illustrates this issue for a scenario involvi
 
 \begin{figure}
   \centering
-  \includegraphics[width=0.8\textwidth]{5-Figures/Chapter4/solutions/solver.png}
+  \includegraphics[width=0.8\textwidth]{5-Figures/Chapter4/solutions/solver.pdf}
   \caption{Trajectory obtained using an optimization-based solver (\texttt{fmincon}) for three drones.}
   \label{fig.4:solver_solution}
 \end{figure}

@@ -16,7 +16,7 @@
 \section{Introduction}
 \label{sec.3:Introduction}
 
-Several concepts are required for a proper understanding of this thesis. Some of them have not yet been introduced in the state of the art presented in Chapter~\ref{cha:State of the art}. These include different methods for spacing agents on $\mathbb{S}^2$ (Section~\ref{sec.3:Fibonacci Lattice}), the Mellinger controller (\ref{sec.3:Mellinger controller}), Lyapunov theory (Section~\ref{sec.3:Lyapunov Stability and Lyapunov-Based Control}), and consensus algorithms(Section~\ref{sec.3:Consensus-Based Coordination}).  
+Several concepts are required for a proper understanding of this thesis. Some of them have not yet been introduced in the state of the art presented in Chapter~\ref{cha:State of the art}. These include different methods for spacing agents on the two-sphere (Section~\ref{sec.3:Fibonacci Lattice}), the Mellinger controller (\ref{sec.3:Mellinger controller}), Lyapunov theory (Section~\ref{sec.3:Lyapunov Stability and Lyapunov-Based Control}), and consensus algorithms(Section~\ref{sec.3:Consensus-Based Coordination}).  
 
 The following sections do not aim to provide a comprehensive treatment of these topics, instead, they present the fundamental concepts and tools necessary to fully understand the work developed in Chapter~\ref{cha:Developed Work}.
 
@@ -53,18 +53,21 @@ Given two consecutive Fibonacci numbers $F_i$ and $F_{i+1}$, the Fibonacci ratio
   \label{eq:golden_ratio}
 \end{equation}
 
-The Fibonacci lattice differs from other spiral lattices on the sphere in that the longitudinal rotation between consecutive points along the generating spiral is the \emph{golden angle},
+The Fibonacci lattice differs is the use of the \emph{golden angle} along the spiral lattice on the sphere where the longitudinal rotation between consecutive points along the generating spiral is given by \ref{eq.3:golden_angle},
 \begin{equation*}
   360^\circ \left(1 - \varphi^{-1}\right)
   = 360^\circ \varphi^{-2}
   \simeq 137.5^\circ ,
+  \label{eq.3:golden_angle}
 \end{equation*}
+
 or, equivalently, its complementary angle,
+
 \begin{equation*}
   360^\circ \varphi^{-1} \simeq 222.5^\circ .
 \end{equation*}
 
-In some lattice constructions, the golden ratio $\varphi$ is replaced by a rational approximant given by a Fibonacci ratio; this is the case when the total number of points is constrained to be a Fibonacci number. The golden angle optimizes packing efficiency in spiral lattices because the golden ratio is the \emph{most irrational} number, thereby avoiding periodic or near-periodic alignments in the spiral structure. As a result, lattice points do not cluster, and spatial uniformity is preserved.
+In some lattice constructions, the golden ratio $\varphi$ is replaced by a rational approximant given by a Fibonacci ratio; this is the case when the total number of points is constrained to be a Fibonacci number. But why use the golden angle as the spacing between points in the sphere lattice? Since the golden angle optimizes packing efficiency in spiral lattices, due to being the golden ratio the \emph{most irrational} number, the  periodic or near-periodic alignments in the spiral structure is avoided. As a result, lattice points do not cluster, and spatial uniformity is preserved.
 
 When a Fibonacci ratio is employed, the total number of lattice points is $F + 1$, where $F > 1$ is a Fibonacci number. In contrast, the lattice used in this work is based directly on the golden ratio and admits any odd number of points.
 
@@ -151,19 +154,23 @@ For a desired fixed number of agents \gls{N_D}, a challenge arises because stand
 Figure~\ref{fig.4:methods_points_on_sphere} compares the distributions obtained from Poisson disk sampling with other methods discussed in the next chapter, illustrating its effectiveness in producing well-spaced points on the sphere. Being the run time shown in Figure~\ref{fig.4:comparing_methods_box_shape}.
 
 \section{Simplified RUAV model}
-As shown in \cite{AlexandraGonalvesRodrigues2023} the complete \gls{RUAV} model is quite complex and non-linear so an approximation of the \gls{RUAV} model is used and since the objective is to control the \gls{RUAV} movements so it follows the target vehicle, the model for the NMPC was simplified. This is possible given that we have a non-linear controller that allows for the combined control of the complete system. This version of the RUAV model becomes simply 
 
+As shown in \cite{AlexandraGonalvesRodrigues2023}, the complete \gls{RUAV} model is highly complex and nonlinear. Since the objective of this work is to control the \gls{RUAV} motion such that it follows a target, a simplified approximation of the full model is adopted. This simplification is justified by the availability of a nonlinear control strategy capable of handling the coupled dynamics of the complete system.
+
+Under these assumptions, the \gls{RUAV} dynamics can be reduced to the following kinematic model:
 \begin{equation*}
 \begin{aligned}
-    \dot{\gls{p_D}}   &= \gls{v_D} \qquad &
-    \dot{\gls{phi_D}} &= \gls{omega_D}
+    \dot{\gls{p_D}}   &= \gls{v_D}, \\
+    \dot{\gls{phi_D}} &= \gls{omega_D}.
 \end{aligned}
 \end{equation*}
 
+
 \section{Mellinger Controller} \label{sec.3:Mellinger controller}
+
 The nonlinear internal controller used in this work is the Mellinger controller, named after Daniel Mellinger and Vijay Kumar \cite{Mellinger2011}. This controller receives as inputs the desired position \gls{p_D_ref}, velocity \gls{v_D_ref}, and attitude \gls{a_D_ref} \cite{AlexandraGonalvesRodrigues2023, Crazyflie_mellinger}, and computes the required thrust commands for each motor of a quadrotor. 
 
-Figure~\ref{fig.3:mellinger_controller_architecture} illustrates the architecture of the Mellinger controller. Since this controller has been extensively validated in the literature and its detailed design is not the focus of this thesis, no further discussion is provided here.
+Figure~\ref{fig.3:mellinger_controller_architecture} illustrates the architecture of the Mellinger controller. Since this controller has been extensively validated in the literature and shown promising results in the industry \href{https://www.bitcraze.io/documentation/repository/crazyflie-firmware/master/functional-areas/sensor-to-control/controllers/#mellinger-controller}{Controllers in the Crazyflie} \todo{Professor posso por isto assim?} its detailed design is not the focus of this thesis, no further discussion is provided here.
 
 \begin{figure}
   \centering
@@ -172,16 +179,22 @@ Figure~\ref{fig.3:mellinger_controller_architecture} illustrates the architectur
   \label{fig.3:mellinger_controller_architecture}
 \end{figure}
 
-\section{Lyapunov Stability and Lyapunov-Based Control \textbf{[50\% CHAT GPT!!!]}} \label{sec.3:Lyapunov Stability and Lyapunov-Based Control}
+\section{Lyapunov Stability and Lyapunov-Based Control} \label{sec.3:Lyapunov Stability and Lyapunov-Based Control}
 
 Lyapunov theory provides a rigorous framework for analyzing the stability of nonlinear dynamical systems and for synthesizing stabilizing control laws without requiring explicit solutions of the system equations. In this work, Lyapunov-based methods are employed to analyze and guarantee the stability of a reduced-attitude control system evolving on nonlinear manifolds.
+
+A very brief introduction to lyapunov control is given being the main focus the chosen lyapunov controller from \cite{lyapunov_outer_loop_control} and its definition.  
+
+This section summarizes the Lyapunov-based reduced-attitude control framework introduced in \cite{lyapunov_outer_loop_control}, which serves as the mathematical background for the higher-level control strategies to be developed in the remainder time of this thesis.
 
 \subsection{System Description}
 
 Consider a nonlinear dynamical system of the form
+
 \begin{equation}
     \dot{\mathbf{x}} = \mathbf{f}(\mathbf{x}, \mathbf{u}),
 \end{equation}
+
 where $\mathbf{x} \in \mathbb{R}^n$ denotes the system state and $\mathbf{u} \in \mathbb{R}^m$ is the control input.  
 An equilibrium point $\mathbf{x}_e$ satisfies $\mathbf{f}(\mathbf{x}_e, \mathbf{u}_e) = \mathbf{0}$ and can be shifted to the origin via an appropriate change of variables.
 
@@ -196,23 +209,34 @@ then the equilibrium is Lyapunov stable. If $\dot{V}(\mathbf{x}) < 0$ for all $\
 
 In Lyapunov-based control, the control law $\mathbf{u}(\mathbf{x})$ is designed such that the closed-loop dynamics yield a non-increasing Lyapunov function, guaranteeing stability by construction. This approach is particularly suitable for nonlinear systems evolving on manifolds, such as rigid-body attitude dynamics.
 
+\subsection{Contextualization}
+From this subsection onwards, the selected potential function $V(\mathbf{x})$ is described, together with the system dynamics and the control law $\mathbf{u}(\mathbf{x})$.
+
+An outer--loop controller has already been introduced in Section~\ref{sec.3:Mellinger controller}. This controller receives a desired position and actuates the quadrotor in order to reach the reference position \gls{p_D_ref}. However, if this were the only objective, scenarios involving multiple agents could lead to collisions. For instance, if two quadrotors have intersecting paths between their current positions and their respective goals, the controller alone provides no guarantees of collision--free trajectories.
+
+To address this limitation, an additional outer--loop control strategy is designed. This higher--level controller preserves the final objective while generating intermediate reference positions that are passed to the Mellinger controller. By shaping the intermediate objectives appropriately, the quadrotor can be guided along collision--free trajectories, for example by curving around other agents or obstacles rather than following a straight--line path to the goal.
+
+The following subsections focus on a Lyapunov--based controller, obtained from \cite{lyapunov_outer_loop_control} capable of steering the system from any point on $\mathbb{S}^2$ to any other point, provided that the geodesic distance between the two points is less than $\pi$.
+
 \subsection{Reduced Attitude Representation}
 
-The attitude configuration of the rigid body is described by the unit vector
+The attitude configuration of the rigid body can described by the unit vector
 \begin{align}
 q = Q e_3,
 \end{align}
-where \( Q \in SO(3) \) is the rotation matrix mapping vectors from the body frame \( I_b \) to the inertial frame \( I_R \), and \( e_3 = [0\;0\;1]^T \).
+where \( Q \in SO(3) \) is the rotation matrix mapping vectors from the body frame $I_b{e_1, e_2, e_3}$ to the inertial frame $I_R{E_1, E_2, E_3}$.
+
 The configuration space is therefore the two-sphere
+
 \begin{align}
-S^2 = \left\{ q \in \mathbb{R}^3 \mid q^T q = 1 \right\}.
+\mathbb{S}^2 = \left\{ q \in \mathbb{R}^3 \mid q^\top q = 1 \right\}.
 \end{align}
 
-The kinematics of the reduced attitude evolve on \( S^2 \) according to
+The kinematics of the reduced attitude evolve on $\mathbb{S}^2$ according to
 \begin{align}
-\dot{q} = S(\omega) q,
+\dot{q} = S(\omega) q
 \end{align}
-where \( \omega \in \mathbb{R}^3 \) is the angular velocity expressed in the inertial frame and \( S(\cdot) \) denotes the skew-symmetric operator.
+where \( \omega \in \mathbb{R}^3 \) is the angular velocity expressed in the inertial frame and \( S(\cdot) \) denotes the skew-symmetric operator \ref{annex:skew_matrix}.
 
 The rotational dynamics of the rigid body are given by
 \begin{align}
@@ -220,20 +244,31 @@ J \dot{\omega} = u - c \omega - S(\omega) J \omega + \tau,
 \end{align}
 where \( J \) is the inertia matrix, \( c > 0 \) is a viscous damping coefficient, \( \tau \) represents external disturbances, and \( u \) is the control moment generated by the outer loop.
 
-\subsection{Attitude Error Function on SO(2)}
+\subsection{Evolution of the desired objectives on the two-sphere}
+
+A initial desired final position can be defined and given a desired angular velocity making so that the system never stabilizes and will rotate continuously around the two-sphere.
+
+\begin{align}
+\dot{q_d} =& S(\omega_d) q_d  \\
+\dot{\omega_d} =& Q_d \omega_d
+\end{align}
+
+\subsection{Attitude Error Function on the two-sphere}
 
 Classical reduced attitude controllers frequently employ the error function
 \begin{align}
-\phi_r(q, q_d) = 1 - q^T q_d,
+\psi_r(q, q_d) = 1 - q^\top q_d,
 \qquad
 e_r = S(q_d) q,
 \end{align}
+
 which exhibits degraded performance for large initial attitude errors, particularly when the relative angle exceeds \( \pi/2 \). In such cases, the magnitude of the error vector decreases as the misalignment increases, reducing the control authority and slowing convergence.
 
-To address this limitation, an alternative error function inspired by \cite{lyapunov_outer_loop_control} is adopted:
+To address this limitation, an alternative error is adopted:
+
 \begin{align}
-\phi_r(q, q_d) =
-2 - \frac{2}{\sqrt{2}} \sqrt{1 + q^T q_d}.
+\psi(q, q_d) =
+2 - \frac{2}{\sqrt{2}} \sqrt{1 + q^\top q_d}.
 \end{align}
 
 This function is smooth and positive definite about \( q = q_d \), and avoids maximizing the error near the antipodal configuration. As a result, large-angle attitude errors are handled more effectively, as shown in Figure~\ref{fig.2:Comparison between error calculations}
@@ -260,61 +295,139 @@ This function is smooth and positive definite about \( q = q_d \), and avoids ma
 The corresponding configuration error vector is defined as
 \begin{align}
 e_q(q, q_d, Q) =
-\frac{1}{\sqrt{2}\,\sqrt{1 + q^T q_d}}\,
-Q^T S(q_d) q,
+\frac{1}{\sqrt{2}\,\sqrt{1 + q^\top q_d}}\,
+Q^\top S(q_d) q,
 \end{align}
 which lies in the tangent space \( T_q S^2 \).
 This formulation ensures that the magnitude of the configuration error varies proportionally with the angular separation between \( q \) and \( q_d \), leading to uniform controller response across the sphere.
 
-\subsection{Angular Velocity Error}
+\subsection{Angular Velocity Error Function on the two-sphere}
 
 The angular velocity tracking error is defined by
+
 \begin{align}
-e_\omega = \omega - \omega_d,
+e_\omega = \omega - Q^\top Q_d \omega_d,
 \end{align}
-where \( \omega_d \) is the desired angular velocity associated with the reference pointing direction \( q_d \).
+
+where $\omega_d$ is the desired angular velocity associated with the reference pointing direction $q_d$.
+
+\subsection{Error Dynamics}
+The error dynamics of the attitude error and angular error can be given by the equations~\ref{eq.3:attiture_error_derivative, eq.3:ang_error_derivative}.
+
+\begin{equation}
+    \begin{aligned}
+        \dot{e}_q
+        &= \frac{1}{\sqrt{2}\sqrt{1 + q^\top q_d}}
+        Q^\top \bigl( S(S(\omega_d) q_d) q + S(q_d)(S(\omega) q) \bigr) \\
+        &\quad - \frac{1}{2(1 + q^\top q_d)}
+        \bigl( (S(\omega_d) q_d)^\top q + q_d^\top (S(\omega) q) \bigr) e_q \\
+        &\quad - S(\omega) e_q
+    \end{aligned}
+    \label{eq.3:attitude_error_derivative}
+\end{equation}
+
+
+\begin{equation}
+    \begin{aligned}
+        \dot{e}_\omega
+        &= \dot{\omega}+S(\omega)Q^\top Q_d \omega_d-Q^\top Q_d \dot{\omega_d}\\
+        &= \mathbf{J}^{-1}(u+S(\mathbf{J}\omega)(\omega)-c\omega+\tau)+S(\omega)Q^\top Q_d \omega_d-Q^\top Q_d \dot{\omega_d} 
+    \end{aligned}
+    \label{eq.3:ang_error_derivative}
+\end{equation}
 
 \subsection{Control Law}
 
-Using the above error definitions, the control moment is chosen as
+For a desired pointing direction curve $q_d(t) \in S^2$ and a desired angular velocity profile
+$\omega_d(t)$ around the $q_d(t)$ axis, we define the control moment $\mathbf{u}$ as
+
+\begin{equation}
+    \begin{aligned}
+        \mathbf{u} &= \eta^{-1}\mathbf{J}
+        \Big(
+        -\eta(\hat{\mathbf{f}} + \mathbf{d})
+        - (\Lambda + \Psi) \dot{\mathbf{e}}_q
+        - \dot{\Psi} \mathbf{e}_q
+        - \gamma \mathbf{s}
+        \Big)\\
+        \mathbf{d} &= S(\omega)\mathbf{Q}^\top \mathbf{Q}_d,\omega_d
+        - \mathbf{Q}^\top \mathbf{Q}_d \dot{\omega}_d,\\
+        \mathbf{f} &= \mathbf{J}^{-1}
+        \Big(
+        S(\mathbf{J}\omega) (\omega)
+        - c\omega
+        + \boldsymbol{\tau}
+        \Big),\\
+        \mathbf{s} &= (\Lambda + \Psi)\mathbf{e}_q + \eta \mathbf{e}_\omega.
+    \end{aligned}
+    \label{eq.3:actuation_lyapunov}
+\end{equation}
+
+where $\lambda \gamma, \eta > 0$ positive constants while $\hat{(.)}$ signifies estimated parameters due to parameter identification errors. It will be shown that the above control law stabilizes and maintains $e_q$, $e_\omega$ in a bounded set around the zero equilibrium. Furthermore for perfect knowledge of the system parameters the above law stabilizes $e_q$, $e_\omega$ to zero exponentially.
+
+Being the defined sliding surface given in \ref{eq.3:actuation_lyapunov}. Its derivative is 
+
+\[
+\dot{s} = \dot{\Psi}^{\,b} e_q + (\Lambda + \Psi)^{b} \dot{e}_q + \eta^{b} \dot{e}_\omega
+\]
+
+\text{The Lyapunov candidate is}
+
+\[
+V(\Psi, e_q^{\,b}, e_\omega^{\,b}) = \frac{1}{2} s^{T} s = \frac{1}{2} \lVert s \rVert^{2}
+\]
+
+Additionally for perfect knowledge of the system parameters, then
+
+\[
+V(t) = -\gamma \| s \|^2 \leq -k_2 \| s \|^2 = -2 k_2 V, \quad k_2 > 0
+\]
+
+\[
+V(t) \leq V(0) e^{-2 k_2 t}
+\]
+
+Despite \ref{eq.3:actuation_lyapunov} being a perfectly reasonable controller, but the control moment in \cite{lyapunov_outer_loop_control} was chosen as \ref{eq.3:actual_lyapunov_controller}.
+
 \begin{align}
 u =
-Q^T\left(
+Q^\top\left(
 - K_r Q e_q
 - K_\omega e_\omega
 \right)
 + S(\omega) J \omega
 + c \omega
 - \tau,
+\label{eq.3:actual_lyapunov_controller}
 \end{align}
 where \( K_r \in \mathbb{R}^{3\times3} \) and \( K_\omega \in \mathbb{R}^{3\times3} \) are positive-definite gain matrices.
 
 The first term stabilizes the configuration and angular velocity errors on \( S^2 \), while the remaining terms cancel the rigid-body nonlinearities, viscous damping, and external disturbances. This results in closed-loop error dynamics that are independent of the inertia matrix.
 
-\subsection{Stability Properties}
-
-Consider the Lyapunov candidate function
-\begin{align}
-V = \frac{1}{2} e_\omega^T J e_\omega + K_r \phi_r(q, q_d).
-\end{align}
-
-The time derivative of \( V \) along the closed-loop trajectories satisfies
-\begin{align}
-\dot{V} = - e_\omega^T K_\omega e_\omega \le 0,
-\end{align}
-showing that all system signals remain bounded and that the equilibrium
-\(
-(q,\omega) = (q_d,\omega_d)
-\)
-is asymptotically stable on \( S^2 \), excluding the antipodal configuration.
-
-Importantly, the proposed error function eliminates the loss of control authority observed in classical formulations, resulting in improved convergence behavior for large initial attitude errors.
-
 \subsection{Implementation and Simulation}
 
 The proposed controller was implemented and evaluated through numerical simulations. The rigid body is initialized with a non-zero angular velocity and a large pointing error. A step change in the desired pointing direction is introduced during the simulation to evaluate transient performance.
 
-The results in Figure~\ref{fig.2:lyapunov_example_results} demonstrate smooth convergence of the pointing direction on \( S^2 \), monotonic decrease of the attitude error function, and asymptotic regulation of the angular velocity. These results confirm the theoretical stability analysis and highlight the advantages of the proposed geometric formulation. A more extensive explanations and formula deduction can be found in the original referenced paper \cite{lyapunov_outer_loop_control}.
+The initial configuration/conditions are,
+\[
+\mathbf{q}(t=0) = \begin{bmatrix} 0 \\ 0 \\ 1 \end{bmatrix}, 
+\quad \mathbf{Q}(t=0) = \mathbf{I}, 
+\quad \boldsymbol{\omega}(t=0) = \begin{bmatrix} 0 \\ 0.3 \\ 0 \end{bmatrix}.
+\]
+
+The controllers must initially stabilize the $\mathbf{e}_3$ body-fixed axis of the body to the following equilibrium,
+\[
+\mathbf{q}_d = \begin{bmatrix} 0 \\ -0.0175 \\ -0.9998 \end{bmatrix}, 
+\quad \boldsymbol{\omega} = \begin{bmatrix} 0 \\ 0 \\ 0 \end{bmatrix},
+\]
+where the vector $\mathbf{q}_d$ denotes a $179^\circ$ rotation around the $\mathbf{E}_1$ axis. Then the $\mathbf{e}_3$ body-fixed axis must rotate back $89^\circ$ around the $\mathbf{E}_1$ axis to,
+\[
+\mathbf{q}_d = \begin{bmatrix} 0 \\ -1 \\ 0 \end{bmatrix}, 
+\quad \boldsymbol{\omega} = \begin{bmatrix} 0 \\ 0 \\ 0 \end{bmatrix}.
+\]
+
+
+The results in Figure~\ref{fig.3:lyapunov_example_results} demonstrate smooth convergence of the pointing direction on \( S^2 \), monotonic decrease of the attitude error function, and asymptotic regulation of the angular velocity. These results confirm the theoretical stability analysis and highlight the advantages of the proposed geometric formulation. A more extensive explanations and formula deduction can be found in the original referenced paper \cite{lyapunov_outer_loop_control}.
 
 \begin{figure}[H]
 \centering
@@ -334,7 +447,7 @@ The results in Figure~\ref{fig.2:lyapunov_example_results} demonstrate smooth co
 \end{minipage}
 
 \caption{Lyapunov example results}
-\label{fig.2:lyapunov_example_results}
+\label{fig.3:lyapunov_example_results}
 \end{figure}
 
 \section{Consensus-Based Coordination  \textbf{[100\% CHAT GPT!!!]} \textbf{[MISSING CITATIONS]}} \label{sec.3:Consensus-Based Coordination}
