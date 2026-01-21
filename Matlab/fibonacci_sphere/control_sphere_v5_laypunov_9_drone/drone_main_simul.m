@@ -62,7 +62,7 @@ for iD = 1:Param.nD
     else
         q_d{iD} = [0; 1; 0];
     end
-    omega_d{iD} = [0; 1; 0];
+    omega_d{iD} = [0; 0; 0];
 end
 
 % Storage
@@ -217,6 +217,7 @@ for k = 1:Nsim
 
     % Index range: last 100 steps (or fewer at the beginning)
     k_start = max(1, k-99);
+    k_start = max(1, k-Nsim);
     idx = k_start:k;
 
     for iD = 1:Param.nD
@@ -249,3 +250,11 @@ for k = 1:Nsim
     pause(0.01);
 end
 
+set(gcf,'Units','centimeters');
+screenposition = get(gcf,'Position');
+
+set(gcf, ...
+    'PaperPosition',[0 0 screenposition(3:4)], ...
+    'PaperSize',[screenposition(3:4)]);
+
+print -dpdf -painters result_fig

@@ -23,9 +23,9 @@ The following sections do not aim to provide a comprehensive treatment of these 
 \section{Agent spacing on the two-sphere} \label{sec.3:Agent spacing on the two-sphere}
 In this section, several methods for distributing points on a manifold are discussed. The primary objective is to achieve the most uniform spacing possible between agents. Such uniformity allows for more efficient use of each agent's reachability set at any given time. In other words, minimizing overlap between the reachability regions of different agents maximizes the collective coverage and effectiveness of the multi-agent system. For simplicity the two-sphere or unit sphere will be the main manifold considered since the problem at hand is encircling a target, where $\mathbb{S}^2 = \{\mathbf{x} \in \mathbb{R}^3 : \|\mathbf{x}\|_2 = 1\}$ denotes the unit sphere. 
 
-Four different methods will be discusses including, lattitude and longitude, fibonnaci sphere, thomson minimum energy sphere and poisson disk sampling.
+Four different methods will be discusses including, latitude and longitude, fibonacci sphere, thomson minimum energy sphere and poisson disk sampling.
 
-The sections \ref{sec.3:Latitude and longitude} and \ref{sec.3:Fibonacci Lattice} are both heavly inspired and influenced by \cite{Latitude_Longitude_vs_fibonacci}.
+The sections \ref{sec.3:Latitude and longitude} and \ref{sec.3:Fibonacci Lattice} are both heavily inspired and influenced by \cite{Latitude_Longitude_vs_fibonacci}.
 
 \subsection{Latitude and Longitude} \label{sec.3:Latitude and longitude}
 
@@ -141,7 +141,7 @@ The implementation was made using a gradient-based iterative solver, using a con
 
 \subsection{Poisson Disk sampling} \label{sec.3:Poisson sampling disk}
 
-Poisson disk sampling is a stochastic sampling technique that enforces a minimum distance between samples, producing distributions that are both random and well-spaced. Formally, a Poisson disk distribution is defined such that no two samples are closer than a user-defined distance \gls{d_min}. This property avoids clustering while preserving randomness, resulting in so-called \emph{blue noise} characteristics, which are highly desirable for a very isotropous distributing of agents.
+Poisson disk sampling is a stochastic sampling technique that enforces a minimum distance between samples, producing distributions that are both random and well-spaced. Formally, a Poisson disk distribution is defined such that no two samples are closer than a user-defined distance \gls{d_min}. This property avoids clustering while preserving randomness, resulting in so-called \emph{blue noise} characteristics, which are highly desirable for a very isotropic distribution of agents.
 
 Poisson disk samples are generated using the fast algorithm proposed by Bridson\cite{poisson_sampling_disk}. The method improves efficiency by restricting candidate samples to a neighborhood around existing points. A background grid is used to accelerate distance queries, with the cell size chosen as \( \gls{d_min} / \sqrt{n} \) in an \( n \)-dimensional domain, ensuring that each cell contains at most one sample.
 
@@ -312,7 +312,7 @@ e_\omega = \omega - Q^\top Q_d \omega_d,
 where $\omega_d$ is the desired angular velocity associated with the reference pointing direction $q_d$.
 
 \subsection{Error Dynamics}
-The error dynamics of the attitude error and angular error can be given by the equations~\ref{eq.3:attiture_error_derivative, eq.3:ang_error_derivative}.
+The error dynamics of the attitude error and angular error can be given by the equations~\ref{eq.3:attitude_error_derivative} \ref{eq.3:ang_error_derivative}.
 
 \begin{equation}
     \begin{aligned}
@@ -402,7 +402,7 @@ Q^\top\left(
 \end{align}
 where \( K_r \in \mathbb{R}^{3\times3} \) and \( K_\omega \in \mathbb{R}^{3\times3} \) are positive-definite gain matrices.
 
-The first term stabilizes the configuration and angular velocity errors on \( S^2 \), while the remaining terms cancel the rigid-body nonlinearities, viscous damping, and external disturbances. This results in closed-loop error dynamics that are independent of the inertia matrix.
+The first term stabilizes the configuration and angular velocity errors on \( S^2 \), while the remaining terms cancel the rigid-body nonlinearity, viscous damping, and external disturbances. This results in closed-loop error dynamics that are independent of the inertia matrix.
 
 \subsection{Implementation and Simulation}
 
@@ -425,7 +425,6 @@ where the vector $\mathbf{q}_d$ denotes a $179^\circ$ rotation around the $\math
 \mathbf{q}_d = \begin{bmatrix} 0 \\ -1 \\ 0 \end{bmatrix}, 
 \quad \boldsymbol{\omega} = \begin{bmatrix} 0 \\ 0 \\ 0 \end{bmatrix}.
 \]
-
 
 The results in Figure~\ref{fig.3:lyapunov_example_results} demonstrate smooth convergence of the pointing direction on \( S^2 \), monotonic decrease of the attitude error function, and asymptotic regulation of the angular velocity. These results confirm the theoretical stability analysis and highlight the advantages of the proposed geometric formulation. A more extensive explanations and formula deduction can be found in the original referenced paper \cite{lyapunov_outer_loop_control}.
 
@@ -450,7 +449,7 @@ The results in Figure~\ref{fig.3:lyapunov_example_results} demonstrate smooth co
 \label{fig.3:lyapunov_example_results}
 \end{figure}
 
-\section{Consensus-Based Coordination  \textbf{[100\% CHAT GPT!!!]} \textbf{[MISSING CITATIONS]}} \label{sec.3:Consensus-Based Coordination}
+\section{Consensus-Based Coordination} \label{sec.3:Consensus-Based Coordination}
 \todo{This entire section}
 Consensus-based coordination is a fundamental approach in multi-agent systems, where a group of agents cooperatively achieves a common objective through local interactions.
 Typical applications include formation control, distributed estimation, flocking, and cooperative robotics.
@@ -526,16 +525,10 @@ If the communication graph is connected, all states converge to a consensus valu
 \end{equation}
 
 For undirected graphs, the consensus value corresponds to the average of the initial states.
-The convergence rate is influenced by the second smallest eigenvalue of the Laplacian, known as the \textit{algebraic connectivity}.
+The convergence rate is influenced by the second smallest eigenvalue of the Laplacian, known as the \textit{algebraic connectivity}. An example of a consensus algorithm can be seen in \cite{2D_circle_formation_phase_spliting_2}, where a consensus algorithm is used in order for given a circular topology all agents obtain the same center around which to form a circle.
 
 \subsection{Extensions and Remarks}
 
 Consensus algorithms can be extended to higher-order agent dynamics, time-varying topologies, directed graphs, and delayed communication.
 Despite these complexities, the Laplacian matrix remains the fundamental tool for analyzing stability and convergence.
 As a result, consensus-based coordination provides a scalable and fully distributed framework for multi-agent control systems.
-
-\subsection{Summary}
-
-Consensus-based coordination relies on local interactions defined by a communication graph to achieve global agreement.
-The adjacency and Laplacian matrices provide compact representations of the network structure and are essential for the design and analysis of consensus algorithms.
-Their spectral properties directly determine the existence, speed, and robustness of consensus.
