@@ -16,28 +16,41 @@
 \section{Introduction}
 \label{sec.3:Introduction}
 
-Several concepts are required for a proper understanding of this thesis. Some of them have not yet been introduced in the state of the art presented in Chapter~\ref{cha:State of the art}. These include different methods for spacing agents on the two-sphere (Section~\ref{sec.3:Fibonacci Lattice}), the Mellinger controller (\ref{sec.3:Mellinger controller}), Lyapunov theory (Section~\ref{sec.3:Lyapunov Stability and Lyapunov-Based Control}), and consensus algorithms(Section~\ref{sec.3:Consensus-Based Coordination}).  
+Several concepts are required for a proper understanding of this thesis, some of which have not yet been introduced in the state of the art presented in Chapter~\ref{cha:State of the art}. These include methods for spacing agents on the two-sphere (Section~\ref{sec.3:Agent spacing on the two-sphere}), the drone model considered in this work (Section~\ref{sec.3:ruav_model}), the nonlinear controller architecture (Section~\ref{sec.3:Non-linear Controller}), Lyapunov stability theory (Section~\ref{sec.3:Lyapunov Stability and Lyapunov-Based Control}), and consensus-based coordination algorithms (Section~\ref{sec.3:Consensus-Based Coordination}).
 
-The following sections do not aim to provide a comprehensive treatment of these topics, instead, they present the fundamental concepts and tools necessary to fully understand the work developed in Chapter~\ref{cha:Developed Work}.
+Before introducing these techniques in detail, some contextualization is provided to clarify their role within the overall control architecture.
+
+The approach followed in this thesis relies on three main components that are not extensively covered in the state of the art. The first concerns the positioning of agents on the surface of a sphere, either the unit sphere (two-sphere) or a sphere of arbitrary radius. This positioning defines the final desired configuration of the agents encircling the target and requires careful selection of methods that provide near-uniform separation between points on the spherical surface.
+
+The second component is the dynamical model of the drones (Section~\ref{sec.3:ruav_model}), which is shared by both the target and the pursuing agents. This model underlies the design of the control laws and ensures consistency across all simulated agents. The third component is the internal drone controller, introduced in Section~\ref{sec.3:Non-linear Controller}, responsible for converting a desired position reference into appropriate actuator commands that drive the quadrotor to the target position. Since this inner-loop controller naturally induces straight-line motion toward the reference, an additional control layer is required to shape the resulting trajectories.
+
+An outer-loop controller, mentioned in Section~\ref{sec.3:Lyapunov Stability and Lyapunov-Based Control}, provides reference positions to the quadrotor and ensures convergence to a desired location $\gls{p_D_ref}$, while maintaining course on the surface sphere instead of going across it. However, when multiple agents operate simultaneously, this controller \textbf{currently} does not guarantee collision-free motion. For example, intersecting paths between agents and their respective goals may lead to collisions.
+
+The sections that follow do not aim to provide a comprehensive treatment of the underlying theories. Instead, they introduce the essential concepts and tools required to fully understand the methods and results presented in Chapter~\ref{cha:Developed Work}.
 
 \section{Agent spacing on the two-sphere} \label{sec.3:Agent spacing on the two-sphere}
 In this section, several methods for distributing points on a manifold are discussed. The primary objective is to achieve the most uniform spacing possible between agents. Such uniformity allows for more efficient use of each agent's reachability set at any given time. In other words, minimizing overlap between the reachability regions of different agents maximizes the collective coverage and effectiveness of the multi-agent system. For simplicity the two-sphere or unit sphere will be the main manifold considered since the problem at hand is encircling a target, where $\mathbb{S}^2 = \{\mathbf{x} \in \mathbb{R}^3 : \|\mathbf{x}\|_2 = 1\}$ denotes the unit sphere. 
 
-Four different methods will be discusses including, latitude and longitude, fibonacci sphere, thomson minimum energy sphere and poisson disk sampling.
+Four different methods will be discusses including: latitude and longitude, fibonacci sphere, thomson minimum energy sphere and poisson disk sampling.
 
 The sections \ref{sec.3:Latitude and longitude} and \ref{sec.3:Fibonacci Lattice} are both heavily inspired and influenced by \cite{Latitude_Longitude_vs_fibonacci}.
 
 \subsection{Latitude and Longitude} \label{sec.3:Latitude and longitude}
 
-The latitude--longitude lattice consists of points located at the intersections of a grid of meridians and parallels, separated by equal angular increments in latitude and longitude. This arrangement is commonly referred to as the \emph{latitude--longitude grid} or the \emph{equal-angle grid}. Due to the convergence of meridians toward the poles, the density of points increases with latitude, resulting in significant anisotropy.
+The latitude--longitude lattice consists of points located at the intersections of a grid of meridians and parallels, separated by equal angular increments in latitude and longitude. This arrangement might be referred as as the \emph{latitude--longitude grid} or the \emph{equal-angle grid}. Due to the convergence of meridians toward the poles, the density of points increases with latitude, resulting in significant anisotropy.
 
-The total number of points, denoted by $P$, depends on the angular spacing $\delta$ between adjacent grid lines. If the sphere is divided into $k$ equal angular intervals in latitude, so that $\delta = 180^\circ / k$ with $k = 1, 2, \ldots$, then the total number of grid points is
+The total number of points, denoted by $P$, depends on the angular spacing $\delta$ between adjacent grid lines. If the sphere is divided into $N$ equal angular intervals in latitude, so that $\delta = 180^\circ / k$ with $k = 1, 2, \ldots$, then the total number of grid points is
 
 \begin{equation}
-    P = 2k(k - 1) + 2 .
+P = 2N(N - 1) + 2, \quad N \in \mathbb{N}
 \end{equation}
 
-This expression accounts for the $2k$ meridians and the $k - 1$ parallels, along with the two poles. A further limitation of this approach is that the total number of agents is constrained by the parameter $k$, which restricts the set of achievable formations. For example, configurations involving 3, 4, or 5 agents, cannot be realized within this framework.
+This expression accounts for the $2k$ meridians and the $k - 1$ parallels, along with the two poles. A limitation for the desired use case is that the total number of agents is constrained by the parameter $N$, which restricts the set of achievable formations. For example, configurations involving 3, 4, or 5 agents, cannot be realized within this framework.
+
+\begin{equation*}
+    P \overset{N=1}{=} 2,\qquad
+    P \overset{N=2}{=} 6
+\end{equation*}
 
 \subsection{Fibonacci Lattice}
 \label{sec.3:Fibonacci Lattice}
@@ -54,12 +67,12 @@ Given two consecutive Fibonacci numbers $F_i$ and $F_{i+1}$, the Fibonacci ratio
 \end{equation}
 
 The Fibonacci lattice differs is the use of the \emph{golden angle} along the spiral lattice on the sphere where the longitudinal rotation between consecutive points along the generating spiral is given by \ref{eq.3:golden_angle},
-\begin{equation*}
+\begin{equation}
   360^\circ \left(1 - \varphi^{-1}\right)
   = 360^\circ \varphi^{-2}
   \simeq 137.5^\circ ,
   \label{eq.3:golden_angle}
-\end{equation*}
+\end{equation}
 
 or, equivalently, its complementary angle,
 
@@ -71,12 +84,7 @@ In some lattice constructions, the golden ratio $\varphi$ is replaced by a ratio
 
 When a Fibonacci ratio is employed, the total number of lattice points is $F + 1$, where $F > 1$ is a Fibonacci number. In contrast, the lattice used in this work is based directly on the golden ratio and admits any odd number of points.
 
-To construct the lattice, let $N$ be a natural number and let the integer index $i$ range from $-N$ to $+N$. The total number of points is
-\begin{equation}
-P = 2N + 1 
-\end{equation}
-
-This forces the number of agents/points to always be odd.
+To construct the lattice, let $N$ be a natural number and let the integer index $i$ range from $-N$ to $+N$. 
 
 The spherical coordinates (in radians) of the $i$th point are given by
 \begin{align}
@@ -85,9 +93,20 @@ The spherical coordinates (in radians) of the $i$th point are given by
 \label{eq:fibonacci_lat_lon}
 \end{align}
 
-Each point is assigned a unique latitude, while the longitudinal separation between consecutive points corresponds to the golden angle (or its complement), approximately $222.5^\circ$.
+Being the total number of points
 
-Although not an academic reference, the interactive visualization provided in \href{https://observablehq.com/@meetamit/fibonacci-lattices}{Fibonacci Lattices} offers an intuitive and informative illustration of the Fibonacci lattice structure.
+\begin{equation}
+P = 2N + 1 
+\label{eq.3:fibonacci_number_of_points}
+\end{equation}
+
+Each point is assigned a unique latitude, while the longitudinal separation between consecutive points corresponds to the golden angle (or its complement), approximately $222.5^\circ$. Also notice from equation \ref{eq.3:fibonacci_number_of_points} that the total number of points is always odd; therefore, the number of agents cannot be any even natural number greater than 1.
+
+\begin{equation*}
+    P \in 2N + 1 \;\Rightarrow\; P \notin 2\mathbb{N}
+\end{equation*}
+
+Finally although not an academically suitable reference, the interactive visualization provided in \cite{fibonacci_lattice_internet} offers an intuitive and informative illustration of the Fibonacci lattice structure.
 
 \subsection{Thomson minimum energy sphere} \label{sec.3:Thomson minimum energy sphere}
 
@@ -99,7 +118,7 @@ The Thomson problem can be formulated mathematically as the minimization of the 
 E(\mathbf{X}) = \sum_{i=1}^{N} \sum_{j=i+1}^{N} \frac{1}{\|\mathbf{x}_i - \mathbf{x}_j\|_2},
 \end{equation}
 
-where $\mathbf{X} = [\mathbf{x}_1^\top, \mathbf{x}_2^\top, \dots, \mathbf{x}_N^\top]^\top \in \mathbb{R}^{N \times 3}$ is the matrix of all point coordinates, and $\|\mathbf{x}_i - \mathbf{x}_j\|_2$ is the Euclidean distance between points $i$ and $j$. The goal of the Thomson problem is to find
+where $\mathbf{X} = [\mathbf{x}_1, \mathbf{x}_2, \dots, \mathbf{x}_N] \in \mathbb{R}^{N \times 3}$ is the matrix of all point coordinates, and $\|\mathbf{x}_i - \mathbf{x}_j\|_2$ is the Euclidean distance between points $i$ and $j$. The goal of the Thomson problem is to find
 
 \begin{equation}
 \mathbf{X}^* = \arg \min_{\mathbf{X} \in (\mathbb{S}^2)^N} E(\mathbf{X}),
@@ -143,7 +162,7 @@ The implementation was made using a gradient-based iterative solver, using a con
 
 Poisson disk sampling is a stochastic sampling technique that enforces a minimum distance between samples, producing distributions that are both random and well-spaced. Formally, a Poisson disk distribution is defined such that no two samples are closer than a user-defined distance \gls{d_min}. This property avoids clustering while preserving randomness, resulting in so-called \emph{blue noise} characteristics, which are highly desirable for a very isotropic distribution of agents.
 
-Poisson disk samples are generated using the fast algorithm proposed by Bridson\cite{poisson_sampling_disk}. The method improves efficiency by restricting candidate samples to a neighborhood around existing points. A background grid is used to accelerate distance queries, with the cell size chosen as \( \gls{d_min} / \sqrt{n} \) in an \( n \)-dimensional domain, ensuring that each cell contains at most one sample.
+Poisson disk samples are generated using the \textit{fast algorithm} proposed by Bridson\cite{poisson_sampling_disk}. The method improves efficiency by restricting candidate samples to a neighborhood around existing points. A background grid is used to accelerate distance queries, with the cell size chosen as \( \gls{d_min} / \sqrt{n} \) in an \( n \)-dimensional domain, ensuring that each cell contains at most one sample.
 
 The algorithm starts by placing an initial random sample in the domain and adding it to an active list. While this list is not empty, a sample is selected and up to \gls{P_k} candidate points are generated uniformly in the spherical annulus between radii \( r \) and \( 2r \). If a candidate is at least distance \gls{d_min} from all existing samples, it is accepted and added to the active list. If no valid candidate is found after \gls{P_k} attempts, the sample is removed from the active list.
 
@@ -151,26 +170,113 @@ Because each iteration either adds or removes a sample and the number of candida
 
 For a desired fixed number of agents \gls{N_D}, a challenge arises because standard Poisson disk sampling does not guarantee an exact number of generated points. To address this limitation, a gradient-based iterative solver might be cable of adjusting minimum separation distance necessary to guarantee a desired number of agents. This refinement might enable the placement of exactly \gls{N_D} agents with approximately uniform spacing. Owing to its low computational cost, such an approach could be practical for real-time or large-scale deployments. However, it should be noted that this remains a conceptual approach and has neither been proven feasible nor experimentally validated during the development of this thesis.
 
-Figure~\ref{fig.4:methods_points_on_sphere} compares the distributions obtained from Poisson disk sampling with other methods discussed in the next chapter, illustrating its effectiveness in producing well-spaced points on the sphere. Being the run time shown in Figure~\ref{fig.4:comparing_methods_box_shape}.
+Figure~\ref{fig.4:methods_points_on_sphere} compares the distributions obtained from Poisson disk sampling with other methods discussed in the next chapter, illustrating its effectiveness in producing well-spaced points. Being the run time shown in Figure~\ref{fig.4:comparing_methods_box_shape}.
 
-\section{Simplified RUAV model}
+\subsection{RUAV Model}
+\label{sec.3:ruav_model}
 
-As shown in \cite{AlexandraGonalvesRodrigues2023}, the complete \gls{RUAV} model is highly complex and nonlinear. Since the objective of this work is to control the \gls{RUAV} motion such that it follows a target, a simplified approximation of the full model is adopted. This simplification is justified by the availability of a nonlinear control strategy capable of handling the coupled dynamics of the complete system.
+The \gls{RUAV}, obtained from \cite{AlexandraGonalvesRodrigues2023}, is modeled as a rigid body with six
+degrees of freedom evolving in \gls{3D} space. Two reference frames are
+considered: the body frame $I_b\{e_1, e_2, e_3\}$ attached
+to the vehicle's center of mass and the inertial frame $I_R\{E_1, E_2, E_3\}$.
 
-Under these assumptions, the \gls{RUAV} dynamics can be reduced to the following kinematic model:
-\begin{equation*}
-\begin{aligned}
-    \dot{\gls{p_D}}   &= \gls{v_D}, \\
-    \dot{\gls{phi_D}} &= \gls{omega_D}.
-\end{aligned}
-\end{equation*}
+The position and velocity of the RUAV in the inertial frame are given by
+$p_D = \begin{bmatrix} x_D & y_D & z_D \end{bmatrix}^\top$
+and
+$v_D = \begin{bmatrix} u_D & v_D & w_D \end{bmatrix}^\top$,
+while the orientation and angular velocity are given by
+$\Phi_D = \begin{bmatrix} \phi_D & \theta_D & \psi_D \end{bmatrix}^\top$
+and
+$\omega_D = \begin{bmatrix} p_D & q_D & r_D \end{bmatrix}^\top$.
 
+The \gls{UAV} model can be written as:
+\begin{align}
+\dot{p}_D &= V_D \\
+\dot{\Phi}_D &= E(\Phi_D)^{-1}\,\omega_{B_D} \\
+\dot{V}_D &= m^{-1} R_{IB}(\Phi_D)\,(f_e + f_D) - g\, R_{IB}(\Phi_D)^{T} z_i \\
+\dot{\omega}_{B_D} &= I^{-1}\!\left(-\omega_{B_D} \times (I \omega_{B_D}) + \tau_e + \tau_D \right)
+\end{align}
 
-\section{Mellinger Controller} \label{sec.3:Mellinger controller}
+where $m$ is the mass of the drone, $g$ is the gravity acceleration, $\mathbf{I}$ is the inertia
+matrix with diagonal elements $\{I_{xx}, I_{yy}, I_{zz}\}$ that are the principal moments of inertia,
+and $R_{IB}(\Phi)$ and $E(\Phi)$ are the known rotation matrices and its Jacobian respectively,
+using Euler ZYX angles. $R_{IB}(\Phi)$ is shown in Equation~\ref{eq.3:rotation_matrix} and $E(\Phi)^{-1}$ in
+Equation~\ref{eq.3:jacobian_matrix}, where for simplicity $c=\cos(\cdot)$, $s=\sin(\cdot)$, $t=\tan(\cdot)$.
+
+\begin{equation}
+R_{IB}(\Phi) =
+\begin{bmatrix}
+c\theta c\psi &
+c\theta s\psi &
+- s\theta \\
+s\phi s\theta c\psi - c\phi s\psi &
+s\phi s\theta s\psi + c\phi c\psi &
+s\phi c\theta \\
+c\phi s\theta c\psi + s\phi s\psi &
+c\phi s\theta s\psi - s\phi c\psi &
+c\phi c\theta
+\end{bmatrix}
+\label{eq.3:rotation_matrix}
+\end{equation}
+
+\begin{equation}
+E(\Phi)^{-1} =
+\begin{bmatrix}
+1 & s\phi t\theta & c\phi t\theta \\
+0 & c\phi & -s\phi \\
+0 & \dfrac{s\phi}{c\theta} & \dfrac{c\phi}{c\theta}
+\end{bmatrix}
+\label{eq.3:jacobian_matrix}
+\end{equation}
+
+The aerodynamic force $\mathbf{f}_a$ and torque $\boldsymbol{\tau}_a$ produced by aerodynamic drag
+are, respectively,
+\begin{equation}
+\mathbf{f}_a =
+\begin{bmatrix}
+f_{ax} & f_{ay} & f_{az}
+\end{bmatrix}^{T}
+=
+- \mathrm{diag}(a_T, a_T, a_T) R_{IB}(\Psi)^{T} \mathbf{V}_{air},
+\end{equation}
+with $\mathbf{V}_{air} = \mathbf{V}_a - \mathbf{V}_w$, where $\mathbf{V}_w$ is the wind velocity vector
+in the inertial frame, and
+\begin{equation}
+\boldsymbol{\tau}_a =
+\begin{bmatrix}
+\tau_{ax} & \tau_{ay} & \tau_{az}
+\end{bmatrix}^{T}
+=
+- \mathrm{diag}(a_R, a_R, a_R)\boldsymbol{\omega}_a,
+\end{equation}
+where $a_t$ and $a_r$ are the linear and rotational air friction, respectively.
+For the external force $\mathbf{f}_e$ and torque $\boldsymbol{\tau}_e$ we have
+\begin{equation}
+\mathbf{f}_e =
+\begin{bmatrix}
+0 & 0 & f_{ez}
+\end{bmatrix}^{T},
+\qquad
+\boldsymbol{\tau}_e =
+\begin{bmatrix}
+\tau_{ex} & \tau_{ey} & \tau_{ez}
+\end{bmatrix}^{T}.
+\end{equation}
+
+If we shorten the continuous equation of the model, we get
+\begin{equation}
+\dot{\mathbf{x}}_a(t) = \mathbf{f}_a \bigl( \mathbf{x}_a(t), \mathbf{u}_a(t) \bigr).
+\tag{3.4}
+\end{equation}
+
+This full nonlinear model is used for simulation and control design, providing a
+realistic representation of the \gls{RUAV} dynamics.
+
+\section{Non-linear Controller} \label{sec.3:Non-linear Controller}
 
 The nonlinear internal controller used in this work is the Mellinger controller, named after Daniel Mellinger and Vijay Kumar \cite{Mellinger2011}. This controller receives as inputs the desired position \gls{p_D_ref}, velocity \gls{v_D_ref}, and attitude \gls{a_D_ref} \cite{AlexandraGonalvesRodrigues2023, Crazyflie_mellinger}, and computes the required thrust commands for each motor of a quadrotor. 
 
-Figure~\ref{fig.3:mellinger_controller_architecture} illustrates the architecture of the Mellinger controller. Since this controller has been extensively validated in the literature and shown promising results in the industry \href{https://www.bitcraze.io/documentation/repository/crazyflie-firmware/master/functional-areas/sensor-to-control/controllers/#mellinger-controller}{Controllers in the Crazyflie} \todo{Professor posso por isto assim?} its detailed design is not the focus of this thesis, no further discussion is provided here.
+Figure~\ref{fig.3:mellinger_controller_architecture} illustrates the architecture of the Mellinger controller. Since this controller has been extensively validated in the literature and shown promising results in the industry \cite{Crazyflie_mellinger} its detailed design is not the focus of this thesis, no further discussion is provided here.
 
 \begin{figure}
   \centering
@@ -209,24 +315,15 @@ then the equilibrium is Lyapunov stable. If $\dot{V}(\mathbf{x}) < 0$ for all $\
 
 In Lyapunov-based control, the control law $\mathbf{u}(\mathbf{x})$ is designed such that the closed-loop dynamics yield a non-increasing Lyapunov function, guaranteeing stability by construction. This approach is particularly suitable for nonlinear systems evolving on manifolds, such as rigid-body attitude dynamics.
 
-\subsection{Contextualization}
-From this subsection onwards, the selected potential function $V(\mathbf{x})$ is described, together with the system dynamics and the control law $\mathbf{u}(\mathbf{x})$.
-
-An outer--loop controller has already been introduced in Section~\ref{sec.3:Mellinger controller}. This controller receives a desired position and actuates the quadrotor in order to reach the reference position \gls{p_D_ref}. However, if this were the only objective, scenarios involving multiple agents could lead to collisions. For instance, if two quadrotors have intersecting paths between their current positions and their respective goals, the controller alone provides no guarantees of collision--free trajectories.
-
-To address this limitation, an additional outer--loop control strategy is designed. This higher--level controller preserves the final objective while generating intermediate reference positions that are passed to the Mellinger controller. By shaping the intermediate objectives appropriately, the quadrotor can be guided along collision--free trajectories, for example by curving around other agents or obstacles rather than following a straight--line path to the goal.
-
-The following subsections focus on a Lyapunov--based controller, obtained from \cite{lyapunov_outer_loop_control} capable of steering the system from any point on $\mathbb{S}^2$ to any other point, provided that the geodesic distance between the two points is less than $\pi$.
-
 \subsection{Reduced Attitude Representation}
 
 The attitude configuration of the rigid body can described by the unit vector
 \begin{align}
 q = Q e_3,
 \end{align}
-where \( Q \in SO(3) \) is the rotation matrix mapping vectors from the body frame $I_b{e_1, e_2, e_3}$ to the inertial frame $I_R{E_1, E_2, E_3}$.
+where \( Q \in SO(3) \) is the rotation matrix mapping vectors from the body frame $I_b\{e_1, e_2, e_3\}$ to the inertial frame $I_R\{E_1, E_2, E_3\}$.
 
-The configuration space is therefore the two-sphere
+Being the configuration space (the two-sphere) defined as
 
 \begin{align}
 \mathbb{S}^2 = \left\{ q \in \mathbb{R}^3 \mid q^\top q = 1 \right\}.
@@ -246,12 +343,14 @@ where \( J \) is the inertia matrix, \( c > 0 \) is a viscous damping coefficien
 
 \subsection{Evolution of the desired objectives on the two-sphere}
 
-A initial desired final position can be defined and given a desired angular velocity making so that the system never stabilizes and will rotate continuously around the two-sphere.
+A desired final position can be defined as
 
 \begin{align}
-\dot{q_d} =& S(\omega_d) q_d  \\
-\dot{\omega_d} =& Q_d \omega_d
+    \dot{q_d} =& S(\omega_d) q_d  \\
+    \dot{\omega_d} =& Q_d \omega_d
 \end{align}
+
+where the subscript $({\cdot})_d$ defined the desired vector/matrix.
 
 \subsection{Attitude Error Function on the two-sphere}
 
@@ -262,16 +361,20 @@ Classical reduced attitude controllers frequently employ the error function
 e_r = S(q_d) q,
 \end{align}
 
-which exhibits degraded performance for large initial attitude errors, particularly when the relative angle exceeds \( \pi/2 \). In such cases, the magnitude of the error vector decreases as the misalignment increases, reducing the control authority and slowing convergence.
+which exhibits degraded performance for large initial attitude errors, particularly when the relative angle exceeds \( \pi/2 \). In such cases, the magnitude of the error vector decreases as the misalignment increases, reducing the control authority and slowing convergence, visible in Figure~\ref{fig.3:Comparison between error calculations}.
 
 To address this limitation, an alternative error is adopted:
 
 \begin{align}
 \psi(q, q_d) =
 2 - \frac{2}{\sqrt{2}} \sqrt{1 + q^\top q_d}.
+\quad
+e_q(q, q_d, Q) =
+\frac{1}{\sqrt{2}\,\sqrt{1 + q^\top q_d}}\,
+Q^\top S(q_d) q,
 \end{align}
 
-This function is smooth and positive definite about \( q = q_d \), and avoids maximizing the error near the antipodal configuration. As a result, large-angle attitude errors are handled more effectively, as shown in Figure~\ref{fig.2:Comparison between error calculations}
+This function is smooth and positive definite about \( q = q_d \), and avoids maximizing the error near the antipodal configuration. As a result, large-angle attitude errors are handled more effectively, as shown in Figure~\ref{fig.3:Comparison between error calculations}
 
 % Subfigures 
 \begin{figure}
@@ -280,25 +383,16 @@ This function is smooth and positive definite about \( q = q_d \), and avoids ma
   \centering
   \includegraphics[width=\linewidth]{5-Figures/Chapter2/lyapunov/old_error.png}
   \caption{Standard method}
-  \label{fig:sub1}
 \end{subfigure}%
 \begin{subfigure}{.45\textwidth}
   \centering
   \includegraphics[width=\linewidth]{5-Figures/Chapter2/lyapunov/new_error.png}
   \caption{Proposed method in \cite{lyapunov_outer_loop_control}}
-  \label{fig:sub2}
 \end{subfigure}
 \caption{Comparison between error calculations}
-\label{fig.2:Comparison between error calculations}
+\label{fig.3:Comparison between error calculations}
 \end{figure}
 
-The corresponding configuration error vector is defined as
-\begin{align}
-e_q(q, q_d, Q) =
-\frac{1}{\sqrt{2}\,\sqrt{1 + q^\top q_d}}\,
-Q^\top S(q_d) q,
-\end{align}
-which lies in the tangent space \( T_q S^2 \).
 This formulation ensures that the magnitude of the configuration error varies proportionally with the angular separation between \( q \) and \( q_d \), leading to uniform controller response across the sphere.
 
 \subsection{Angular Velocity Error Function on the two-sphere}
@@ -387,7 +481,7 @@ V(t) = -\gamma \| s \|^2 \leq -k_2 \| s \|^2 = -2 k_2 V, \quad k_2 > 0
 V(t) \leq V(0) e^{-2 k_2 t}
 \]
 
-Despite \ref{eq.3:actuation_lyapunov} being a perfectly reasonable controller, but the control moment in \cite{lyapunov_outer_loop_control} was chosen as \ref{eq.3:actual_lyapunov_controller}.
+Despite \ref{eq.3:actuation_lyapunov} being a perfectly reasonable controller, the control moment in \cite{lyapunov_outer_loop_control} was chosen as \ref{eq.3:actual_lyapunov_controller}.
 
 \begin{align}
 u =
@@ -450,7 +544,7 @@ The results in Figure~\ref{fig.3:lyapunov_example_results} demonstrate smooth co
 \end{figure}
 
 \section{Consensus-Based Coordination} \label{sec.3:Consensus-Based Coordination}
-\todo{This entire section}
+
 Consensus-based coordination is a fundamental approach in multi-agent systems, where a group of agents cooperatively achieves a common objective through local interactions.
 Typical applications include formation control, distributed estimation, flocking, and cooperative robotics.
 The key idea is that global coordination emerges from simple local interaction rules defined by the communication network.
@@ -464,7 +558,7 @@ Let the communication network be represented by a graph
 \end{equation}
 where $\mathcal{V} = \{1,2,\dots,N\}$ is the set of nodes (agents) and $\mathcal{E} \subseteq \mathcal{V} \times \mathcal{V}$ is the set of edges representing information exchange.
 
-If information flow between agents is bidirectional, the graph is undirected; otherwise, it is directed.
+If information flow between agents is bidirectional, the graph is undirected; otherwise, directed.
 The connectivity properties of $\mathcal{G}$ play a crucial role in determining whether consensus can be achieved.
 
 \subsection{Adjacency Matrix}
@@ -525,7 +619,7 @@ If the communication graph is connected, all states converge to a consensus valu
 \end{equation}
 
 For undirected graphs, the consensus value corresponds to the average of the initial states.
-The convergence rate is influenced by the second smallest eigenvalue of the Laplacian, known as the \textit{algebraic connectivity}. An example of a consensus algorithm can be seen in \cite{2D_circle_formation_phase_spliting_2}, where a consensus algorithm is used in order for given a circular topology all agents obtain the same center around which to form a circle.
+The convergence rate is influenced by the second smallest eigenvalue of the Laplacian, known as the \textit{algebraic connectivity}. An example of a consensus algorithm can be seen in \cite{Jin2018}, where a consensus algorithm is used in order for given a circular topology all agents obtain the same center around which to form a circle.
 
 \subsection{Extensions and Remarks}
 

@@ -1,0 +1,339 @@
+\documentclass{article}
+% ----------------------------------------------------------------------
+% Define external packages, language, margins, fonts, new commands 
+% and colors
+% ----------------------------------------------------------------------
+\usepackage[utf8]{inputenc} % Codification
+\usepackage[english]{babel} % Writing idiom
+
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage[T1]{fontenc}
+\usepackage{imakeidx}
+\usepackage{circuitikz}
+\usetikzlibrary{positioning}
+\usepackage[export]{adjustbox} % Align images
+\usepackage{amsmath} % Extra commands for math mode
+\usepackage{caption}
+\usepackage{amssymb} % Mathematical symbols
+\usepackage{anysize} % Personalize margins
+    %\marginsize{2cm}{2cm}{2cm}{2cm} % {left}{right}{above}{below}
+\usepackage{appendix} % Appendices
+\usepackage{cancel} % Expression cancellation
+\usepackage{placeins}
+\usepackage{caption} % Captions
+    \captionsetup{labelfont={bf}}
+\usepackage{cite} % Citations, like [1 - 3]
+\usepackage{color} % Text coloring
+\usepackage{fancyhdr} % Head note and footnote
+    \pagestyle{fancy}
+    \fancyhf{}
+    \fancyhead[L]{
+        \includegraphics[width=4cm]{Imagens/NovaFct.png}
+    } % Left of Head notea
+    \fancyhead[R]{\footnotesize Controlo em Sistemas Ciber-físicos} % Right of Head note
+    \fancyfoot[L]{\footnotesize MEEC} % Left of Footnote
+    \fancyfoot[R]{\thepage  } % Center of Footnote
+    %\fancyfoot[R]{\footnotesize Degree} % Right of Footnote
+    \renewcommand{\footrulewidth}{0.4pt} % Footnote rule
+\usepackage{float} % Utilization of [H] in figures
+\usepackage{graphicx} % Figures in LaTeX
+\usepackage[colorlinks = true, plainpages = true, linkcolor = istblue, urlcolor = istblue, citecolor = istblue, anchorcolor = istblue]{hyperref}
+\usepackage{indentfirst} % First paragraph
+\usepackage[super]{nth} % Superscripts
+\usepackage{siunitx} % SI units
+
+\usepackage{tocloft}%style the listofcontent to have dots
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+
+\usepackage[list=true, listformat=simple]{subcaption} % Subfigures
+
+\usepackage{titlesec} % Font
+    \titleformat{\section}{\Large\bfseries}{\thesection}{1em}{}
+    \titleformat{\subsection}{\large\bfseries}{\thesubsection}{1em}{}
+    \titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection}{1em}{}
+    %\fancyfoot[C]{\thepage}
+
+%code
+\usepackage[breakable]{tcolorbox}
+
+\graphicspath{ {Imagens/.} }
+
+% Code highlighting
+\usepackage{listings}
+\lstset{ 
+    language=Matlab,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny,
+    stepnumber=1,
+    numbersep=5pt,
+    backgroundcolor=\color{cellbackground}, % background color for the code block
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{dkgreen},
+    stringstyle=\color{red},
+    breaklines=true,
+    breakatwhitespace=false,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    captionpos=b,
+}
+
+%pseudocode styling
+\newcounter{nalg}[section] % defines algorithm counter for chapter-level
+\DeclareCaptionLabelFormat{simple}{Algoritmo \thenalg} % defines a new caption label as Algorithm x.y
+\lstnewenvironment{algorithm}[1][] % defines the algorithm listing environment
+{
+    \vspace{1ex}
+    \refstepcounter{nalg} % increments algorithm number
+    \captionsetup{labelformat=simple,labelsep=colon,position=top} % set caption position to top
+    \lstset{ % this is the style
+        mathescape=true,
+        frame=tB,
+        numbers=left, 
+        numberstyle=\tiny,
+        basicstyle=\scriptsize, 
+        keywordstyle=\color{black}\bfseries\em,
+        keywords={input, output, return, datatype, function, in, if, else, foreach, while, begin, end}, % add the keywords you want, or load a language as Rubens explains in his comment above.
+        numbers=left,
+        xleftmargin=.04\textwidth,
+        #1 % this is to add specific settings to an usage of this environment (for instance, the caption and referable label)
+    }
+}
+{}
+
+% Exact colors from NB
+\definecolor{incolor}{HTML}{303F9F}
+\definecolor{outcolor}{HTML}{D84315}
+\definecolor{cellborder}{HTML}{CFCFCF}
+\definecolor{cellbackground}{HTML}{F7F7F7}
+\definecolor{commentcolour}{rgb}{0.42, 0.45, 0.51}
+\definecolor{string}{rgb}{0.42, 0.45, 0.51}
+
+\usetikzlibrary{shapes,arrows}
+\tikzstyle{block} = [draw, rectangle, 
+    minimum height=2.5em, minimum width=3.5em]
+\tikzstyle{sum} = [draw, circle, node distance=1cm]
+\tikzstyle{input} = [coordinate]
+\tikzstyle{output} = [coordinate]
+\tikzstyle{pinstyle} = [pin edge={to-,thin,black}]
+
+
+% Random text (not needed)
+\usepackage{lipsum}
+\usepackage{duckuments}
+
+\usepackage{cleveref}
+
+\usepackage{xcolor}
+
+% New and re-newcommands
+\newcommand{\sen}{\operatorname{\sen}} % Sine function definition
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}} % Specific rule definition
+\renewcommand{\appendixpagename}{\LARGE Appendices}
+
+% Colors
+\definecolor{istblue}{RGB}{28, 118, 196}
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+
+\usepackage{amsmath,amssymb}
+\usepackage{bm}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                 Document                             %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+
+% ----------------------------------------------------------------------
+% Cover
+% ----------------------------------------------------------------------
+\begin{center}
+    \begin{figure}
+        \vspace{-1.0cm}
+        \includegraphics[scale = 1, left]{Imagens/NovaFct.png} % Nova logo
+    \end{figure}
+
+    \mbox{}\\[2.0cm]
+    \textsc{\Huge Mestrado em Engenharia Eletrotécnica e de Computadores}\\[2.5cm]
+    \textsc{\LARGE Controlo em Sistemas Ciber-físicos}\\[2.0cm]
+    \HRule\\[0.4cm]
+    {\large \bf { 
+        Controlling Satellite Dynamics\\
+    }[\texttt{EN}]}\\[0.2cm]
+    \HRule\\[1.5cm]
+\end{center}
+
+\begin{flushleft}
+    \textbf{Authors:}
+\end{flushleft}
+
+\begin{center}
+    \begin{minipage}{0.5\textwidth}
+        \begin{flushleft}
+            Filipe Cavalheiro (70119)\\
+        \end{flushleft}
+    \end{minipage}%
+    \begin{minipage}{0.5\textwidth}
+        \begin{flushright}
+            \href{mailto:fs.cavalheiro@campus.fct.unl.pt}{\texttt{fs.cavalheiro@campus.fct.unl.pt}}
+        \end{flushright}
+    \end{minipage}
+\end{center}
+
+    \vspace{4cm}
+
+    \begin{center}
+        \large \bf 2025/2026 -- 1º Semestre
+    \end{center}
+
+    \thispagestyle{empty}
+
+    \setcounter{page}{0}
+
+    \newpage
+
+    \newpage
+
+    \renewcommand{\contentsname}{Table of contents}
+    \tableofcontents % Generates the table of contents
+    \newpage
+
+    \renewcommand{\listfigurename}{List of Images}
+    \listoffigures
+    \newpage
+
+\section*{Multi-Agent Drone System on a Sphere}
+
+Consider a set of $N$ drones constrained to move on the surface of a sphere of radius $R > 0$.
+
+\subsection*{State Definition}
+
+For each drone $i \in \{1,\dots,N\}$, the state vector is defined as
+\begin{equation}
+    \bm{x}_i =
+    \begin{bmatrix}
+    \bm{p}_i \\
+    \bm{v}_i \\
+    \mathrm{vec}(\bm{R}_i) \\
+    \bm{\omega}_i
+    \end{bmatrix}
+    \in \mathbb{R}^{18},
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $\bm{p}_i \in \mathbb{R}^3$ is the position,
+    \item $\bm{v}_i \in \mathbb{R}^3$ is the linear velocity,
+    \item $\bm{R}_i \in SO(3)$ is the rotation matrix,
+    \item $\bm{\omega}_i \in \mathbb{R}^3$ is the angular velocity.
+\end{itemize}
+
+\subsection*{Geodesic Distance Between Agents}
+
+For agents $i$ and $j$, the geodesic distance on the sphere is
+\begin{equation}
+    d_{ij} = R \arccos\!\left(
+    \frac{\tilde{\bm{p}}_i \cdot \tilde{\bm{p}}_j}{R^2}
+    \right).    
+\end{equation}
+
+
+\subsection*{Reference Point Initialization}
+
+A set of $N$ reference points $\{\bm{p}_i^{\mathrm{ref}}\}$ is generated on the sphere using a Fibonacci lattice:
+\[
+\|\bm{p}_i^{\mathrm{ref}}\| = R.
+\]
+
+The minimum safe distance is chosen as the average nearest-neighbor distance:
+\begin{equation}
+    d_{\min} = \frac{1}{N} \sum_{i=1}^N
+    \frac{1}{N-1} \sum_{\substack{j=1 \\ j \neq i}}^N d_{ij}^{\mathrm{ref}}.
+\end{equation}
+
+$\frac{1}{N-1}$ because of $j \neq i$
+
+
+\subsection*{Projection onto the Sphere}
+
+At each time step $k$, the corresponding unit normal vector is: 
+\[
+\bm{n}_i = \frac{\bm{p}_i}{\|\bm{p}_i\|}.
+\]
+
+
+the position of each drone is projected onto the sphere:
+\[
+\tilde{\bm{p}}_i = R \bm{n}_i.
+\]
+
+\subsection*{Lyapunov-Based Distance Control}
+
+Define the distance error
+\[
+e_{ij} = d_{ij} - d_{\min}.
+\]
+
+The control interaction is active only when agents are closer than the safe distance:
+\[
+\text{if } e_{ij} \le 0.
+\]
+
+The pairwise repulsion direction is approximated by the Euclidean direction
+\[
+\bm{d}_{ij} = \frac{\tilde{\bm{p}}_i - \tilde{\bm{p}}_j}
+{\|\tilde{\bm{p}}_i - \tilde{\bm{p}}_j\|}.
+\]
+
+The cumulative control vector for agent $i$ is
+\begin{equation}
+    \bm{u}_i =
+    \begin{cases}
+    - k \displaystyle\sum_{\substack{j=1 \\ j \neq i}}^N e_{ij} \bm{d}_{ij}, & \text{if } e_{ij} \le 0, \\[6pt]
+    - k \displaystyle\sum_{\substack{j=1 \\ j \neq i}}^N 0, & \text{if } e_{ij} > 0.
+    \end{cases}
+\end{equation}
+where $k > 0$ is a gain.
+
+\subsection*{Projection onto the Tangent Space}
+
+To enforce motion on the sphere, the control is projected onto the tangent plane:
+\[
+\bm{u}_i^{\perp} =
+\bm{u}_i - (\bm{u}_i^\top \bm{n}_i)\bm{n}_i.
+\]
+
+\subsection*{Tracking Controller}
+
+Each drone tracks the reference position $\bm{p}_i^{d}$ using a geometric controller
+(Mellinger-type), producing thrust and torque inputs:
+\[
+(\bm{T}_i, \bm{\tau}_i)
+= \mathcal{C}(\bm{p}_i, \bm{v}_i, \bm{R}_i, \bm{\omega}_i,
+\bm{p}_i^{d}).
+\]
+
+The position tracking error $\bm{e}_{p,i}$ is integrated as
+\[
+\bm{\xi}_{p,i}(k+1) =
+\bm{\xi}_{p,i}(k) + \Delta t\, \bm{e}_{p,i}(k).
+\]
+
+\subsection*{Drone Dynamics}
+
+The continuous-time dynamics are given by
+\begin{align*}
+\dot{\bm{p}}_i &= \bm{v}_i, \\
+\dot{\bm{v}}_i &= \bm{f}(\bm{R}_i, \bm{T}_i), \\
+\dot{\bm{R}}_i &= \bm{R}_i [\bm{\omega}_i]_\times, \\
+\dot{\bm{\omega}}_i &= \bm{g}(\bm{\omega}_i, \bm{\tau}_i),
+\end{align*}
+where $[\cdot]_\times$ denotes the skew-symmetric operator.
+
+A forward Euler discretization with step $\Delta t$ is used:
+\[
+\bm{x}_i(k+1) = \bm{x}_i(k) + \Delta t\, \dot{\bm{x}}_i(k).
+\]
+
+\end{document}

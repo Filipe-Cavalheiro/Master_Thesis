@@ -5,13 +5,17 @@
 %%
 %% Abstract in Portuguese
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\typeout{NT FILE abstract-en.tex}%
 
-\typeout{NT FILE abstract-pt.tex}%
-Os drones tornaram-se cada vez mais populares nos últimos anos devido à sua versatilidade em múltiplas ocasiões, seja no contexto militar, civil, ou para transporte, mapeamento ou vigilância. Com este aumento, não só têm surgido soluções novas e inovadoras para diversos problemas, como também atores mal-intencionados têm tirado proveito destas mesma tecnologias.
-Esta tese aborda este problema através do estudo de jogos de perseguição-evasão, com foco no planeamento de trajetórias para garantir um percurso livre de colisões numa perseguição envolvendo múltiplos drones a um infrator. O rastreamento de referência foi realizado através de um controlador Millinger já validado, sendo a parte principal da tese baseada em funções de Lyapunov de controlo numa dada manifold.
+Os drones têm-se tornado cada vez mais populares nos últimos anos devido à sua versatilidade numa vasta gama de aplicações, incluindo transporte, mapeamento de terrenos, espectáculos aéreos e vigilância. A par deste rápido crescimento, não só surgiram soluções inovadoras para problemas complexos, como também agentes maliciosos encontraram formas de explorar estas tecnologias, conduzindo a violações de espaço aéreo restrito ou protegido.
 
+Esta dissertação aborda este desafio através da proposta de um método não destrutivo para forçar um drone não cooperante a sair de zonas restritas. A opção por uma abordagem não destrutiva é motivada por preocupações de segurança, uma vez que a destruição física pode resultar na queda de destroços suscetíveis de causar danos em infraestruturas, como aeroportos ou áreas residenciais, e de colocar em risco a vida humana. Em contraste, o método proposto baseia-se numa orientação controlada para redireccionar de forma segura o drone intruso para fora do espaço aéreo não autorizado.
+
+Para este fim, é estudado o problema da navegação multi-agente e do cerco de um alvo, com ênfase no movimento livre de colisões. É desenvolvido um novo enquadramento de cerco que, tanto quanto é do conhecimento do autor, não foi previamente explorado na literatura. O seguimento de referências é realizado recorrendo a um controlador não linear bem estabelecido para a manipulação de agentes (Mellinger), combinado com um controlador de definição de trajectórias baseado em Funções de Lyapunov de Controlo definidas na variedade da esfera bidimensional. Esta abordagem assegura um seguimento de trajectórias estável e preciso para cada drone, permitindo simultaneamente um comportamento coordenado e livre de colisões no sistema multi-agente.
+
+% Abstract keywords
 \keywords{
   \gls{CLF} \and
-  UAV \and
-  Path planning
+  \gls{UAV} \and
+  Planeamento de trajectórias
 }
