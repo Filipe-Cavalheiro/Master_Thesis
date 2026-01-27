@@ -10,27 +10,8 @@ clearvars iD;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Fibonacci sphere values
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if Param.nD >= 3
-    fib_ref_points= get_fibonacci_points(Param.nD, Param.sphere_radius);
-    fib_ref_points = fib_ref_points';
-    
-    % Compute geodesic distances between all pairs
-    ref_geo_distances = geo_distances(fib_ref_points', Param.sphere_radius);
-    
-    dist_vals = zeros(Param.nD, Param.nD-1);
-    
-    for i = 1:Param.nD
-        distances = ref_geo_distances(i, :);
-        [sorted_dists, sorted_idx] = sort(distances);
-        dist_vals(i,:) = sorted_dists(1:(Param.nD-1));
-    end
-    
-    overall_avg_distance = mean(mean(dist_vals, 2)); % Mean across each row
-    fprintf('overall_avg_distance: %.4f \n', overall_avg_distance);
-    min_safe_dist = overall_avg_distance;
-    
-    clearvars dist_vals sorted_dists sorted_idx distances;
-end
+fib_ref_points= get_fibonacci_points(Param.nD, Param.sphere_radius);
+fib_ref_points = fib_ref_points';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Simulation initialization

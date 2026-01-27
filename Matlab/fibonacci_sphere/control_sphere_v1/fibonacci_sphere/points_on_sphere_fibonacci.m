@@ -4,7 +4,7 @@ clear; clc; %close all;
 % for j = 1:100
 %     start = clock;
     % Number of points
-    P = 9;                  
+    P = 1;                  
     N = floor((P-1)/2);         % Since P = 2N + 1 works best for odd P
     
     % Sphere radius
@@ -22,8 +22,12 @@ clear; clc; %close all;
     theta = diff(theta_pos);
     
     phi_pos = 2*pi*idx/phi_golden;  % longitude (eq: 2.5, da tese)
-    phi = diff(phi_pos);
-    phi = phi(1) ;
+    if size(phi_pos) < 2
+        phi = 0;
+    else
+        phi = diff(phi_pos);
+        phi = phi(1) ;
+    end
     
     theta_tmp = theta_pos(1);
     phi_tmp = phi_pos(1);

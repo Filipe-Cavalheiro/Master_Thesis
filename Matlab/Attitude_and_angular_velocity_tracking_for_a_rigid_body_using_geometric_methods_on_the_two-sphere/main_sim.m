@@ -125,3 +125,28 @@ subplot(3,1,2); plot(t, omega_hist(2,:)); grid on; ylabel('\omega_2');
 subplot(3,1,3); plot(t, omega_hist(3,:)); grid on; ylabel('\omega_3');
 xlabel('Time [s]');
 sgtitle('Angular Velocity');
+
+% === Animation of Pointing Direction on S^2 ===
+figure; hold on; grid on; axis equal;
+[xs,ys,zs] = sphere(50);
+surf(xs,ys,zs, ...
+    'FaceAlpha',0.25,'EdgeColor','none','FaceColor',[0.85 0.85 0.85]);
+
+xlabel('x'); ylabel('y'); zlabel('z');
+title('Pointing Direction Animation on S^2');
+view(3);
+
+% Plot desired equilibrium points
+plot3(q_d(1), q_d(2), q_d(3), 'kp', 'MarkerSize',12, 'MarkerFaceColor','k');
+text(q_d(1), q_d(2), q_d(3), ' q_d', 'FontSize',12);
+
+% Initialize trajectory and current point
+traj = plot3(q_hist(1,1), q_hist(2,1), q_hist(3,1), 'r','LineWidth',2);
+current = plot3(q_hist(1,1), q_hist(2,1), q_hist(3,1), 'ro','MarkerFaceColor','r', 'MarkerSize',6);
+
+% Animation loop
+for k = 1:10:Nsim   % skip some frames for speed
+    set(traj, 'XData', q_hist(1,1:k), 'YData', q_hist(2,1:k), 'ZData', q_hist(3,1:k));
+    set(current, 'XData', q_hist(1,k), 'YData', q_hist(2,k), 'ZData', q_hist(3,k));
+    drawnow;
+end

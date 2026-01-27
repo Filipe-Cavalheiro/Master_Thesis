@@ -1,11 +1,20 @@
-function fibonacci_points = get_fibonacci_points(P, R)
+function fibonacci_points = get_fibonacci_points(P, R, verbose)
     % This function returns the desired trajectory for the drones to form a 
     % sphere around a point
     % input parameters:
     % P - number of drones
     % R - radios of sphere
+
     if P < 3
-        error("Not enought points")
+        error('Not enough elements (P must be >= 3).');
+    end
+
+    if mod(P, 2) == 0
+        error('Even number of elements is not allowed.');
+    end
+
+    if nargin < 3
+        verbose = false;
     end
 
     % Number of fibonacci_points           
@@ -45,4 +54,8 @@ function fibonacci_points = get_fibonacci_points(P, R)
     z_fibonacci(P) = R * cos(theta_tmp);
     
     fibonacci_points = [x_fibonacci(:), y_fibonacci(:), z_fibonacci(:)];
+    if verbose
+        fprintf('fibonacci_points:\n');
+        disp(fibonacci_points);
+    end
 end
