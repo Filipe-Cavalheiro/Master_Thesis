@@ -53,9 +53,8 @@ function q = linear_motion_ref( ...
     q_s = q_s + Param.dTi * q_dot;
 
     % ---------- Enforce S² constraint (local) ----------
-    q_s  = Rad * q_s  / norm(q_s);
-    q_d = Rad * q_d / norm(q_d);
+    q_s = Rad * q_s  / norm(q_s);
 
     % ---------- Shift back to world frame ----------
-    q   = q_s  + c_sphere;
+    q = q_s  + c_sphere;
 end
