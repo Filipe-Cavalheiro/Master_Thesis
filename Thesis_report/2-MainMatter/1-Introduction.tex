@@ -11,6 +11,8 @@
 \chapter{Introduction}
 \label{cha:introduction}
 
+\glsresetall
+
 \prependtographicspath{{5-Figures/Covers/}}
 
 % epigraph configuration
@@ -18,13 +20,10 @@
 \setlength\epigraphwidth{12.5cm}
 \setlength\epigraphrule{0pt}
 
-
-
 \section{Motivation} \label{sec.1:Motivation}
 
-The interest in drones has been growing from a research and military standpoint. Drones are being increasingly used for aerial surveillance, 3D mapping, among other things. Doing such tasks autonomously requires reliable navigation from the drones, particularly in unknown areas. Moreover, gls{UAVs} are becoming more developed for scenarios where it is advantageous to deploy an unmanned vehicle that has a high level of autonomy to carry out tasks that can be done without human supervision. However, these devices aren't used only in the research and industry fields, as many people have incorporated drones in their day to day lives, usually as a hobby. Although there is nothing wrong with using drones for fun there are some issues, such as safety and privacy, that need to be respected. A good example are airports, where the sighting of a drone within the airport's aerial space can cause a temporary shutdown, leading to delayed flights. Another example is the use of drones as a form to break the privacy of others. If not regulated drones can be used a hardly traceable method for spying into people's homes, permitting the drone's owner to see and record inside someone's property, which is a clear breach of privacy. For this reasons many countries, including Portugal, have laws and regulations on this subject. Some of the rules applied to the piloting of drones in Portugal set forth by \gls{ANAC} include not flying over crowds of people, not flying above 120 meters, and not dropping materials from the drone. Moreover, it is necessary to go to the authorities in order to get assigned a category to be able to fly the drone legally, where each category has a slightly different sets of rules, depending on the desired purpose for the drone. With this in mind a clear question comes on how to capture safely and with the least impact the law evading target.This thesis focuses on methods of guaranteeing encirclement evader without the use of destructive methods.
+The interest in drones has been growing from a research and military standpoint. Drones are being increasingly used for aerial surveillance, 3D mapping, among other things. Doing such tasks autonomously requires reliable navigation from the drones, particularly in unknown areas. Moreover, \gls{UAV} are becoming more developed for scenarios where it is advantageous to deploy an unmanned vehicle that has a high level of autonomy to carry out tasks that can be done without human supervision. However, these devices aren't used only in the research and industry fields, as many people have incorporated drones in their day to day lives, usually as a hobby. Although there is nothing wrong with using drones for fun there are some issues, such as safety and privacy, that need to be respected. A good example are airports, where the sighting of a drone within the airport's aerial space can cause a temporary shutdown, leading to delayed flights. Another example is the use of drones as a form to break the privacy of others. If not regulated drones can be used a hardly traceable method for spying into people's homes, permitting the drone's owner to see and record inside someone's property, which is a clear breach of privacy. For this reasons many countries, including Portugal, have laws and regulations on this subject. Some of the rules applied to the piloting of drones in Portugal set forth by \gls{ANAC} include not flying over crowds of people, not flying above 120 meters, and not dropping materials from the drone. Moreover, it is necessary to go to the authorities in order to get assigned a category to be able to fly the drone legally, where each category has a slightly different sets of rules, depending on the desired purpose for the drone. With this in mind a clear question comes on how to capture safely and with the least impact the law evading target.This thesis focuses on methods of guaranteeing encirclement evader without the use of destructive methods.
 
-  
 \section{Problem Statement} \label{sec.1:Problem Statement}
 
 The guaranteed capture of an agent such as a drone, ship, or aircraft—has been a subject of research for over a century, dating back to early work in game theory \cite{game_theory_1925}. Closely related is the problem of determining optimal formation for encircling the target be it fixed or in motion.
@@ -37,15 +36,14 @@ This emphasis on \gls{2D} pursuit limits the applicability of existing approache
 
 In this thesis, the focus is on guaranteeing encirclement in a 3D environment. Specifically, the work addresses, the creation of positions around a target, their navigation and the generation of collision-free trajectories during this process. The objective is to ensure safe and coordinated motion while achieving and maintaining an encirclement configuration in 3D space.
 
-At present, the encirclement strategy is formulated on an $\mathrm{SO}(2)$ manifold, corresponding to a two-circle representation around the target. While this constraint simplifies the problem and enables rigorous analysis, the proposed framework is designed with extensibility in mind. Future extensions that might not be complete during these thesis but be possible future directions of research aim to generalize the approach to arbitrary continuous and fully differentiable surfaces, allowing encirclement on more complex manifolds, as well as having a consensus between chasing agents making it so that non centralized solution are achievable.
+At present, the encirclement strategy is formulated on an $\mathbb{S}^2$ manifold, corresponding to a two-circle representation around the target. While this constraint simplifies the problem and enables rigorous analysis, the proposed framework is designed with extensibility in mind. Future extensions that might not be complete during these thesis but be possible future directions of research aim to generalize the approach to arbitrary continuous and fully differentiable surfaces, allowing encirclement on more complex manifolds, as well as having a consensus between chasing agents making it so that non centralized solution are achievable.
 
 \section{Report Organization} \label{sec.1:Report organization}
 
-Chapter~\ref{cha:State of the art} refers some contextualization about the previous available works be it 2D and 3D referring the most common and well known methods as well as a focus on some specific papers about encercliment but also some other works considered important and necessary for the developed work along the thesis.
+Chapter~\ref{cha:State of the art} refers some contextualization about the previous available works be it 2D and 3D referring the most common and well known methods as well as a focus on some specific papers about encirclement but also some other works considered important and necessary for the developed work along the thesis.
 
-Chapter~\ref{cha:Background work} focuses on a more mathematical approach to some themes that are of great relevance for the complete understanding of the work developed. It was considered a necessary section due to its distinct theming compared with the state of the art.
+Chapter~\ref{cha:Background} focuses on a more mathematical approach to some themes that are of great relevance for the complete understanding of the work developed. It was considered a necessary section due to its distinct theming compared with the state of the art.
 
 Chapter~\ref{cha:Developed Work} presets methods for achieving optimal and evenly spaced distributions of points on the two-sphere. These methods are used to define desired agent configurations around the target. It is also shown different methods to guarantee a collision free navigation.
 
-Chapter~\ref{cha:Timeline and Conclusions} talks about the timeline for the rest of the thesis including desired results and work progress. The conclusions mention once more the current state of the developed work and future objective.
-
+Chapter~\ref{cha:Conclusions and Future Work} talks about the timeline for the rest of the thesis including desired results and work progress. The conclusions mention once more the current state of the developed work and future objective.
