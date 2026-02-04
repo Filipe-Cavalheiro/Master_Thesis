@@ -210,6 +210,7 @@ legend([hInit, hProj], ...
     {'Initial Positions', 'Initial Position Projection'});
 
 lgd = legend;
+lgd.Position = [0.65 0.75 0.25 0.1];  % [x y width height]
 lgd.AutoUpdate = 'off';
 
 for iD = 1:Param.nD

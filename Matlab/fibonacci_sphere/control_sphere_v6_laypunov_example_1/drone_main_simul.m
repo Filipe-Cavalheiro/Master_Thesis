@@ -90,9 +90,12 @@ for k = 1:Nsim
         q_hist{iD}(:,k) = q{iD};
         q_d_hist{iD}(:,k) = q_d{iD};
 
-        % position reference generation
-        [Rad{iD}, q{iD}, q_d{iD}] = linear_motion_ref(Rad{iD},pos{iD},omega{iD},q_d{iD},omega_d{iD},Param);
+        % Position reference generation
+        q{iD} = linear_motion_ref(Rad{iD}, pos{iD},omega{iD},q_d{iD},omega_d{iD},[0;0;0], Param);
         
+        % Reduce q_d radius
+        [Rad{iD}, q_d{iD}] = update_radius(Rad{iD}, q{iD}, q_d{iD}, [0;0;0], Param);
+
         % get reference
         p_d =  q{iD};
         %v_d = v_ref{iD}(:,k);
@@ -133,23 +136,29 @@ for k = 1:Nsim
     end
 end
 
+%%
+
 figure; hold on; grid on; axis equal; view(3);
 [x_sphere, y_sphere, z_sphere] = sphere;
-% x_sphere = x_sphere * Param.sphere_radius;
-% y_sphere = y_sphere * Param.sphere_radius;
-% z_sphere = z_sphere * Param.sphere_radius;s
+x_sphere_2 = x_sphere * Param.sphere_radius;
+y_sphere_2 = y_sphere * Param.sphere_radius;
+z_sphere_2 = z_sphere * Param.sphere_radius;
+hSphere_2 = surf(x_sphere_2, y_sphere_2, z_sphere_2);
+hSphere_2.FaceAlpha = 0.3;
+hSphere_2.EdgeColor = 'r';
+hSphere_2.FaceColor = 'none';
 
 % Draw reference sphere
 hSphere = surf(x_sphere, y_sphere, z_sphere);
-hSphere.FaceAlpha = 0.3;
-hSphere.EdgeColor = 'none';
-hSphere.FaceColor = [0.8627,0.8627,0.8627];
+hSphere.FaceColor = 'none';
+hSphere.EdgeColor = 'b';
+hSphere.EdgeAlpha = 0.1;
 
 % Setup colors and plot handles for agents
 colors = lines(Param.nD);
 
 %%Create a label
-for iD = 1:Param.nD
+for iD = 1:1
     scatter3(x{iD}(1,1), x{iD}(2,1), x{iD}(3,1), ...
         50, colors(iD,:), 'x', 'LineWidth', 2, ...
         'HandleVisibility','off');
@@ -165,9 +174,21 @@ hInit = scatter3(NaN, NaN, NaN, ...
 hProj = scatter3(NaN, NaN, NaN, ...
     50, 'k', 'd', 'LineWidth', 2);
 
-legend([hInit, hProj], ...
-    {'Initial Positions', 'Final Objective'});
-lgd = legend;
+hdrone = scatter3(NaN, NaN, NaN, ...
+    50, 'k', 'x');
+
+hq = scatter3(NaN, NaN, NaN, ...
+    50, 'k', 'o', 'filled');
+
+hq_d = scatter3(NaN, NaN, NaN, ...
+    50, 'k', '+');
+
+lgd = legend([hInit, hProj, hdrone, hq, hq_d], ...
+    {'Initial Positions', 'Final Objective', 'drone', ...
+     '$q$', '$q_d$'});
+
+lgd.Interpreter = 'latex';
+lgd.Position = [0.75 0.75 0.1 0.25];  % [x y width height]
 lgd.AutoUpdate = 'off';
 %%End of create a label
 
@@ -180,8 +201,8 @@ for iD = 1:Param.nD
     href_ref{iD} = plot3(NaN, NaN, NaN, '+', 'Color', 'k', 'MarkerSize', 6, 'MarkerFaceColor', colors(iD,:));
 end
 
-xlabel('x'); ylabel('y'); zlabel('z');
-title('3D Trajectories of Agents – Evolution Over Time');
+% xlabel('x'); ylabel('y'); zlabel('z');
+% title('3D Trajectories of Agents – Evolution Over Time');
 
 % Animation loop
 for k = 1:Nsim

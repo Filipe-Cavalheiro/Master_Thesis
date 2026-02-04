@@ -142,7 +142,7 @@ for k = 1:Nsim
         end
     end
 end
-
+%%
 figure; hold on; grid on; axis equal; view(3);
 [x_sphere, y_sphere, z_sphere] = sphere;
 x_sphere = x_sphere * Param.sphere_radius;
@@ -174,6 +174,8 @@ hProj = scatter3(NaN, NaN, NaN, ...
 legend([hInit, hProj], ...
     {'Initial Positions', 'Final Objective'});
 lgd = legend;
+lgd.Units = 'normalized';     % relative to figure
+lgd.Position = [0.55 0.75 0.25 0.1];  % [x y width height]
 lgd.AutoUpdate = 'off';
 %%End of create a label
 
@@ -190,7 +192,7 @@ end
 c_sphere_animation = plot3(NaN, NaN, NaN, 'k', 'LineWidth', 1);
 
 xlabel('x'); ylabel('y'); zlabel('z');
-title('3D Trajectories of Agents – Evolution Over Time');
+%title('3D Trajectories of Agents – Evolution Over Time');
 
 
 % Animation loop
@@ -250,4 +252,4 @@ for k = 1:10:Nsim
     pause(0.01); % adjust speed of animation
 end
 
-print2pdf("test",true);
+print2pdf("final_result_t_15.pdf",true);

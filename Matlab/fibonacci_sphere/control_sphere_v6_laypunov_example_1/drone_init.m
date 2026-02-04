@@ -12,7 +12,14 @@ Nsim = round(Param.Tend/Param.dTi)+1;
 Param.g = 9.81;     % earth gravity
 Param.nD = 3; % number of drones
 Param.sphere_radius = 5;  % sphere radius
-Param.k_rad = 0.3; % radius reduction gain
+Param.k_rad = 0.7; % radius reduction gain
+
+% Outer-loop parameters
+Param.c = 0.3;                             % Nm (s/rad)
+Param.J = diag([0.0294 0.0305 0.0495]);    % kg m^2
+Param.tau = zeros(3,1);
+Param.K_r = diag([70 70 70]);
+Param.K_w = diag([7.056 7.320 11.88]) * 1e-1;
 
 % reference parameters
 Param.p_ref_static = [1;1;3];
@@ -35,7 +42,7 @@ Param.ref_mode = 2; % reference: 1 - square wave; 2 - circle
 Param.m = 5;        % drone mass
 Param.I = diag([2e-2,2e-2,3e-2]);  % inertia tensor
 Param.D = 0.00;     % frame drag coeficient
-Param.kp = diag([15,15,15]);
+Param.kp = diag([150,150,150]);
 Param.kv = diag([15,15,15]);
 Param.ki = diag([0,0,0]);
 Param.kR = diag([8,8,8]);

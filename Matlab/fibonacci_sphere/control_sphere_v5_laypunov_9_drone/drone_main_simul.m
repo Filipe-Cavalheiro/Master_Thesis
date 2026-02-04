@@ -176,6 +176,7 @@ hProj = scatter3(NaN, NaN, NaN, ...
 legend([hInit, hProj], ...
     {'Initial Positions', 'Initial Position Projection'});
 lgd = legend;
+lgd.Position = [0.65 0.75 0.2 0.1];  % [x y width height]
 lgd.AutoUpdate = 'off';
 
 % Setup colors and plot handles for agents
@@ -195,7 +196,7 @@ view(3);
 
 % Animation loop
 for k = 1:Nsim
-
+    
     % Index range: last 100 steps (or fewer at the beginning)
     k_start = max(1, k-99);
     k_start = max(1, k-Nsim);
@@ -230,12 +231,3 @@ for k = 1:Nsim
     drawnow;
     pause(0.01);
 end
-
-set(gcf,'Units','centimeters');
-screenposition = get(gcf,'Position');
-
-set(gcf, ...
-    'PaperPosition',[0 0 screenposition(3:4)], ...
-    'PaperSize',[screenposition(3:4)]);
-
-print -dpdf -painters result_fig

@@ -18,7 +18,6 @@ Param.k_rad = 0.3; % radius reduction gain
 Param.c = 0.3;                             % Nm (s/rad)
 Param.J = diag([0.0294 0.0305 0.0495]);    % kg m^2
 Param.tau = zeros(3,1);
-
 Param.K_r = diag([70 70 70]);
 Param.K_w = diag([7.056 7.320 11.88]) * 1e-1;
 

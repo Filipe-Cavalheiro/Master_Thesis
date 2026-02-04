@@ -36,7 +36,7 @@ function q = AFP_safe_guard(iD,  current_pos, q, min_safe_dist, Rad, c_sphere, P
 
         AB_tangent = AB_tangent / norm(AB_tangent);
 
-        repulsion_mag = (min_safe_dist - dist_vals(i))* 0.5;
+        repulsion_mag = (min_safe_dist - dist_vals(i))* 0.3;
 
         artificial_potential_vector = ...
             artificial_potential_vector + repulsion_mag * AB_tangent;

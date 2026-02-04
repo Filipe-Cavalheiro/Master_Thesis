@@ -253,4 +253,4 @@ for k = 1:10:Nsim
     pause(0.01); % adjust speed of animation
 end
 
-print2pdf("test",true);
+print2pdf("output.pdf",true);

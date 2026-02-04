@@ -82,6 +82,6 @@ function animate_simulation(x, q_hist, q_d_hist, fib_ref_points, c_sphere, Param
             'ZData', c_sphere(3,idx));     
 
         drawnow;
-        pause(0.1);
+        pause(0.01);
     end
 end

@@ -1,16 +1,16 @@
-function print2pdf(outfilename,doprint)
-% https://stackoverflow.com/questions/3801730/get-rid-of-the-white-space-around-matlab-figures-pdf-output
+function print2pdf(outfilename, doprint)
     if exist('doprint','var') && doprint
-        h = gcf;
-        set(h, 'PaperUnits','centimeters');
-        set(h, 'Units','centimeters');
-        pos=get(h,'Position');
-        set(h, 'PaperSize', [pos(3) pos(4)]);
-        set(h, 'PaperPositionMode', 'manual');
-        set(h, 'PaperPosition',[0 0 pos(3) pos(4)]);
+        fig = gcf;
 
-        print('-dpdf',outfilename);
+        % Make figure large on screen
+        set(fig, 'Units','centimeters');
+        set(fig, 'Position',[1 1 30 20]);   % <-- make this as big as you want
+
+        % Export at high resolution (only affects rasterized content)
+        exportgraphics(fig, outfilename, ...
+            'ContentType','vector', ...   % keeps text/lines vector
+            'Resolution',600);            % high DPI for images
     end
-
 end
+
 
