@@ -14,15 +14,15 @@
 \glsresetall
 
 \section{Introduction} \label{sec.4:Introduction}
-As has been mentioned in Section~\ref{cha:State of the art} most methods for agent separation and encirclement rely on multiple methods being them either \gls{2D} or \gls{3D}, in this chapter the focus will be on a method believed to different from the previously mentioned methods rely of course in them as a basis and inspiration but with a though to be new  method of separation along the two-sphere.
+As discussed in Section~\ref{cha:State of the art}, most existing methods for agent separation and encirclement operate either in \gls{2D} or \gls{3D}. This chapter focuses on a method that is believed to differ from those previously presented for \gls{3D} formations. While it builds upon them as a basis and source of inspiration, it introduces a novel approach to separation on the two-sphere.
 
-This chapter can be separated in to 2 major categories, what methods there are to displace dots along the two-sphere in Section~\ref{sec.4:Explored Agent Positioning Strategies} in which for a desired number of agent how could the final desired position be displaced along the two-sphere as well as the outer/inner control loop architecture \ref{sec.4:Control loop architecture} where both the agent controller (outer) and the dot in sphere controller (inner).
+This chapter is structured into two principal components. The first concerns methods for distributing points on the two-sphere (Section~\ref{sec.4:Comparison of Agent Distributions on the Two-Sphere}), addressing how the desired final positions of a given number of agents can be arranged over the sphere. The second component presents the outer-inner control-loop architecture (Section~\ref{sec.4:Control loop architecture}), detailing both the outer agent controller and the inner controller responsible for the motion of points on the sphere.
 
-\section{Results and Comparison of Agent Distributions on the Two-Sphere} \label{sec.4:Results and Comparison of Agent Distributions on the Two-Sphere}
+\section{Comparison of Agent Distributions on the Two-Sphere} \label{sec.4:Comparison of Agent Distributions on the Two-Sphere}
 
 As outlined in Section~\ref{sec.3:Agent spacing on the two-sphere}, multiple approaches exist for distributing a prescribed number of agents on the two-sphere. In this section, the outcomes of each method are presented and systematically compared. Based on this comparison, the most suitable method is identified in light of the objectives and constraints of the present study.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
 
 \begin{minipage}{0.12\textwidth} % width for the row label
@@ -66,42 +66,79 @@ Poisson Disk\\Sampling:
 \includegraphics[width=5cm]{5-Figures/Chapter4/poisson_disk_sampling.png}
 \end{minipage}
 
-\begin{itemize}
-  \item \textbf{Longitude \& Latitude:} \(K = 29\), 1070 points;\\ mean runtime: 0.0016 sec, \(\sigma = 7.6877 \times 10^{-4}\) sec.
-  \item \textbf{Fibonacci Lattice:} 1001 points;\\ mean runtime: 2.4e-4 sec, \(\sigma = 9.3333 \times 10^{-4}\) sec.
-  \item \textbf{Thomson Minimal Energy:} MaxIter = 20.000, Seeds = 1--100, 31 points;\\ mean runtime: 0.9753 sec, \(\sigma = 0.1169\) sec.
-  \item \textbf{Poisson Disk Sampling:} width = 40, height = 40, minimum distance \(r = 1\), 1028 points;\\ mean runtime: 0.0751 sec, \(\sigma = 0.0014\) sec.
-\end{itemize}
-
 \caption{Agent positions resulting from each distribution methods.}
 \label{fig.4:methods_points_on_sphere}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[htbp]
   \centering
   \captionsetup{justification=centering,margin=2cm}
-  \includegraphics{5-Figures/Chapter4/comparing_methods_box_shape.pdf}
-  \caption{Overall runtime comparison of the different methods (100 trials).\\ Computer specification can be found at: \ref{appendix:Computer Specifications}}
+
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{5-Figures/Chapter4/comparing_methods_box_shape.pdf}
+    
+  \end{minipage}
+  \hfill
+  \begin{minipage}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{5-Figures/Chapter4/comparing_methods_box_shape_2.pdf}
+  \end{minipage}
+  \caption{Overall runtime comparison of the different methods (100 trials). Computer specification can be found at: \ref{appendix:Computer Specifications}}
   \label{fig.4:comparing_methods_box_shape}
 \end{figure}
 
-\begin{figure}[H]
-  \centering
-  \captionsetup{justification=centering,margin=2cm}
-  \includegraphics[width=\textwidth]{5-Figures/Chapter4/comparing_methods_box_shape_2.pdf}
-  \caption{Overall runtime comparison of the different methods (100 trials).\\ Computer specification can be found at: \ref{appendix:Computer Specifications}}
-  \label{fig.4:comparing_methods_box_shape_2}
-\end{figure}
 
-As shown in Figures~\ref{fig.4:methods_points_on_sphere}, the four methods produce noticeably different agent distributions. The longitude \& latitude method can be discarded due to its highly non-uniform spacing, which results in clustering near the poles. Thomson's minimal energy method, while producing high-quality uniform distributions, is computationally expensive \ref{fig.4:comparing_methods_box_shape} and therefore impractical for larger numbers of agents (note that only 31 agents where being used).
+As shown in Figures~\ref{fig.4:methods_points_on_sphere}, the four methods produce noticeably different agent distributions. The longitude \& latitude method can be discarded due to its highly non-uniform spacing, which results in clustering near the poles as well as the limitation of number of agents. Thomson's minimal energy method, while producing high-quality uniform distributions, is much more computationally expensive then the others methods as can be seen in Figure~\ref{fig.4:comparing_methods_box_shape} and Table~\ref{tab.4:Runtime comparison of point sampling methods}, the average time is 0.9753 while the others are at least 10x faster (between $2.4 \times 10^{-4}$  and $0.0751$) and therefore, impractical for larger numbers of agents (note that only 31 agents where being used) compared with the 1000 plus of the other methods.
 
-This leaves two viable options: the Fibonacci lattice and Poisson disk sampling. The Fibonacci lattice is extremely fast \ref{fig.4:comparing_methods_box_shape_2} and provides uniform coverage, but it is restricted to distributions on a spherical surface and is less flexible for arbitrary domains. Poisson disk sampling, in contrast, is more versatile and can be applied to arbitrary geometries, but it requires more computation and a gradient-based refinement step to achieve a fixed number of agents being the necessary separation distance initially unknown. Each method thus presents a trade-off between computational efficiency, uniformity, and flexibility. Due to the simplicity of the Fibonacci Lattice, it was chosen at the current time but with the development of the research it may be possible to generalize into any manifold making then necessary the transition to the Poisson Disk sampling.
 
-\section{Explored Agent Positioning Strategies} \label{sec.4:Explored Agent Positioning Strategies}
 
-This section discusses alternative methods that were explored to position agents on a spherical surface. Although the final configuration of each drone is based on the Fibonacci lattice, several other approaches were investigated, inspired by phase-separation methods commonly used for 2D formations \cite{Litimein2021}, \cite{Jin2018}, \cite{Kim2007}.  In particular, an attempt was made to develop a displacement-based 3D method in which each drone maintains a fixed angular separation from its predecessor.
+\begin{table}[htbp]
+\caption{Runtime comparison of point sampling methods}
+\label{tab.4:Runtime comparison of point sampling methods}
+\centering
+\begin{tabular}{l c c c c}
+\hline
+\textbf{Property}
+& \makecell{\textbf{Lon--Lat}}
+& \makecell{\textbf{Fibonacci}}
+& \makecell{\textbf{Thomson}}
+& \makecell{\textbf{Poisson Disk}} \\
+\hline
+\makecell{Parameters}
+& \makecell{$K=29$}
+& \makecell{--}
+& \makecell{MaxIter=20000,\\ Seeds=1--100}
+& \makecell{$40\times40$,\\ $r=1$} \\
 
-The standard Fibonacci lattice formulation could not be directly applied in this context. While the longitude increments between agents are constant, allowing a simple angular separation rule, the latitude is computed through a nonlinear $\arcsin(\cdot)$ mapping (see \eqref{eq.2:fibonacci_lat_lon}), which is inherently non-uniform. This nonlinearity prevents the use of a single, constant spacing rule across all agents. Several attempts were made to linearize this relationship so that all agents could rely on identical local control laws, but none yielded satisfactory results. For completeness, the tested approaches are summarized below.
+\makecell{Number of points}
+& \makecell{1070}
+& \makecell{1001}
+& \makecell{31}
+& \makecell{1028} \\
+
+\makecell{Mean runtime\\ (s)}
+& \makecell{0.0016}
+& \makecell{$2.4\times10^{-4}$}
+& \makecell{0.9753}
+& \makecell{0.0751} \\
+
+\makecell{Std. deviation\\ $\sigma$ (s)}
+& \makecell{$7.6877\times10^{-4}$}
+& \makecell{$9.3333\times10^{-4}$}
+& \makecell{0.1169}
+& \makecell{0.0014} \\
+\hline
+\end{tabular}
+\end{table}
+
+This leaves two viable options: the Fibonacci lattice and Poisson disk sampling. The Fibonacci lattice is the fastest of the two methods as shown in Figure~\ref{fig.4:comparing_methods_box_shape} being still $666.66\dots\%$ faster on average while providing uniform coverage, but it is restricted to distributions on a spherical surface and is less flexible for arbitrary domains. Poisson disk sampling, in contrast, is more versatile and can be applied to arbitrary geometries, but it requires more computation and a gradient-based refinement step to achieve a fixed number of agents being the necessary separation distance initially unknown. Each method thus presents a trade-off between computational efficiency, uniformity, and flexibility. Due to the simplicity of the Fibonacci Lattice, it was chosen at the current time but with the development of the research it may be possible to generalize into any manifold making then necessary the transition to the Poisson Disk sampling.
+
+\section{Alternative Agent Positioning Strategies} \label{sec.4:Alternative Agent Positioning Strategies}
+
+This section discusses alternative methods that were considered to work to position agents on a spherical surface. Although the final configuration of each drone is based on the Fibonacci lattice, several other approaches were investigated, inspired by phase-separation methods commonly used for 2D formations \cite{Litimein2021}, \cite{Jin2018}, \cite{Kim2007}.  In particular, an attempt was made to develop a displacement-based 3D method in which each drone maintains a fixed angular separation from its predecessor.
+
+The standard Fibonacci lattice formulation could not be directly applied in this context. While the longitude increments between agents are constant, allowing a simple angular separation rule, the latitude is computed through a nonlinear $\arcsin(\cdot)$ mapping, which is inherently non-uniform. This nonlinearity prevents the use of a single, constant spacing rule across all agents. Several attempts were made to linearize this relationship so that all agents could rely on identical local control laws, but none yielded satisfactory results. For completeness, the tested approaches are summarized below.
 
 \subsection{Mean Distance Between Points on the Sphere}
 In the first attempt, the geodesic distance between consecutive agents in the sequence was computed, and the mean of these distances was used as a reference spacing. This approach proved unsuccessful, as illustrated in Figure~\ref{fig.4:fibonacci_diff_methods} (row~2). The mean distance is heavily skewed by agents located near $\theta = \pi$, where inter-agent distances are significantly larger. For example, with 1001 points distributed on a sphere of radius $R = 5$, the mean distance was approximately 7.3270, corresponding to more than half the sphere's diameter. As a result, this metric does not provide a meaningful or usable spacing reference.
@@ -127,7 +164,7 @@ The motivation for this approach was twofold. First, by fixing $\theta_{\text{me
 
 However, despite these improvements, this approach still fails to guarantee uniform geodesic distances between neighboring agents. The imposed linearity in both $\theta$ and $z$ conflicts with the intrinsic geometry of the sphere, resulting in distorted inter-agent spacing. In particular, agents near the north and south region become closer than desired. The resulting shape comes due to the fact the points are forced (as intended) to spread equally along the z axis but this in turn makes the $i^{th}$ element be much lower than would be expected by X and Y coordinates.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
 
 \begin{minipage}{0.12\textwidth}
@@ -181,18 +218,18 @@ In summary, while this final approach partially alleviates the pole-clustering p
 
 This section focuses on how was the control of the drone in this case a quadrotor implemented in order to not only have the drone go to a desired position but also never collide with other agents. The system can be, as mentioned in the introduction, separated in two loops the inner loop responsible for having the actuation on the drone go to a desired waypoint with a desired velocity accelerations angle etc, as well as an outer loop that moves the drones desired waypoint, \gls{q},to the final desired point on the two-sphere, \gls{q_d}, the idea of having this outer loop where a point \gls{q} goes to \gls{q_d} comes from if non of the projected points on the sphere collide then non of the drones will either, this simplification of the collision space from $\mathbb{R}^3$ to $\mathbb{S}^2$ simplifies the system.
 
-Multiple methods will be shown in this section of a possible control architecture being the inner loop always fixed to a Mellinger controller since it has been proven to be effective \ref{sec.3:Non-linear Controller} while the outer loop controller varies. Two types of methodology will be shown either a desired inter distance of agents is given to the controller being then the controller a displacement based or simply the final desired position \gls{q_d} if given, (position based). In both methods the initial position of the point on the sphere \gls{q} is the projection of the initial/current position of the drone on the two-sphere. Then this controller moves that point until a desired minimal distance \gls{d_min} is met or the final desired position \gls{q_d} is obtained. In Figures~\ref{fig.4:mellinger_controller_architecture} the inner--loop using a Mellinger controller can be seen while in Figure~\ref{fig.4:generelized_controller_architecture} the final controller can be seen where the "controller" in question for the outer--loop will be discussed, is one of the belows defined controllers.
+Multiple methods will be shown in this section of a possible control architecture being the inner loop always fixed to a Mellinger controller since it has been proven to be effective, as shown in Figure~\ref{sec.3:Vehicle model and noninear control}, while the outer loop controller varies. Two types of methodology will be shown either a desired inter distance of agents is given to the controller being then the controller a displacement based or simply the final desired position \gls{q_d} if given, (position based). In both methods the initial position of the point on the sphere \gls{q} is the projection of the initial/current position of the drone on the two-sphere. Then this controller moves that point until a desired minimal distance \gls{d_avg} is met or the final desired position \gls{q_d} is obtained. In Figures~\ref{fig.4:mellinger_controller_architecture} the inner--loop using a Mellinger controller can be seen while in Figure~\ref{fig.4:generelized_controller_architecture} the final controller can be seen where the "controller" in question for the outer--loop will be discussed, is one of the belows defined controllers. The variables \gls{p_D_ref} and \gls{q} both indicated desired drone position, \gls{v_D_ref} desired drone velocity and \gls{a_D_ref} desired drone accelerations.
 
-\begin{figure}
+\begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{5-Figures/Chapter4/controller_architecture/mellinger_controller.png}
-  \caption{Mellinger Controller [ROUBADO DA PATRÍCIA!! TENHO QUE FZR O MEU]}
+  \includegraphics[width=\textwidth]{5-Figures/Chapter3/Mellinger Controller.pdf}
+  \caption{NonLinear Controller architecture based in \cite{Mellinger2011}}
   \label{fig.4:mellinger_controller_architecture}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{5-Figures/Chapter4/controller_architecture/generelized_controller_architecture.pdf}
+  \includegraphics[width=\textwidth]{5-Figures/Chapter4/controller_architecture/generalized_controller_architecture.pdf}
   \caption{outer/inner loop controller}
   \label{fig.4:generelized_controller_architecture}
 \end{figure}
@@ -205,44 +242,48 @@ However, this approach suffers from a fundamental limitation: none of the verifi
 
 Figure~\ref{fig.4:solver_solution} illustrates this issue for a scenario involving three drones. It can be observed that the intermediate solver-generated trajectories do not directly converge toward the Fibonacci lattice points, highlighting the practical limitations of this approach for real-time or tightly constrained multi-agent motion planning.
 
-\begin{figure}
+\begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.8\textwidth]{5-Figures/Chapter4/solutions/solver.pdf}
+  \includegraphics[width=0.4\textwidth]{5-Figures/Chapter4/solutions/solver.pdf}
   \caption{Trajectory obtained using an optimization-based solver (\texttt{fmincon}) for three drones.}
   \label{fig.4:solver_solution}
 \end{figure}
 
 \subsection{Artificial Potential Field (APF)}
 
-Let \gls{N_D} denote the number of drones and let  
+Let \gls{n_D} denote the number of drones and let  
 \begin{equation}
-  \{ q_i^{\mathrm{fib}} \in \mathbb{R}^3 \}_{i=1}^{N_D}
+  \{ q_i^{\mathrm{fib}} \in \mathbb{S}^3 \}_{i=1}^{N_D}
 \end{equation}
-be the Fibonacci lattice points distributed on a sphere of radius \gls{R_s}.
+be the Fibonacci lattice points distributed on a sphere of radius \gls{r_s}.
 
-The geodesic distance matrix $d_{ij}$ between all pairs of lattice points is computed, and the minimum safe distance
-\gls{d_min} is defined as the average geodesic distance
+The geodesic distance matrix $d_{ij}$, defined by Equation~\eqref{eq.4:geodesic_distance}, is computed between all pairs of lattice points, and the minimum safe distance \gls{d_avg} is defined as the average geodesic distance.At each simulation step \gls{k}, the position of each drone $i$ is projected onto the spherical manifold using Equation~\ref{eq.4:project_to_sphere}.
 
 \begin{equation}
-  d_{\min} = \frac{1}{N_D} \sum_{i=1}^{N_D} 
+  d_{ij} =
+  \begin{cases}
+  r_s\arccos\!\left( \dfrac{q_i^{\top}q_j}{r_s^2} \right), & i \neq j, \\[6pt]
+  \infty, & i = j .
+  \end{cases}
+  \label{eq.4:geodesic_distance}
+\end{equation}
+
+\begin{equation}
+  d_{avg} = \frac{1}{N_D} \sum_{i=1}^{N_D} 
   \left( \frac{1}{N_D-1} \sum_{\substack{j=1 \\ j \neq i}}^{N_D} d_{ij} \right).
-  \label{eq:d_min between drones}
+  \label{eq.4:d_avg between drones}
 \end{equation}
-
-At each simulation step \gls{k}, the position of each drone $i$ is projected onto the spherical manifold,
 
 \begin{equation}
-  q_i(k) = R_s \frac{p_i(k)}{\|p_i(k)\|},
+  q_i(k) = r_s \frac{p_i(k)}{\|p_i(k)\|},
+  \label{eq.4:project_to_sphere}
 \end{equation}
 
-where $p_i(k) \in \mathbb{R}^3$ is the Cartesian position of the drone.
-The geodesic distances $d_{ij}(k)$ between all projected points $q_i(k)$ are then evaluated.
-
-For each drone $i$, a repulsive artificial potential correction set is constructed using only neighboring drones whose geodesic distance violates the minimum safe distance constraint,
+where $p_i(k) \in \mathbb{R}^3$ is the Cartesian position of the drone and \gls{r_s} is the radius of the sphere. For each drone $i$, a repulsive artificial potential correction set is constructed using only neighboring drones whose geodesic distance violates the minimum safe distance constraint,
 \begin{equation}
-  \mathcal{N}_i(k) = \left\{ j \neq i \mid d_{ij}(k) < d_{\min} \right\}.
+  \mathcal{N}_i(k) = \left\{ j \neq i \mid d_{ij}(k) < d_{avg} \right\}.
 \end{equation}
-In order words a artificial potential force is only applied if the minimal distance between drones is not complied. Applying both drones an equal force of opposite directions. Being the the drones in the set $\mathcal{N}_i(k)$ the ones inside the minimal radius of the $i$-th drone.
+In order words a artificial potential force is only applied if the minimal distance between drones is not satisfied. Applying both drones an equal force of opposite directions. Being the drones in the set $\mathcal{N}_i(k)$ the ones inside the minimal radius of the $i$-th drone.
 
 The artificial potential vector applied to drone $i$ is given by
 \begin{equation}
@@ -251,7 +292,7 @@ The artificial potential vector applied to drone $i$ is given by
   \left(
   q_i(k) +
   \frac{q_i(k) - q_j(k)}{\|q_i(k) - q_j(k)\|}
-  \left( d_{\min} - d_{ij}(k) \right)
+  \left( d_{avg} - d_{ij}(k) \right)
   \right),
 \end{equation}
 
@@ -260,41 +301,32 @@ This basically means that the term
 \begin{equation*}
   \frac{q_i(k)-q_j(k)}{\|q_i(k)-q_j(k)\|}
 \end{equation*}
-
 defines the repulsion direction from drone~$j$ to drone~$i$, while the magnitude
-$\bigl(d_{\min}-d_{ij}(k)\bigr)$ increases linearly as the inter-drone distance
-decreases below the minimum safety distance $d_{\min}$.\\
 
-To prevent excessive corrections, the vector magnitude is saturated as
+$\bigl(d_{avg}-d_{ij}(k)\bigr)$ increases linearly as the inter-drone distance
+decreases below the minimum safety distance $d_{avg}$. To prevent excessive corrections, the vector magnitude is saturated using Equation~\eqref{eq.4:saturation_apf},meaning that the actuation of a drone at any one step never will pass the movement greater then \gls{d_avg}.
+
 \begin{equation}
   u_i^{\mathrm{apf}}(k) \leftarrow
-  \min\!\left( \|u_i^{\mathrm{apf}}(k)\|,\, d_{\min} \right)
+  \min\!\left( \|u_i^{\mathrm{apf}}(k)\|,\, d_{avg} \right)
   \frac{u_i^{\mathrm{apf}}(k)}{\|u_i^{\mathrm{apf}}(k)\|}.
-\end{equation}
-meaning that the actuation of a drone at any one step never will pass the movement greater then \gls{d_min}.
-
-The resulting reference position for drone $i$ is then defined as
-
-\begin{equation}
-p_i^{\mathrm{ref}}(k) =
-R_s \frac{u_i^{\mathrm{apf}}(k)}{\|u_i^{\mathrm{apf}}(k)\|},
+  \label{eq.4:saturation_apf}
 \end{equation}
 
-which ensures that all references lie on the spherical manifold.
+Finally the resulting reference position for drone $i$ is then projected back to the sphere ensuring that all references lie on the spherical manifold.
 
-As has been previous mentioned this reference $p^{\mathrm{ref}}(k)$ is tracked using a nonlinear Mellinger controller, which maps the desired translational accelerations and yaw angle into thrust and torque commands as has been shown in Figure~\ref{fig.4:mellinger_controller_architecture}.
-As a result, the drones do not converge exactly to the original Fibonacci lattice points but instead form a dynamically generated configuration that is approximately uniformly distributed over the spherical surface while maintaining inter-agent separation. The final architecture of this method is shown in Figure~\ref{fig.4:APF_controller_architecture}, with results for 3 drones shown in \ref{fig.4:APF_solution}
+As has been previous mentioned this reference $p^{\mathrm{ref}}(k)$ is tracked using the nonlinear Mellinger controller, which maps the desired translational accelerations and yaw angle into thrust and torque commands as has been shown in Figure~\ref{fig.4:mellinger_controller_architecture}. As a result, the drones do not converge to the original Fibonacci lattice points but instead form a dynamically generated configuration that is approximately uniformly distributed over the spherical surface while maintaining inter-agent separation. The final architecture of this method is shown in Figure~\ref{fig.4:APF_controller_architecture}, with results for 3 drones shown in Figure~\ref{fig.4:APF_solution}
 
-\begin{figure}
+\begin{figure}[htbp]
   \centering
   \includegraphics[width=\textwidth]{5-Figures/Chapter4/controller_architecture/APF_controller_architecture.pdf}
   \caption{outer/inner loop controller}
   \label{fig.4:APF_controller_architecture}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.8\textwidth]{5-Figures/Chapter4/solutions/APF.png}
+  \includegraphics[width=0.8\textwidth]{5-Figures/Chapter4/solutions/APF.pdf}
   \caption{Trajectory obtained using the APF for three drones.}
   \label{fig.4:APF_solution}
 \end{figure}
@@ -303,33 +335,20 @@ As a result, the drones do not converge exactly to the original Fibonacci lattic
 
 Lyapunov controllers have been mentioned previously in Section \ref{sec.3:Lyapunov Stability and Lyapunov-Based Control}, not only the general introduction but the explicit controller to be used obtained from \cite{lyapunov_outer_loop_control}.This section describes the outer loop control architecture implementation in $\mathbb{S}^2$.
 
-\subsubsection{Fibonacci Sphere Initialization} 
+As in the \gls{APF} approach, the Fibonacci lattice is first computed as a set of reference points \(\{ q_i^{\mathrm{fib}} \in \mathbb{S}^2 \}_{i=1}^{N_D}\) distributed on a sphere of radius~\gls{r_s}.
 
-Just like in the \gls{APF} the fibonacci lattice is first calculated being a set of reference points $\{ q_i^{\mathrm{fib}} \in \mathbb{R}^3 \}_{i=1}^{N_D}$ generated on a sphere of radius \gls{R_s}.
+Using the Lyapunov-based control actuation defined in Section~\ref{sec.3:Lyapunov Stability and Lyapunov-Based Control}, it is possible to retain the same inner-loop structure as the Mellinger controller used in the other methods, while redesigning the outer loop. In this formulation, the outer loop assigns a desired final position—specifically, the Fibonacci points on the sphere—and drives each drone projection \gls{q} toward its corresponding target \gls{q_d} with exponentially decreasing error.
 
-The geodesic distance matrix $d_{ij}$ between all point pairs is computed, and the minimum safe distance \gls{d_min} is defined as the average inter-agent geodesic distance (equation:\ref{eq:d_min between drones}).
+The overall control architecture is shown in Figure~\ref{fig.4:Lyapunov_controller_architecture}, and the resulting system behavior is illustrated in Figure~\ref{fig.4:Layapunov_solution}. This formulation enables stable multi-agent motion constrained to a spherical surface while preserving geometric consistency and ensuring dynamic feasibility.
 
-Each reference point is normalized to lie on $\mathbb{S}^2$,
-\begin{equation}
-q_{d,i}(0) = R_s \frac{q_i^{\mathrm{fib}}}{\|q_i^{\mathrm{fib}}\|}.
-\end{equation}
-
-Using the Lyapunov-based control actuation defined in Section~\ref{sec.3:Lyapunov Stability and Lyapunov-Based Control}, it is possible to retain the same inner-loop structure as the Mellinger controller used in the other methods, while redesigning the outer loop. In this formulation, the outer loop assigns a desired final position—specifically, the Fibonacci points on the sphere—and drives each drone projection $q$ toward its corresponding target with exponentially decreasing error.
-
-Each projection is assigned to the closest Fibonacci point, ensuring that all agents converge to distinct targets. As a result, drone trajectories do not intersect, inherently preventing collisions. This property removes the need for a APF algorithm, while still guaranteeing exponential convergence from $q$ to the desired configuration $q_d$.
-
-The overall control architecture is shown in Figure~\ref{fig.4:Lyapunov_controller_architecture}, and the resulting system behavior is illustrated in Figure~\ref{fig.4:Layapunov_solution}.
-
-This formulation enables stable multi-agent motion constrained to a spherical surface while preserving geometric consistency and ensuring dynamic feasibility.
-
-\begin{figure}
+\begin{figure}[htbp]
   \centering
   \includegraphics[width=\textwidth]{5-Figures/Chapter4/controller_architecture/Lyapunov_controller_architecture.pdf}
   \caption{outer/inner loop controller}
   \label{fig.4:Lyapunov_controller_architecture}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[htbp]
   \centering
   \includegraphics[width=0.8\textwidth]{5-Figures/Chapter4/solutions/lyapunov.pdf}
   \caption{Trajectory obtained using the Lyapunov for three drones.}
@@ -338,26 +357,30 @@ This formulation enables stable multi-agent motion constrained to a spherical su
 
 \section{Currently Optimized Implementation}
 
-Despite the positive results obtained in Section~\ref{subsection.4:Lyapunov control}, several additional improvements were introduced to the control architecture.
+Despite the positive results obtained in Section~\ref{subsection.4:Lyapunov control} and Figure~\ref{fig.4:Layapunov_solution}, some additional improvements were introduced to the control architecture.
 
-A true inner--outer loop structure was implemented, in which the reference point $q$ no longer evolves independently of the vehicle state. Instead, the reference is always explicitly tied to the current position of the drone. As a consequence, the reference point cannot ``escape'' toward the desired Fibonacci configuration without the drone following it. If the drone were to remain stationary, the associated reference point would also remain fixed in space and would not evolve toward the target Fibonacci position.
+Instead of projecting the drone position onto a fixed two-sphere, the Fibonacci sphere points are projected onto a sphere whose radius corresponds to the current radial distance of each drone from the sphere center \gls{r}. This implies that drones starting from different initial radii will each have an associated projected Fibonacci sphere with a different radius. These radii are then gradually reduced toward the desired sphere radius according to the gain $K_{\mathrm{rad}}$, as defined in the radial update law in Equation~ \ref{eq.4:radius_update}.
 
-Furthermore, instead of projecting the drone position onto a fixed two-sphere, the Fibonacci sphere points are projected onto a sphere whose radius corresponds to the current radial distance of each drone from the sphere center. This implies that drones starting from different initial radii will each have an associated projected Fibonacci sphere with a different radius. These radii are then gradually reduced toward the desired sphere radius according to the gain $K_{\mathrm{rad}}$, as defined in the radial update law below.
-
-\subsection{Radial Dynamics}
-
-Let $q$ denote the current drone position, $q_d$ the desired Fibonacci point, and $c_{\text{sphere}}$ the center of the sphere. The radial update law is given by
 \begin{equation}
 \begin{aligned}
     q_s &= q - c_{\text{sphere}}, \\
-    \dot{R} &= K_{\mathrm{rad}} \cdot \frac{1}{2}
+    \dot{r} &= K_{\mathrm{rad}} \cdot \frac{1}{2}
     \left(1 + \frac{q_s^\top q_d}{\|q_s\|\,\|q_d\|}\right)
-    \left(R_{\text{sphere}} - R\right), \\
-    R_{k+1} &= R_k + \Delta t\, \dot{R},
+    \left(R_s - r\right), \\
+    r_{k+1} &= r_k + \Delta t\, \dot{r},
 \end{aligned}
-\label{eq:radius_update}
+\label{eq.4:radius_update}
 \end{equation}
-where $R$ is the current radius of the projected sphere, $R_{\text{sphere}}$ is the desired final sphere radius, and $\Delta t$ is the simulation sampling period.
+Where $c_{\text{sphere}}$ the center of the sphere, and $r$ is the current radius of the projected sphere, \gls{r_s} is the desired final sphere radius, and $\Delta t$ is the simulation sampling period. In Figure~\ref{fig.4:Layapunov_solution_explained} its possible to better visualize this improvement made where the fibonacci points, "Final Objective" is projected to the current radius of the drone \gls{q_d} being the \gls{q} the currently desired point for the drone \gls{p_D_ref}.
+
+Another improvement was made where instead of moving toward a randomly selected Fibonacci point on the sphere, the drones are assigned to target points using the Munkres algorithm. Given a cost matrix defined as the geodesic distance between each drone and all target points projected onto the final-radius sphere \gls{r_s}, the algorithm computes an optimal solution to the \gls{GNN} assignment problem. This solution minimizes the total assignment cost. No custom implementation of the algorithm was developed; instead, the built-in \(\text{MATLAB}^\text{\textregistered}\) \cite{MATLAB:R2024a} function \textit{assignmunkres} \cite{MATLAB_assignmunkres} was used.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.8\textwidth]{5-Figures/Chapter4/solutions/final_result_explained.pdf}
+  \caption{Trajectory obtained for 1 drone mid simulation.}
+  \label{fig.4:Layapunov_solution_explained}
+\end{figure}
 
 \subsection{Simulation Setup}
 
@@ -365,29 +388,30 @@ The simulation was performed using the parameters listed below.
 
 \begin{table}[h]
 \centering
+\caption{General simulation parameters.}
 \begin{tabular}{l c}
 \hline
 Parameter & Value \\
 \hline
 Simulation duration $T_{\text{end}}$ & $15~\text{s}$ \\
 Sampling period $\Delta t$ & $0.01~\text{s}$ \\
-Gravity $g$ & $9.81~\text{m/s}^2$ \\
-Number of drones $n_D$ & $3$ \\
-Desired sphere radius $R_{\text{sphere}}$ & $5~\text{m}$ \\
+Gravity \gls{g} & $9.81~\text{m/s}^2$ \\
+Number of drones \gls{n_D} & $3$ \\
+Desired sphere radius \gls{r_s} & $5~\text{m}$ \\
 Radial gain $K_{\mathrm{rad}}$ & $0.3$ \\
 \hline
 \end{tabular}
-\caption{General simulation parameters.}
 \end{table}
 
 \begin{table}[h]
 \centering
+\caption{Outer-loop control parameters.}
 \begin{tabular}{l c}
 \hline
 Parameter & Value \\
 \hline
 Damping coefficient $c$ & $0.3$ \\
-Inertia matrix $J$ &
+Inertia matrix \gls{I_q} &
 $\mathrm{diag}(0.0294,\;0.0305,\;0.0495)$ \\
 Additional torques $\tau$ & $\mathbf{0}_{3\times1}$ \\
 Position gain $K_r$ & $\mathrm{diag}(70,\;70,\;70)$ \\
@@ -395,17 +419,17 @@ Angular velocity gain $K_\omega$ &
 $10^{-1}\,\mathrm{diag}(7.056,\;7.320,\;11.88)$ \\
 \hline
 \end{tabular}
-\caption{Outer-loop control parameters.}
 \end{table}
 
 \begin{table}[h]
 \centering
+\caption{Inner-loop control parameters.}
 \begin{tabular}{l c}
 \hline
 Parameter & Value \\
 \hline
-Mass $m$ & $5~\text{kg}$ \\
-Inertia matrix $I$ &
+Mass \gls{m_D} & $5~\text{kg}$ \\
+Inertia matrix \gls{I_D} &
 $\mathrm{diag}(0.02,\;0.02,\;0.03)$ \\
 Drag coefficient $D$ & $0$ \\
 Proportional gain $K_p$ & $\mathrm{diag}(150,\;150,\;150)$ \\
@@ -415,19 +439,16 @@ Attitude gain $K_R$ & $\mathrm{diag}(8,\;8,\;8)$ \\
 Angular rate gain $K_\Omega$ & $\mathrm{diag}(0.5,\;0.5,\;0.5)$ \\
 \hline
 \end{tabular}
-\caption{Inner-loop control parameters.}
 \end{table}
 
-\subsubsection{Initial Conditions}
+Being the initial angular coordinates and radii of the drones given by and recalculated to cartesian using equation~\eqref{eq.4:spherical_to_cartesian}.
 
-The initial angular coordinates and radii of the drones are given by
 \begin{align*}
     \theta_0 &= [0.175,\;0.698,\;1.222], \\
     \phi_0 &= [1.484,\;1.222,\;1.396], \\
     r_0 &= [13,\;15,\;11].
 \end{align*}
 
-The corresponding Cartesian positions are computed as
 \begin{equation}
     q_0 = r_0
     \begin{bmatrix}
@@ -435,6 +456,7 @@ The corresponding Cartesian positions are computed as
         \sin\theta_0 \sin\phi_0 \\
         \cos\theta_0
     \end{bmatrix}.
+    \label{eq.4:spherical_to_cartesian}
 \end{equation}
 
 \subsubsection{Target Motion}
@@ -466,12 +488,26 @@ The target $T_{pos}$ trajectory is defined as the following piecewise function:
   \end{cases}
 \end{equation*}
 
-In Figure~\ref{fig.4:Layapunov_solution_final} the final result obtained with the improvements above mentioned can be visualized. As it is possible to see the chaser drones are capable of encircling the target even if the same is in motion, note that as mentioned in \cite{Mycielski1988} the chasers must at least have the same velocity as the target to be able to achieve this results. 
+In Figure~\ref{fig.4:Lyapunov_solution_final} the final result obtained with the improvements above mentioned can be visualized. As it is possible to see the chaser drones are capable of encircling the target even if the same is in motion, note that as mentioned in \cite{Mycielski1988} the chasers must at least have the same velocity as the target to be able to achieve this results. 
 
-\begin{figure}
+\begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.8\textwidth]{5-Figures/Chapter4/solutions/final_result.pdf}
-  \caption{Trajectory obtained using the Lyapunov for three drones.}
-  \label{fig.4:Layapunov_solution_final}
+
+  % --- Top row (2 figures) ---
+  \subfloat[$t=0$]{%
+    \includegraphics[width=0.45\textwidth]{5-Figures/Chapter4/solutions/final_result_t_0.pdf}
+  }\hfill
+  \subfloat[$t=3$]{%
+    \includegraphics[width=0.45\textwidth]{5-Figures/Chapter4/solutions/final_result_t_3.pdf}
+  }
+
+  \vspace{0.5cm}
+
+  % --- Bottom row (1 centered figure) ---
+  \subfloat[$t=15$]{%
+    \includegraphics[width=0.45\textwidth]{5-Figures/Chapter4/solutions/final_result_t_15.pdf}
+  }
+
+  \caption{Trajectory obtained using the Lyapunov for three drones. ($t$ in seconds)}
+  \label{fig.4:Lyapunov_solution_final}
 \end{figure}
-\todo{add a t=0 and t=end figures and update label}

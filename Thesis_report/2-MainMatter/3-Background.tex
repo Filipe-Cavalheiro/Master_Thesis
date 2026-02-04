@@ -16,11 +16,11 @@
 \section{Introduction}
 \label{sec.3:Introduction}
 
-Several concepts are required for a proper understanding of this thesis, some of which have not yet been introduced in the state of the art presented in Chapter~\ref{cha:State of the art}. These include methods for spacing agents on the two-sphere (Section~\ref{sec.3:Agent spacing on the two-sphere}), the drone model considered in this work (Section~\ref{sec.3:ruav_model}), the nonlinear controller architecture (Section~\ref{sec.3:Non-linear Controller}), Lyapunov stability theory (Section~\ref{sec.3:Lyapunov Stability and Lyapunov-Based Control}), and consensus-based coordination algorithms (Section~\ref{sec.3:Consensus-Based Coordination}).
+Several concepts are required for a proper understanding of this thesis, some of which have not yet been introduced in the state of the art presented in Chapter~\ref{cha:State of the art}. These include methods for spacing agents on the two-sphere (Section~\ref{sec.3:Agent spacing on the two-sphere}), the drone model considered in this work (Section~\ref{sec.3:Vehicle model and noninear control}), the vehicle model and nonlinear controller architecture (Section~\ref{sec.3:Vehicle model and noninear control}), Lyapunov stability theory (Section~\ref{sec.3:Lyapunov Stability and Lyapunov-Based Control}), and consensus-based coordination algorithms (Section~\ref{sec.3:Consensus-Based Coordination}).
 
 Before these techniques are introduced in detail, a brief contextualization is provided to clarify their role within the overall control architecture.The approach followed in this thesis relies on three main components that are not extensively covered in the state of the art. The first concerns the positioning of agents on the surface of a sphere, either the unit sphere (two-sphere) or a sphere of arbitrary radius. This positioning defines the final desired configuration of the agents encircling the target and requires careful selection of methods that provide near-uniform separation between points on the spherical surface.
 
-The second component is the dynamical model of the drones (Section~\ref{sec.3:ruav_model}), which is shared by both the target and the pursuing agents. This model underlies the design of the control laws and ensures consistency across all simulated agents. The third component is the internal drone controller, introduced in Section~\ref{sec.3:Non-linear Controller}, responsible for converting a desired position reference into appropriate actuator commands that drive the quadrotor to the target position. Since this inner-loop controller naturally induces straight-line motion toward the reference, an additional control layer is required to shape the resulting trajectories.
+The second component is the dynamical model of the drones (Section~\ref{sec.3:Vehicle model and noninear control}), which is shared by both the target and the pursuing agents. This model underlies the design of the control laws and ensures consistency across all simulated agents. The third component is the internal drone controller, introduced in Section~\ref{sec.3:Vehicle model and noninear control}, responsible for converting a desired position reference into appropriate actuator commands that drive the quadrotor to the target position. Since this inner-loop controller naturally induces straight-line motion toward the reference, an additional control layer is required to shape the resulting trajectories.
 
 An outer-loop controller, mentioned in Section~\ref{sec.3:Lyapunov Stability and Lyapunov-Based Control}, provides reference positions to the quadrotor and ensures convergence to a desired location $\gls{p_D_ref}$, while maintaining course on the surface sphere instead of going across it. However, when multiple agents operate simultaneously, this controller \textbf{currently} does not guarantee collision-free motion. For example, intersecting paths between agents and their respective goals may lead to collisions.
 
@@ -28,7 +28,7 @@ The sections that follow do not aim to provide a comprehensive treatment of the 
 
 \section{Agent spacing on the two-sphere} \label{sec.3:Agent spacing on the two-sphere}
 
-In this section, several methods for distributing points on a manifold are discussed. The primary objective is to achieve the most uniform spacing possible between agents. Such uniformity allows for more efficient use of each agent's reachability set at any given time. In other words, minimizing overlap between the reachability regions of different agents maximizes the collective coverage and effectiveness of the multi-agent system. For simplicity the two-sphere or unit sphere will be the main manifold considered since the problem at hand is encircling a target, where $\mathbb{S}^2 = \{\mathbf{x} \in \mathbb{R}^3 : \|\mathbf{x}\|_2 = 1\}$ \todo{peço desculpa mas n sei o que é que o professor quer que eu altere aqui}denotes the unit sphere. Four different methods will be discusses including: latitude and longitude, fibonacci sphere, thomson minimum energy sphere and poisson disk sampling.
+In this section, several methods for distributing points on a manifold are discussed. The primary objective is to achieve the most uniform spacing possible between agents. Such uniformity allows for more efficient use of each agent's reachability set at any given time. In other words, minimizing overlap between the reachability regions of different agents maximizes the collective coverage and effectiveness of the multi-agent system. For simplicity the two-sphere or unit sphere will be the main manifold considered since the problem at hand is encircling a target, where $\mathbb{S}^2 = \{\mathbf{x} \in \mathbb{R}^3 : \|\mathbf{x}\| = 1\}$ denotes the unit sphere (the 2-norm will be defined as $\|.\|$ from now on). Four different methods will be discusses including: latitude and longitude, fibonacci sphere, thomson minimum energy sphere and poisson disk sampling.
 
 \subsection{Latitude and Longitude} \label{sec.3:Latitude and longitude}
 
@@ -42,7 +42,7 @@ P = 2N(N - 1) + 2, \quad N \in \mathbb{N}
 
 This expression accounts for the $2k$ meridians and the $k - 1$ parallels, along with the two poles. A limitation for the desired use case is that the total number of agents is constrained by the parameter $N$, which restricts the set of achievable formations. For example, configurations involving 3, 4, or 5 agents, cannot be realized within this framework $P \overset{N=1}{=} 2, P \overset{N=2}{=} 6$. As can be observed in Figure~\ref{fig.3:latlon_results_demonstration}, the spacing produced by this method is best demonstrated from a side view, where its clearly visible that the points are arranged in a grid-like pattern as well as their clumping around the edge of the circular projection.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
 \subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Chapter4/latlon_sphere/latlon_sphere_normal.png}}\hfil
 \subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Chapter4/latlon_sphere/latlon_sphere_top.png}}\hfil 
@@ -107,7 +107,7 @@ Each point is assigned a unique latitude, while the longitudinal separation betw
 
 Finally the interactive visualization provided in \cite{fibonacci_lattice_internet} offers an intuitive and informative illustration of the Fibonacci lattice structure. It is also possible to see the resulting formation created by this method in Figure~\ref{fig.3:fibonacci_lattice_demonstration} where its clearly visible the lattice points do not cluster, and spatial uniformity is preserved.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
 \subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Chapter4/fibonacci_sphere/fibonacci_sphere_normal.png}}\hfil   
 \subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Chapter4/fibonacci_sphere/fibonacci_sphere_top.png}}\hfil
@@ -131,6 +131,8 @@ where $\mathbf{X} = [\mathbf{x}_1, \mathbf{x}_2, \dots, \mathbf{x}_N] \in \mathb
 \begin{equation}
 \mathbf{X}^* = \arg \min_{\mathbf{X} \in (\mathbb{S}^2)^N} E(\mathbf{X}),
 \end{equation}
+
+\begin{comment}
 
 The implementation of this method was made using a gradient-based iterative solver, using a continuous optimization approach with steps projected onto the tangent plane of the sphere at each point. The key steps are as follows:
 
@@ -163,10 +165,11 @@ The implementation of this method was made using a gradient-based iterative solv
     \max_i \|\mathbf{x}_i^{(k+1)} - \mathbf{x}_i^{(k)}\|_2 < \text{Tol}.
     \end{equation}
 \end{enumerate}
+\end{comment}
 
-The only found benefit of using this method, for the desired formation purposes, is due to it not being any restrictions imposed to the number of agents desired on the two-sphere any formation is possible, being the downside that this method is extremely slow as will be later demonstrate is Chapter~\ref{cha:Background}. The results of this method can be visible in Figure~\ref{fig.3:thomson_demonstration}.
+The only found benefit of using this method, for the desired formation purposes, is that due to there not being any imposed  restrictions, the number of agents on the two-sphere can be any \gls{n_D}, being the downside that this method is extremely slow as will be later demonstrate is Chapter~\ref{cha:Background}. The results of this method can be visible in Figure~\ref{fig.3:thomson_demonstration}.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
 \subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Chapter4/thomson_sphere/thomson_normal.png}}\hfil   
 \subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Chapter4/thomson_sphere/thomson_top.png}}\hfil
@@ -177,48 +180,48 @@ The only found benefit of using this method, for the desired formation purposes,
 
 \subsection{Poisson Disk sampling} \label{sec.3:Poisson sampling disk}
 
-Poisson disk sampling is a stochastic sampling technique that enforces a minimum distance between samples, producing distributions that are both random and well-spaced. Formally, a Poisson disk distribution is defined such that no two samples are closer than a user-defined distance \gls{d_min}. This property avoids clustering while preserving randomness, resulting in so-called \emph{blue noise} characteristics, which are highly desirable for a very isotropic distribution of agents.
+Poisson disk sampling is a stochastic sampling technique that enforces a minimum distance between samples, producing distributions that are both random and well-spaced. Formally, a Poisson disk distribution is defined such that no two samples are closer than a user-defined distance \gls{d_avg}. This property avoids clustering while preserving randomness, resulting in so-called \emph{blue noise} characteristics, which are highly desirable for a very isotropic distribution of agents.
 
-Poisson disk samples are generated using the \textit{fast algorithm} proposed by Bridson\cite{poisson_sampling_disk}. The method improves efficiency by restricting candidate samples to a neighborhood around existing points. A background grid is used to accelerate distance queries, with the cell size chosen as \( \gls{d_min} / \sqrt{n} \) in an \( n \)-dimensional domain, ensuring that each cell contains at most one sample.
+Poisson disk samples are generated using the \textit{fast algorithm} proposed by Bridson\cite{poisson_sampling_disk}. The method improves efficiency by restricting candidate samples to a neighborhood around existing points. A background grid is used to accelerate distance queries, with the cell size chosen as \( \gls{d_avg} / \sqrt{n} \) in an \( n \)-dimensional domain, ensuring that each cell contains at most one sample.
 
-The algorithm starts by placing an initial random sample in the domain and adding it to an active list. While this list is not empty, a sample is selected and up to \gls{P_k} candidate points are generated uniformly in the spherical annulus between radii \( r \) and \( 2r \). If a candidate is at least distance \gls{d_min} from all existing samples, it is accepted and added to the active list. If no valid candidate is found after \gls{P_k} attempts, the sample is removed from the active list.
+The algorithm starts by placing an initial random sample in the domain and adding it to an active list. While this list is not empty, a sample is selected and up to \gls{P_k} candidate points are generated uniformly in the spherical annulus between radii \( r \) and \( 2r \). If a candidate is at least distance \gls{d_avg} from all existing samples, it is accepted and added to the active list. If no valid candidate is found after \gls{P_k} attempts, the sample is removed from the active list.
 
 Because each iteration either adds or removes a sample and the number of candidate attempts is bounded by a constant, the overall computational complexity of the algorithm is \( O(N) \), being \( N \) the total number of samples. A key advantage of this approach is that it generalizes naturally to arbitrary dimensions, making it well suited for multi-dimensional sampling problems.
 
-For a desired fixed number of agents \gls{N_D}, a challenge arises because standard Poisson disk sampling does not guarantee an exact number of generated points. To address this limitation, a gradient-based iterative solver might be cable of adjusting minimum separation distance necessary to guarantee a desired number of agents. This refinement might enable the placement of exactly \gls{N_D} agents with approximately uniform spacing. Owing to its low computational cost, such an approach could be practical for real-time or large-scale deployments. However, it should be noted that this remains a conceptual approach and has neither been proven feasible nor experimentally validated during the development of this thesis.
+For a desired fixed number of agents \gls{n_D}, a challenge arises because standard Poisson disk sampling does not guarantee an exact number of generated points. To address this limitation, a gradient-based iterative solver might be cable of adjusting minimum separation distance necessary to guarantee a desired number of agents. This refinement might enable the placement of exactly \gls{n_D} agents with approximately uniform spacing. Owing to its low computational cost, such an approach could be practical for real-time or large-scale deployments. However, it should be noted that this remains a conceptual approach and has neither been proven feasible nor experimentally validated during the development of this thesis.
 
 In Figure~\ref{fig.3:poisson_disk_demonstration}, the results of this method are visible. It is clear that the method was not applied to the two-sphere; only a \gls{2D} region was used. This approach was taken because since multiple methods were being tested, and only a proof of concept was deemed required at the time of development a manifold version was not considered necessary. This method also seems viable due to its non uniform distribution being the only main fault as mentioned before the number of agent can not directly be passed to the equation.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=8cm]{5-Figures/Chapter4/poisson_disk_sampling.png}
 \caption{Poisson Disk Sampling demonstration (1028 points)}
 \label{fig.3:poisson_disk_demonstration}
 \end{figure}
 
-\section{Vehicle model and non linear control}
-\label{sec.3:ruav_model}
+\section{Vehicle model and nonlinear control}
+\label{sec.3:Vehicle model and noninear control}
 
 The \gls{RUAV}, obtained from \cite{AlexandraGonalvesRodrigues2023}, is modeled as a rigid body with six
 degrees of freedom evolving in \gls{3D} space. Two reference frames are
-considered: the body frame $\mathbf{B}\{e_1, e_2, e_3\}$ attached
-to the vehicle's center of mass and the inertial frame $\mathbf{I}\{E_1, E_2, E_3\}$, being also defined $m$ as the mass of the drone, and $g$ the gravity acceleration.
+considered: the body frame \gls{B_D} attached
+to the vehicle's center of mass and the inertial frame \gls{I_D}, being also defined $m$ as the mass of the drone, and $g$ the gravity acceleration.
 
 The position and velocity of the RUAV in the inertial frame are given by
-$p_D = \begin{bmatrix} x_D & y_D & z_D \end{bmatrix}^\top$
+\gls{p_D} $= \begin{bmatrix} x_D & y_D & z_D \end{bmatrix}^\top$
 and
-$v_D = \begin{bmatrix} u_D & v_D & w_D \end{bmatrix}^\top$,
+\gls{v_D}$= \begin{bmatrix} u_D & v_D & w_D \end{bmatrix}^\top$,
 while the orientation and angular velocity are given by
-$\Phi_D = \begin{bmatrix} \phi_D & \theta_D & \psi_D \end{bmatrix}^\top$
+\gls{phi_D} $= \begin{bmatrix} \phi_D & \theta_D & \psi_D \end{bmatrix}^\top$
 and
-$\omega_D = \begin{bmatrix} p_D & q_D & r_D \end{bmatrix}^\top$.
+\gls{omega_D} $= \begin{bmatrix} p_D & q_D & r_D \end{bmatrix}^\top$.
 
 The \gls{UAV} model can be written as:
 \begin{align}
 \dot{p}_D &= V_D \\
 \dot{\Phi}_D &= E(\Phi_D)^{-1}\,\omega_{B_D} \\
-\dot{V}_D &= m^{-1} R_{IB}(\Phi_D)\,(f_e + f_D) - g\, R_{IB}(\Phi_D)^{T} e_3 \\
-\dot{\omega}_{B_D} &= I^{-1}\!\left(-\omega_{B_D} \times (I \omega_{B_D}) + \tau_e + \tau_D \right)
+\dot{V}_D &= m^{-1} R_{IB}(\Phi_D)\,(f_e + f_a) - g\, R_{IB}(\Phi_D)^{T} e_3 \\
+\dot{\omega}_{B_D} &= I^{-1}\!\left(-\omega_{B_D} \times (I \omega_{B_D}) + \tau_e + \tau_a \right)
 \end{align}
 
 The rotation matrix and Jacobian are shown in Equation~\eqref{eq.3:rotation_matrix} and Equation~\eqref{eq.3:jacobian_matrix} respectively, where for simplicity $c=\cos(\cdot)$, $s=\sin(\cdot)$, $t=\tan(\cdot)$.
@@ -259,7 +262,7 @@ f_{ax} & f_{ay} & f_{az}
 =
 - \mathrm{diag}(a_T, a_T, a_T) R_{IB}(\Psi)^{T} \mathbf{V}_{air},
 \end{equation}
-with $\mathbf{V}_{air} = \mathbf{V}_a - \mathbf{V}_w$, where $\mathbf{V}_w$ is the wind velocity vector
+with $v_{air} = v_a - v_w$, where $v_w$ is the wind velocity vector
 in the inertial frame, and
 \begin{equation}
 \boldsymbol{\tau}_a =
@@ -286,16 +289,16 @@ For the external force $\mathbf{f}_e$ and torque $\boldsymbol{\tau}_e$ we have
 A compact notation for the continuous equation of the model can be defined as 
 
 \begin{equation}
-\dot{\mathbf{x}}_a(t) = \mathbf{f}_a \bigl( \mathbf{x}_a(t), \mathbf{u}_a(t) \bigr).
+\dot{\mathbf{x_D}}(t) = \mathbf{f} \bigl( \mathbf{x_D}(t), \mathbf{u}(t) \bigr).
 \tag{3.4}
 \end{equation}
 
-This full nonlinear model is used throughout the rest of this thesis for simulation and control design, providing a realistic representation of the \gls{RUAV} dynamics, and is controlled via a nonlinear internal controller derived from the work of Daniel Mellinger and Vijay Kumar \cite{Mellinger2011}, referred to from this point on as the Mellinger Controller. The controller receives as inputs the desired position \gls{p_D_ref}, velocity \gls{v_D_ref}, and attitude \gls{a_D_ref} \cite{AlexandraGonalvesRodrigues2023, Crazyflie_mellinger}, and computes the required thrust commands for each motor of a quadrotor. Figure~\ref{fig.3:mellinger_controller_architecture} illustrates the architecture of the Mellinger Controller.
+This full nonlinear model is used throughout the rest of this thesis for simulation and control design, providing a realistic representation of the \gls{RUAV} dynamics, and is controlled via a nonlinear internal controller derived from the work of Daniel Mellinger and Vijay Kumar \cite{Mellinger2011}, for simplicity referred from this point on as the "Mellinger Controller". The controller receives as inputs the desired position \gls{p_D_ref}, velocity \gls{v_D_ref}, and attitude \gls{a_D_ref} \cite{AlexandraGonalvesRodrigues2023, Crazyflie_mellinger}, and computes the required thrust commands for each motor of a quadrotor. Figure~\ref{fig.3:mellinger_controller_architecture} illustrates the architecture of the Mellinger Controller.
 
-\begin{figure}
+\begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{5-Figures/Chapter4/controller_architecture/mellinger_controller.png}
-  \caption{Mellinger Controller [ROUBADO DA PATRÍCIA!! TENHO QUE FZR O MEU]}
+  \includegraphics[width=\textwidth]{5-Figures/Chapter3/Mellinger Controller.pdf}
+  \caption{Mellinger Controller}
   \label{fig.3:mellinger_controller_architecture}
 \end{figure}
 
@@ -332,25 +335,39 @@ The attitude configuration of the rigid body can described by the unit vector
 q = Q e_3,
 \end{align}
 
-where \( Q \in SO(3) \) is the rotation matrix mapping vectors from the body frame $I_b\{e_1, e_2, e_3\}$ to the inertial frame $I_R\{E_1, E_2, E_3\}$. This definition of the body and inertial frames differs from that in Section \ref{sec.3:ruav_model} because it is not the same! It is important to note that this “body” should not be confused with the drone itself. The dynamics and outer-loop controller considered here do not directly control the drone, which is already managed by the Mellinger controller. Instead, they govern the motion of a point on the two-sphere, which can follow any desired trajectory. This point ,\gls{p_D_ref} mentioned for the outer controller as \gls{q}, acts as a reference for the drone to track, and its objective is to evolve along the sphere to reach the specified final position \gls{q_d}.
+where \( Q \in SO(3) \) is the rotation matrix mapping vectors from the body frame $I_b\{e_1, e_2, e_3\}$ to the inertial frame $I_R\{E_1, E_2, E_3\}$. This definition of the body and inertial frames differs from that in Section \ref{sec.3:Vehicle model and noninear control} because it is not the same! It is important to note that this “body” should not be confused with the drone itself. The dynamics and outer-loop controller considered here do not directly control the drone, which is already managed by the Mellinger controller. Instead, they govern the motion of a point on the two-sphere, which can follow any desired trajectory. This point ,\gls{p_D_ref} mentioned for the outer controller as \gls{q}, acts as a reference for the drone to track, and its objective is to evolve along the sphere to reach the specified final position \gls{q_d}.
 
-The kinematics of the reduced attitude evolve on $\mathbb{S}^2$ according to
+The kinematics of the reduced attitude evolve on $\mathbb{S}^2$ according to Equation~\ref{eq.3:kinematics of the reduced attitude} and the rotational dynamics of the rigid body are defined by Equation~\ref{eq.3:rotational dynamics}.
+
 \begin{align}
-\dot{q} = S(\omega) q
+    \dot{q} = S(\omega) q
+    \label{eq.3:kinematics of the reduced attitude}
 \end{align}
-where $\omega \in \mathbb{R}^3$ is the angular velocity expressed in the inertial frame and $S(\cdot)$ denotes the skew-symmetric operator \ref{annex:skew_matrix}.
 
-The rotational dynamics of the rigid body are defined as
 \begin{align}
-J \dot{\omega} = u - c \omega - S(\omega) J \omega + \tau,
+    J \dot{\omega} = u - c \omega - S(\omega) J \omega + \tau,
+    \label{eq.3:rotational dynamics}
 \end{align}
-where \( J \) is the inertia matrix, \( c > 0 \) is a viscous damping coefficient, \( \tau \) represents external disturbances, and \( u \) is the control moment generated by the outer loop. A desired final position can be defined and have the dynamic defined in \eqref{eq.3:ref_dynamic_outerloop}.
 
-\begin{align}
-    \dot{q_d} =& S(\omega_d) q_d  \\
-    \dot{\omega_d} =& Q_d \omega_d
+where $\omega \in \mathbb{R}^3$ is the angular velocity expressed in the inertial frame and $S(\cdot)$ denotes the skew-symmetric operator defined by equation \eqref{eq.3:skew_matrix}, \( J \) is the inertia matrix, \( c > 0 \) is a viscous damping coefficient, \( \tau \) represents external disturbances and \( u \) is the control moment generated by the outer loop. A desired final position can be defined and have the dynamic defined in Equations~\eqref{eq.3:ref_dynamic_outerloop}.
+
+\begin{equation}
+    S(r)
+=
+\begin{bmatrix}
+0 & -r_3 & r_2 \\
+r_3 & 0 & -r_1 \\
+-r_2 & r_1 & 0
+\end{bmatrix},
+\qquad
+S^{-1}\left(S(r)\right) = r, r \in \mathbb{R}^3
+\label{eq.3:skew_matrix}
+\end{equation}
+
+\begin{equation}
+    \dot{q_d} = S(\omega_d) q_d, \qquad  \dot{\omega_d} = Q_d \omega_d
     \label{eq.3:ref_dynamic_outerloop}
-\end{align}
+\end{equation}
 
 where the subscript $({\cdot})_d$, not to be confused with the drone definition of $({\cdot})_D$, defined the desired vector/matrix. Normally the reduced attitude controllers  use the classic error between the defined desired position the current position frequently employed as the error function defined by Equation~\ref{eq.3:err_ref_dynamic}.
 
@@ -376,7 +393,7 @@ This type of error function exhibits a degraded in performance for large initial
 This function is smooth and positive definite about $q = q_d$, and avoids maximizing the error near the antipodal configuration. As a result, large-angle attitude errors are handled more effectively, as shown in Figure~\ref{fig.3:Comparison between error calculations}
 
 % Subfigures 
-\begin{figure}
+\begin{figure}[htbp]
 \centering
 \begin{subfigure}{.45\textwidth}
   \centering
@@ -401,7 +418,7 @@ This formulation ensures that the magnitude of the configuration error varies pr
 
 where \gls{omega_d} is the desired angular velocity associated with the reference pointing direction \gls{q_d}.
 
-The error dynamics of the attitude error and angular error can be given by the equations~\ref{eq.3:attitude_error_derivative} \ref{eq.3:ang_error_derivative}.
+The attitude and angular errors dynamics can be given by the equations~\ref{eq.3:attitude_error_derivative} \ref{eq.3:ang_error_derivative} respectively.
 
 \begin{equation}
     \begin{aligned}
@@ -500,11 +517,10 @@ The proposed controller was implemented and evaluated through numerical simulati
 The initial configuration/conditions are,
 \[
 \mathbf{q}(t=0) = \begin{bmatrix} 0 \\ 0 \\ 1 \end{bmatrix}, 
-\quad \mathbf{Q}(t=0) = \mathbf{I}, 
+\quad \mathbf{Q}(t=0) = \mathbb{I}_3, 
 \quad \boldsymbol{\omega}(t=0) = \begin{bmatrix} 0 \\ 0.3 \\ 0 \end{bmatrix}.
 \]
-
-The controllers must initially stabilize the $\mathbf{e}_3$ body-fixed axis of the body to the following equilibrium,
+Being $\mathbb{I}_3$ the identity matrix in a $3\times3$ configuration. The controllers must initially stabilize the $\mathbf{e}_3$ body-fixed axis of the body to the following equilibrium,
 \[
 \mathbf{q}_d = \begin{bmatrix} 0 \\ -0.0175 \\ -0.9998 \end{bmatrix}, 
 \quad \boldsymbol{\omega} = \begin{bmatrix} 0 \\ 0 \\ 0 \end{bmatrix},
@@ -517,7 +533,7 @@ where the vector $\mathbf{q}_d$ denotes a $179^\circ$ rotation around the $\math
 
 The results in Figure~\ref{fig.3:lyapunov_example_results} demonstrate smooth convergence of the pointing direction on \( S^2 \), monotonic decrease of the attitude error function, and asymptotic regulation of the angular velocity. These results confirm the theoretical stability analysis and highlight the advantages of the proposed geometric formulation. A more extensive explanations and formula deduction can be found in the original referenced paper \cite{lyapunov_outer_loop_control}.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
 
 \begin{minipage}{\textwidth}
@@ -620,4 +636,4 @@ The convergence rate is influenced by the second smallest eigenvalue of the Lapl
 
 Consensus algorithms can be extended to higher-order agent dynamics, time-varying topologies, directed graphs, and delayed communication.
 Despite these complexities, the Laplacian matrix remains the fundamental tool for analyzing stability and convergence.
-As a result, consensus-based coordination provides a scalable and fully distributed framework for multi-agent control systems.
+As a result, consensus-based coordination provides a scalable and fully distributed framework for multi-agent control systems. \cite{4118472, 1431045, 1205192}

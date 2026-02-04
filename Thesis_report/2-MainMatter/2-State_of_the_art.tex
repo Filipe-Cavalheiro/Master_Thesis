@@ -142,10 +142,11 @@ This classification also clarifies the use of commonly employed terms such as \e
 In summary, rather than relying on the potentially confusing centralized-decentralized dichotomy, this thesis adopts the classification framework proposed in \cite{Oh2015}, which emphasizes sensing capabilities and interaction topology. This approach provides a more precise and technically grounded basis for analyzing and comparing formation control strategies, and it better reflects the fundamental trade-offs between information availability, inter-agent communication, and achievable formation objectives.
 
 \section{Relevant Examples} \label{sec.2:Related Works}
-\todo{Quero deixar claro que esta parte é apenas para ter o minimo de paginas acho que vou tirar se o professor concordar}
 
 \begin{table}[htbp]
     \centering
+    \caption{Problem classification summary for \cite{Wang_2021}}
+    \label{tab.2:Wang_2021}
     \footnotesize
     \begin{tabular}{|c|c|}
         \hline
@@ -157,8 +158,6 @@ In summary, rather than relying on the potentially confusing centralized-decentr
         Control Methodologies & Convex Hull \\ \hline
         Measurement Type & (simulation) known position, unknown velocity \\ \hline
     \end{tabular}
-    \caption{Problem classification summary for \cite{Wang_2021}}
-    \label{tab.2:Wang_2021}
 \end{table}
 
 
@@ -176,6 +175,8 @@ To demonstrate the effectiveness of the proposed framework, the authors compare 
 
 \begin{table}[htbp]
     \centering
+    \caption{Problem classification summary for \cite{Jin2018}}
+    \label{tab.2:Jin2018}
     \footnotesize
     \begin{tabular}{|c|c|}
         \hline
@@ -188,8 +189,6 @@ To demonstrate the effectiveness of the proposed framework, the authors compare 
         Measurement Type & all variables are known\\
         \hline
     \end{tabular}
-    \caption{Problem classification summary for \cite{Jin2018}}
-    \label{tab.2:Jin2018}
 \end{table}
 
 A concise summary of the paper is presented in Table~\ref{tab.2:Jin2018}. This work \cite{Jin2018} is given special attention due to its ability to encircle a point without explicitly specifying a target position. Instead, the formation center emerges through a consensus process among the agents. The paper addresses the problem of coordinating multiple agents to form and maintain a circular formation with an arbitrary, preassigned phase distribution. Unlike many classical circular formation approaches that restrict agents to uniformly spaced configurations, this method allows for uneven angular spacing between agents.
@@ -212,6 +211,8 @@ The paper validates its methodology through multiple simulation studies, includi
 
 \begin{table}[htbp]
     \footnotesize
+    \caption{Problem classification summary for \cite{Kim2007}}
+    \label{tab.2:Kim2007}
     \centering
     \begin{tabular}{|c|c|}
         \hline
@@ -224,8 +225,7 @@ The paper validates its methodology through multiple simulation studies, includi
         Measurement Type & all variables are known\\
         \hline
     \end{tabular}
-    \caption{Problem classification summary for \cite{Kim2007}}
-    \label{tab.2:Kim2007}
+
 \end{table}
 
 Being, from the viewed papers, \cite{Kim2007} one of the few works in the literature that addresses target capture in \gls{3D} space, the study by \cite{Kim2007} is considered particularly relevant. An overview of this work is provided in Table~\ref{tab.2:Kim2007}. The paper presents a distributed control framework for coordinating multiple agents to capture and enclose a moving target in \gls{3D} space, with the main motivation being the design of a simple, communication-free, and robust cooperative control law that enables agents to achieve a desired circular formation around a target using only local information.
