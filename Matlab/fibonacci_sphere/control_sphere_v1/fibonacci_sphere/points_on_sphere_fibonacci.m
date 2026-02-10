@@ -4,7 +4,7 @@ clear; clc; %close all;
 % for j = 1:100
 %     start = clock;
     % Number of points
-    P = 1;                  
+    P = 1001;                  
     N = floor((P-1)/2);         % Since P = 2N + 1 works best for odd P
     
     % Sphere radius
@@ -68,7 +68,7 @@ surf(R*XS, R*YS, R*ZS, ...
     'FaceColor', [0.7647 0.7647 0.7647]); 
 
 % Plot points
-scatter3(x, y, z, 15, 'k', 'filled');  % small black filled points (paper-friendly)
+scatter3(x, y, z, 15, 'k', 'filled');
 
 % Formatting for paper
 axis equal

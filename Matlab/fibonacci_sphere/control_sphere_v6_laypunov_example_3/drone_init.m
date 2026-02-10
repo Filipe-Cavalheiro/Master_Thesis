@@ -10,7 +10,7 @@ Param.Tend = 15;
 Param.dTi = 0.01;  % inner-loop and simulation sampling period
 Nsim = round(Param.Tend/Param.dTi)+1;
 Param.g = 9.81;     % earth gravity
-Param.nD = 5; % number of drones
+Param.nD = 9; % number of drones
 Param.sphere_radius = 0.5;  % sphere radius
 Param.inital_target_pos = [0;0;1];
 Param.k_rad = 0.3; % radius reduction gain
@@ -65,11 +65,13 @@ Param.kom= diag([0.5,0.5,0.5]);
 %                 sin(theta0).*sin(phi0);
 %                 cos(theta0)] + Param.inital_target_pos;
 
-initial_pos = [0, 0, 1, 1, -1;...
-               0, 1, 0, 1, 0;...
-               0, 0, 0, 0, 0;];
+initial_pos = [-1, -1, -1, 0, 0, 0, 1, 1, 1;...
+               -1, 0, 1, -1, 0, 1, -1, 0, 1;...
+               0, 0, 0, 0, 0, 0, 0, 0, 0;];
 
-Param.r0 = sqrt(sum((initial_pos - repmat(Param.inital_target_pos,1,5)) .^ 2));
+initial_pos = initial_pos(:, 1:Param.nD);
+
+Param.r0 = sqrt(sum((initial_pos - repmat(Param.inital_target_pos,1,Param.nD)) .^ 2));
 
 % initialize variables for all drones:
 t = 0:Param.dTi:Param.Tend;

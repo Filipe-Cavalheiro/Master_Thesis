@@ -1,7 +1,7 @@
 clc; clear; close all;
 
 % Simulation parameters
-Tend = 15;
+Tend = 8;
 dt   = 0.001;
 Nsim = round(Tend/dt) + 1;
 t    = linspace(0, Tend, Nsim);
@@ -44,7 +44,7 @@ Psi_hist   = zeros(1, Nsim);
 % Main simulation loop
 for k = 1:Nsim
 
-    if k == 5/dt % new desired goal for t >= 5 sec
+    if k == Tend/2/dt % new desired goal for t >= 5 sec
         % New desired equilibrium points
         q_d = [1; 0; 0];
         q_d = q_d / norm(q_d);
@@ -126,27 +126,76 @@ subplot(3,1,3); plot(t, omega_hist(3,:)); grid on; ylabel('\omega_3');
 xlabel('Time [s]');
 sgtitle('Angular Velocity');
 
-% === Animation of Pointing Direction on S^2 ===
-figure; hold on; grid on; axis equal;
+% === Time-Accurate Animation of Pointing Direction on S^2 ===
+
+animation = figure; hold on; grid on; axis equal;
 [xs,ys,zs] = sphere(50);
 surf(xs,ys,zs, ...
     'FaceAlpha',0.25,'EdgeColor','none','FaceColor',[0.85 0.85 0.85]);
 
 xlabel('x'); ylabel('y'); zlabel('z');
 title('Pointing Direction Animation on S^2');
-view(3);
+view(45,30);
 
-% Plot desired equilibrium points
-plot3(q_d(1), q_d(2), q_d(3), 'kp', 'MarkerSize',12, 'MarkerFaceColor','k');
-text(q_d(1), q_d(2), q_d(3), ' q_d', 'FontSize',12);
+% --- Desired equilibrium points
+q_d1 = [0; -0.0175; -0.9998]; q_d1 = q_d1/norm(q_d1);
+q_d2 = [1; 0; 0];
 
-% Initialize trajectory and current point
-traj = plot3(q_hist(1,1), q_hist(2,1), q_hist(3,1), 'r','LineWidth',2);
-current = plot3(q_hist(1,1), q_hist(2,1), q_hist(3,1), 'ro','MarkerFaceColor','r', 'MarkerSize',6);
+plot3(q_d1(1), q_d1(2), q_d1(3), 'kp', ...
+      'MarkerSize',12,'MarkerFaceColor','k');
+text(q_d1(1), q_d1(2), q_d1(3), ' q_{d1}', 'FontSize',12);
 
-% Animation loop
-for k = 1:10:Nsim   % skip some frames for speed
-    set(traj, 'XData', q_hist(1,1:k), 'YData', q_hist(2,1:k), 'ZData', q_hist(3,1:k));
-    set(current, 'XData', q_hist(1,k), 'YData', q_hist(2,k), 'ZData', q_hist(3,k));
-    drawnow;
+plot3(q_d2(1), q_d2(2), q_d2(3), 'kp', ...
+      'MarkerSize',12,'MarkerFaceColor','k');
+text(q_d2(1), q_d2(2), q_d2(3), ' q_{d2}', 'FontSize',12);
+
+% --- Trajectory & current point
+traj = plot3(q_hist(1,1), q_hist(2,1), q_hist(3,1), ...
+             'r','LineWidth',2);
+current = plot3(q_hist(1,1), q_hist(2,1), q_hist(3,1), ...
+                'ro','MarkerFaceColor','r','MarkerSize',6);
+
+% --- Time annotation
+timeText = text(-1.7,0,1.2,'t = 0.00 s', ...
+    'FontSize',12,'FontWeight','bold');
+
+% === Video settings (TIME-ACCURATE) ===
+save_to_mp4 = 1;
+frameStep   = 10;                % must match animation loop
+sim_dt      = dt * frameStep;    % simulated time per frame
+videoFPS    = 1 / sim_dt;        % makes video exactly 10 sec
+
+if save_to_mp4
+    mp4File = 'lyapunov_stability_in_s2.mp4';
+    v = VideoWriter(mp4File,'MPEG-4');
+    v.FrameRate = videoFPS;
+    open(v);
+end
+
+% === Animation loop ===
+for k = 1:frameStep:Nsim
+
+    % Update trajectory
+    set(traj, 'XData', q_hist(1,1:k), ...
+              'YData', q_hist(2,1:k), ...
+              'ZData', q_hist(3,1:k));
+
+    % Update current point
+    set(current, 'XData', q_hist(1,k), ...
+                 'YData', q_hist(2,k), ...
+                 'ZData', q_hist(3,k));
+
+    % Update time text
+    set(timeText,'String',sprintf('t = %.2f s',t(k)));
+
+    drawnow limitrate nocallbacks
+
+    if save_to_mp4
+        frame = getframe(animation);
+        writeVideo(v,frame);
+    end
+end
+
+if save_to_mp4
+    close(v);
 end
