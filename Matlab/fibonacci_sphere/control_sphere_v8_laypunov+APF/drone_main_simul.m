@@ -8,36 +8,22 @@ drone_init;
 clearvars iD;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%target motion reference
-target_fun = @(t) [ ...
-    (t<=1.5).*3*t + (t>1.5 & t<=3).*3*t + (t>3).*9 ; ...
-    (t<=1.5).*0    + (t>1.5 & t<=3).*(-3*(t-1.5)) + (t>3).*(-4.5) ; ...
-    zeros(size(t))] + Param.inital_target_pos;
-
-target_fun = @(t) [ ...
-    2*(t<=16).*sin(t*pi/4) + (t>16).*0; ...
-    2*(t<=16).*cos(t*pi/4) + (t>16).*2; ...
-    zeros(size(t))] + Param.inital_target_pos;
-
-%target_fun = @(t) [0;0;0] + Param.inital_target_pos;
-
-initial_c_sphere = target_fun(0);
-
-% calculate Fibonacci points
-fib_ref_points = get_fibonacci_points(Param.nD, Param.sphere_radius, initial_c_sphere);
+% Fibonacci sphere values
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+fib_ref_points = get_fibonacci_points(Param.nD, Param.sphere_radius, Param.initial_target_pos);
 min_safe_dist = get_min_safe_distance(Param.nD, Param.sphere_radius);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Assign each agent to nearest ref point
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Compute geodesic distances between all pairs
-pos_on_sphere = projectToSphere(initial_pos, Param.sphere_radius, initial_c_sphere);
+pos_on_sphere = projectToSphere(initial_pos, Param.sphere_radius, Param.initial_target_pos);
 geo_distances_all = zeros(Param.nD, Param.nD);
 for i = 1:Param.nD
     for j = 1:Param.nD
         a = fib_ref_points(:,i);
         b = pos_on_sphere(:,j);
-        dot_product = dot(a-initial_c_sphere, b-initial_c_sphere);
+        dot_product = dot(a-Param.initial_target_pos, b-Param.initial_target_pos);
         geo_distances_all(i, j) = Param.sphere_radius * acos(dot_product / (Param.sphere_radius^2));
     end
 end
@@ -63,16 +49,17 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Simulation initialization
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 for iD = 1:Param.nD
     % initial values
     Rad{iD} = organized_Rad(iD);
-    x{iD}(1:3,1) = organized_initial_pos(:,iD);
+    chaser{iD}(1:3,1) = organized_initial_pos(:,iD);
     q{iD} = organized_initial_pos(:,iD);
     omega{iD} = [0; 0; 0];
     
-    % desired values at the radius of each point
-    q_d{iD} = projectToSphere(fib_ref_points(:,iD), Rad{iD}, initial_c_sphere);
-
+    % desired values
+    q_d{iD} = fib_ref_points(:,iD)/norm(fib_ref_points(:,iD))*Rad{iD};
+    
     omega_d{iD} = [0; 0; 0];
 end
 
@@ -83,10 +70,26 @@ for iD = 1:Param.nD
     q_d_hist{iD} = zeros(3, Nsim);
 end
 c_sphere = zeros(3,Nsim);
+target_hist = zeros(18,Nsim);
+
 current_pos = zeros(3,Param.nD);
 for i = 1:Param.nD
     current_pos(:, i) = q{i};
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Target drone initialization
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Initial target state
+target.x = zeros(18,1);
+target.x(1:3)   = Param.initial_target_pos;    % position
+target.x(4:6)   = [0;0;0];                     % velocity
+target.x(7:15)  = reshape(eye(3),[],1);        % rotation matrix
+target.x(16:18) = [0;0;0];                     % angular velocity
+
+% Integral error (if you want to reuse Mellinger)
+target.xiep = zeros(3,1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Main time loop for simulation
@@ -94,30 +97,37 @@ end
 for k = 1:Nsim
     fprintf("Computing simulation interation: %04d\n", k);
     
+    %move target
     t = (k-1)*Param.dTi;
-    c_sphere(:,k) = target_fun(t);
+    p_d_target = target_ref(t);
+    [target, c_sphere(:,k)] = target_motion(target, p_d_target, Param);
+    target_hist(:,k) = target.x;
 
-    for iD = 1:Param.nD   
+    for iD = 1:Param.nD
         % get state vector
-        pos{iD} = x{iD}(1:3,k);
-        v{iD} = x{iD}(4:6,k);
-        R = reshape(x{iD}(7:15,k),3,3);
-        om = x{iD}(16:18,k);
-
-        % Position reference generation
-        q{iD} = linear_motion_ref(Rad{iD}, pos{iD},omega{iD},q_d{iD},omega_d{iD},c_sphere(:,k), Param);
+        pos{iD} = chaser{iD}(1:3,k);
+        v{iD} = chaser{iD}(4:6,k);
+        R = reshape(chaser{iD}(7:15,k),3,3);
+        om = chaser{iD}(16:18,k);
         
+        % Position reference generation
+        [q{iD}, e_q] = linear_motion_ref(Rad{iD}, pos{iD},omega{iD},q_d{iD},omega_d{iD},c_sphere(:,k), Param);
+            
         % Position reference shift to safe guard collisions
         current_pos(:, iD) = q{iD};
         q{iD} = AFP_safe_guard(iD, current_pos, q{iD}, min_safe_dist, Rad{iD}, c_sphere(:,k), Param);
-
+        
+        % update radius
+        Rad{iD} = update_radius(Rad{iD}, e_q, q{iD}, q_d{iD}, chaser{iD}(:,k), target.x,Param);
+            
         %shift q_d to new sphere pos
         if k > 1
+            % update radius of q_d
             q_d{iD} = q_d{iD} + c_sphere(:,k)  - c_sphere(:,k-1);
         end
 
-        % Reduce q_d radius
-        [Rad{iD}, q_d{iD}] = update_radius(Rad{iD}, q{iD}, q_d{iD}, c_sphere(:,k), Param);
+        % update radius of q_d
+        q_d{iD} = projectToSphere(q_d{iD}, Rad{iD}, c_sphere(:,k));
 
         % --- Store
         Rad_hist{iD}(k) = Rad{iD};
@@ -142,12 +152,12 @@ for k = 1:Nsim
         % nonlinear drone model (continuous time)
         [dot_p,dot_v,dot_R,dot_om] = drone_3dfull_dyn(v{iD},R,om,T{iD}(:,k),tau{iD}(:,k),Param);
         
-        % % discretization
+        % discretization
         pp = pos{iD} + Param.dTi*dot_p;
         vp = v{iD} + Param.dTi*dot_v;
         Rp = rot_integrate(R,om,Param.dTi);
         omp = om + Param.dTi*dot_om;
-        x{iD}(:,k+1) = [pp;vp;reshape(Rp,[],1);omp];
+        chaser{iD}(:,k+1) = [pp;vp;reshape(Rp,[],1);omp];
     
         % auxiliary drone attitude computation from rotation matrix
         lbd{iD}(:,k) = R2Euler(R);
@@ -159,6 +169,24 @@ for k = 1:Nsim
     end
 end
 
-animate_simulation(x, q_hist, q_d_hist, fib_ref_points, c_sphere, Param, Nsim);
+%%
+% figure;
+% hold on;
+% 
+% t = (0:Nsim-1) * Param.dTi;
+% 
+% plot(t, Rad_hist{1});
+% plot(t, vecnorm(target_hist(1:3,:), 2, 1) ...
+%        - vecnorm(chaser{1}(1:3,2:end), 2, 1));
+% plot(t, vecnorm(target_hist(4:6,:), 2, 1) ...
+%        - vecnorm(chaser{1}(4:6,2:end), 2, 1));
+% 
+% xlabel('Time [s]');
+% legend( ...
+%     'Radial history', ...
+%     'Position difference (norm)', ...
+%     'Velocity difference (norm)' ...
+% );
+% grid on;
 
-print2pdf("output.pdf",false);
+animate_simulation(chaser, q_hist, q_d_hist, fib_ref_points, c_sphere, Param, Nsim);

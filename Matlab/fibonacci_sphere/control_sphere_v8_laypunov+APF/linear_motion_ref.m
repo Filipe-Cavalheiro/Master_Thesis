@@ -1,4 +1,4 @@
-function q = linear_motion_ref( ...
+function [q, e_q] = linear_motion_ref( ...
             Rad, q, omega, q_d, omega_d, c_sphere, Param)
 
     % System parameters (V. Numerical Simulations)
@@ -19,17 +19,18 @@ function q = linear_motion_ref( ...
 
     % ---------- Shift to sphere frame (back to origin)----------
     q_s  = q   - c_sphere;
+    q_d_s  = q_d   - c_sphere;
 
     % ---------- Radius dynamics ----------
     Rad_dot = Param.k_rad * 0.5 * ...
-        (1 + q_s' * q_d / (norm(q_s) * norm(q_d))) * ...
+        (1 + q_s' * q_d_s / (norm(q_s) * norm(q_d_s))) * ...
         (Param.sphere_radius - Rad);
 
     Rad = Rad + Param.dTi * Rad_dot;
 
     % ---------- Unit-sphere projection ----------
     q_hat  = q_s/ norm(q_s);
-    qd_hat = q_d / norm(q_d);
+    qd_hat = q_d_s / norm(q_d_s);
     
     % ---------- Configuration error ----------
     e_q = (1 / (sqrt(2) * sqrt(1 + q_hat' * qd_hat))) * ...

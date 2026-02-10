@@ -6,12 +6,12 @@
 clear all;
 
 % Model and simulation parameters
-Param.Tend = 15;
+Param.Tend = 30;
 Param.dTi = 0.01;  % inner-loop and simulation sampling period
 Nsim = round(Param.Tend/Param.dTi)+1;
 Param.g = 9.81;     % earth gravity
 Param.nD = 3; % number of drones
-Param.sphere_radius = 0.5;  % sphere radius
+Param.sphere_radius = 1;  % sphere radius
 Param.k_rad = 0.3; % radius reduction gain
 
 %target motion reference
@@ -91,12 +91,12 @@ for iD = 1:Param.nD
     psi0{iD} = pi/20*((Param.nD-1)/2-iD+1);
     R0{iD} = Euler2R([0;0;psi0{iD}]);
     om0{iD} = [0;0;0];
-    x{iD} = zeros(nx,Nsim+1);
+    chaser{iD} = zeros(nx,Nsim+1);
     xiep{iD} = zeros(3,Nsim+1);
     T{iD} = zeros(1,Nsim);
     tau{iD} = zeros(3,Nsim);
     lbd{iD} = zeros(3,Nsim);
-    x{iD}(:,1) = [p0{iD};v0{iD};reshape(R0{iD},[],1);om0{iD}];
+    chaser{iD}(:,1) = [p0{iD};v0{iD};reshape(R0{iD},[],1);om0{iD}];
     
     if Param.ref_mode == 1 % square wave reference
         t_step = 10;

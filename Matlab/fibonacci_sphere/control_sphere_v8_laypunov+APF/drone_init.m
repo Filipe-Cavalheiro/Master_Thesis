@@ -6,14 +6,21 @@
 clear all;
 
 % Model and simulation parameters
-Param.Tend = 20;
+Param.Tend = 30;
 Param.dTi = 0.01;  % inner-loop and simulation sampling period
 Nsim = round(Param.Tend/Param.dTi)+1;
 Param.g = 9.81;     % earth gravity
-Param.nD = 9; % number of drones
-Param.sphere_radius = 0.5;  % sphere radius
-Param.inital_target_pos = [0;0;1];
+Param.nD = 3; % number of drones
+Param.sphere_radius = 1;  % sphere radius
 Param.k_rad = 0.3; % radius reduction gain
+
+%target motion reference
+target_ref = @(t) [ ...
+    2*(t<=8).*sin(t*pi/8) + (t>8).*0; ...
+    2*(t<=8).*cos(t*pi/8) + (t>8).*-2; ...
+    1 ];
+
+Param.initial_target_pos = target_ref(0);
 
 % Outer-loop parameters
 Param.c = 0.3;                             % Nm (s/rad)
@@ -54,26 +61,24 @@ Param.kom= diag([0.5,0.5,0.5]);
 % if Param.nD <= 9
 %     theta0   = [0.175 0.698 1.222 1.745 2.269 2.793 3.491 4.189 4.712];
 %     phi0     = [1.484 1.222 1.396 1.047 1.484 1.222 0.698 1.396 0.960];
-%     Param.r0 = [5 5 5 5 5 5 5 5 5];
+%     Param.r0 = [13 15 11 20 15 30 25 20 15];
 % else
 %     theta0   = 2*pi*rand(1,Param.nD);
 %     phi0     = 2*pi*rand(1,Param.nD);
 %     Param.r0 = 15*rand(1, Param.nD);
 % end 
-%  
+% 
 % initial_pos = Param.r0.* [sin(theta0).*cos(phi0);
 %                 sin(theta0).*sin(phi0);
 %                 cos(theta0)] + Param.inital_target_pos;
-% initial_pos = initial_pos(:, 1:Param.nD);
 
-% Floor position
 initial_pos = [-1, -1, -1, 0, 0, 0, 1, 1, 1;...
                -1, 0, 1, -1, 0, 1, -1, 0, 1;...
                0, 0, 0, 0, 0, 0, 0, 0, 0;];
 
 initial_pos = initial_pos(:, 1:Param.nD);
 
-Param.r0 = sqrt(sum((initial_pos - repmat(Param.inital_target_pos,1,Param.nD)) .^ 2));
+Param.r0 = sqrt(sum((initial_pos - repmat(target_ref(0),1,Param.nD)) .^ 2));
 
 % initialize variables for all drones:
 t = 0:Param.dTi:Param.Tend;
@@ -88,12 +93,12 @@ for iD = 1:Param.nD
     psi0{iD} = pi/20*((Param.nD-1)/2-iD+1);
     R0{iD} = Euler2R([0;0;psi0{iD}]);
     om0{iD} = [0;0;0];
-    x{iD} = zeros(nx,Nsim+1);
+    chaser{iD} = zeros(nx,Nsim+1);
     xiep{iD} = zeros(3,Nsim+1);
     T{iD} = zeros(1,Nsim);
     tau{iD} = zeros(3,Nsim);
     lbd{iD} = zeros(3,Nsim);
-    x{iD}(:,1) = [p0{iD};v0{iD};reshape(R0{iD},[],1);om0{iD}];
+    chaser{iD}(:,1) = [p0{iD};v0{iD};reshape(R0{iD},[],1);om0{iD}];
     
     if Param.ref_mode == 1 % square wave reference
         t_step = 10;

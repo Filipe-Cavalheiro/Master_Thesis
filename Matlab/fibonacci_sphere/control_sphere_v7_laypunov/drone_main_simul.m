@@ -57,7 +57,7 @@ end
 for iD = 1:Param.nD
     % initial values
     Rad{iD} = organized_Rad(iD);
-    x{iD}(1:3,1) = organized_initial_pos(:,iD);
+    chaser{iD}(1:3,1) = organized_initial_pos(:,iD);
     q{iD} = organized_initial_pos(:,iD);
     omega{iD} = [0; 0; 0];
     
@@ -74,6 +74,7 @@ for iD = 1:Param.nD
     q_d_hist{iD} = zeros(3, Nsim);
 end
 c_sphere = zeros(3,Nsim);
+target_hist = zeros(18,Nsim);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Target drone initialization
@@ -99,19 +100,23 @@ for k = 1:Nsim
     t = (k-1)*Param.dTi;
     p_d_target = target_ref(t);
     [target, c_sphere(:,k)] = target_motion(target, p_d_target, Param);
+    target_hist(:,k) = target.x;
 
     for iD = 1:Param.nD
         % get state vector
-        pos{iD} = x{iD}(1:3,k);
-        v{iD} = x{iD}(4:6,k);
-        R = reshape(x{iD}(7:15,k),3,3);
-        om = x{iD}(16:18,k);
-
+        pos{iD} = chaser{iD}(1:3,k);
+        v{iD} = chaser{iD}(4:6,k);
+        R = reshape(chaser{iD}(7:15,k),3,3);
+        om = chaser{iD}(16:18,k);
+        
         % Position reference generation
-        q{iD} = linear_motion_ref(Rad{iD}, pos{iD},omega{iD},q_d{iD},omega_d{iD},c_sphere(:,k), Param);
+        [q{iD}, e_q] = linear_motion_ref(Rad{iD}, pos{iD},omega{iD},q_d{iD},omega_d{iD},c_sphere(:,k), Param);
+            
+        % update radius of q_d
+        q_d{iD} = Rad{iD} * q_d{iD} / norm(q_d{iD});
 
-        % Reduce q_d radius
-        [Rad{iD}, q_d{iD}] = update_radius(Rad{iD}, q{iD}, q_d{iD}, c_sphere(:,k), Param);
+        % update radius
+        Rad{iD} = update_radius(Rad{iD}, e_q, q{iD}, q_d{iD}, chaser{iD}(:,k), target.x,Param);
 
         % --- Store
         Rad_hist{iD}(k) = Rad{iD};
@@ -141,7 +146,7 @@ for k = 1:Nsim
         vp = v{iD} + Param.dTi*dot_v;
         Rp = rot_integrate(R,om,Param.dTi);
         omp = om + Param.dTi*dot_om;
-        x{iD}(:,k+1) = [pp;vp;reshape(Rp,[],1);omp];
+        chaser{iD}(:,k+1) = [pp;vp;reshape(Rp,[],1);omp];
     
         % auxiliary drone attitude computation from rotation matrix
         lbd{iD}(:,k) = R2Euler(R);
@@ -154,4 +159,24 @@ for k = 1:Nsim
 end
 
 %%
-animate_simulation(x, q_hist, q_d_hist, c_sphere, fib_ref_points, Param, Nsim)
+% figure;
+% hold on;
+% 
+% t = (0:Nsim-1) * Param.dTi;
+% 
+% plot(t, Rad_hist{1});
+% plot(t, vecnorm(target_hist(1:3,:), 2, 1) ...
+%        - vecnorm(chaser{1}(1:3,2:end), 2, 1));
+% plot(t, vecnorm(target_hist(4:6,:), 2, 1) ...
+%        - vecnorm(chaser{1}(4:6,2:end), 2, 1));
+% 
+% xlabel('Time [s]');
+% legend( ...
+%     'Radial history', ...
+%     'Position difference (norm)', ...
+%     'Velocity difference (norm)' ...
+% );
+% grid on;
+
+
+animate_simulation(chaser, q_hist, q_d_hist, c_sphere, fib_ref_points, Param, Nsim)
