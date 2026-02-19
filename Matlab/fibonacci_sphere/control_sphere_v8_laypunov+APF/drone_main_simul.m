@@ -11,7 +11,7 @@ clearvars iD;
 % Fibonacci sphere values
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 fib_ref_points = get_fibonacci_points(Param.nD, Param.sphere_radius, Param.initial_target_pos);
-min_safe_dist = get_min_safe_distance(Param.nD, Param.sphere_radius);
+min_safe_dist = get_min_safe_distance(Param.nD, Param.sphere_radius)*0.5;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Assign each agent to nearest ref point
@@ -58,10 +58,11 @@ for iD = 1:Param.nD
     omega{iD} = [0; 0; 0];
     
     % desired values
-    q_d{iD} = fib_ref_points(:,iD)/norm(fib_ref_points(:,iD))*Rad{iD};
+    q_d{iD} = projectToSphere(fib_ref_points(:,iD), Param.sphere_radius, Param.initial_target_pos);
     
     omega_d{iD} = [0; 0; 0];
 end
+
 
 % Storage
 for iD = 1:Param.nD
@@ -115,7 +116,7 @@ for k = 1:Nsim
             
         % Position reference shift to safe guard collisions
         current_pos(:, iD) = q{iD};
-        q{iD} = AFP_safe_guard(iD, current_pos, q{iD}, min_safe_dist, Rad{iD}, c_sphere(:,k), Param);
+        q{iD} = AFP_safe_guard(iD, current_pos, min_safe_dist, Param.sphere_radius, Rad{iD}, c_sphere(:,k), Param);
         
         % update radius
         Rad{iD} = update_radius(Rad{iD}, e_q, q{iD}, q_d{iD}, chaser{iD}(:,k), target.x,Param);
@@ -172,21 +173,23 @@ end
 %%
 % figure;
 % hold on;
+% grid on;
 % 
 % t = (0:Nsim-1) * Param.dTi;
 % 
-% plot(t, Rad_hist{1});
-% plot(t, vecnorm(target_hist(1:3,:), 2, 1) ...
-%        - vecnorm(chaser{1}(1:3,2:end), 2, 1));
+% plot(t, Rad_hist{1}, 'LineWidth', 3);
+% plot(t, vecnorm(target_hist(1:3,:)-chaser{1}(1:3,1:end-1), 2, 1), 'LineWidth', 3);
 % plot(t, vecnorm(target_hist(4:6,:), 2, 1) ...
-%        - vecnorm(chaser{1}(4:6,2:end), 2, 1));
+%        - vecnorm(chaser{1}(4:6,2:end), 2, 1), 'LineWidth', 3);
 % 
 % xlabel('Time [s]');
-% legend( ...
+% lgd = legend( ...
 %     'Radial history', ...
 %     'Position difference (norm)', ...
 %     'Velocity difference (norm)' ...
 % );
-% grid on;
+% 
+% lgd.FontSize = 12; 
+% lgd.Interpreter = 'latex';
 
 animate_simulation(chaser, q_hist, q_d_hist, fib_ref_points, c_sphere, Param, Nsim);

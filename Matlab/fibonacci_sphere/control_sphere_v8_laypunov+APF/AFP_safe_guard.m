@@ -1,13 +1,13 @@
-function q = AFP_safe_guard(iD,  current_pos, q, min_safe_dist, Rad, c_sphere, Param)
+function q = AFP_safe_guard(iD,  q_positions, min_safe_dist, Rad_sphere, Rad, c_sphere, Param)
 %AFP_SAFE_GUARD Summary of this function goes here
 %   Detailed explanation goes here
 % parse the position from cells to array
 
     % Project points on the sphere
-    points_on_sphere = projectToSphere(current_pos, Rad, c_sphere);
+    points_on_sphere = projectToSphere(q_positions, Rad_sphere, c_sphere);
 
     %Compute geodesic distances between all pairs
-    current_geo_distances = geo_distances(points_on_sphere, Rad, c_sphere);
+    current_geo_distances = geo_distances(points_on_sphere, Rad_sphere, c_sphere);
 
     % APF collision avoidance
     distances = current_geo_distances(iD, :);
@@ -36,7 +36,7 @@ function q = AFP_safe_guard(iD,  current_pos, q, min_safe_dist, Rad, c_sphere, P
 
         AB_tangent = AB_tangent / norm(AB_tangent);
 
-        repulsion_mag = (min_safe_dist - dist_vals(i))* 0.3;
+        repulsion_mag = (min_safe_dist - dist_vals(i));
 
         artificial_potential_vector = ...
             artificial_potential_vector + repulsion_mag * AB_tangent;

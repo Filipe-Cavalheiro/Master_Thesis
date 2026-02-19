@@ -21,13 +21,6 @@ function [q, e_q] = linear_motion_ref( ...
     q_s  = q   - c_sphere;
     q_d_s  = q_d   - c_sphere;
 
-    % ---------- Radius dynamics ----------
-    Rad_dot = Param.k_rad * 0.5 * ...
-        (1 + q_s' * q_d_s / (norm(q_s) * norm(q_d_s))) * ...
-        (Param.sphere_radius - Rad);
-
-    Rad = Rad + Param.dTi * Rad_dot;
-
     % ---------- Unit-sphere projection ----------
     q_hat  = q_s/ norm(q_s);
     qd_hat = q_d_s / norm(q_d_s);

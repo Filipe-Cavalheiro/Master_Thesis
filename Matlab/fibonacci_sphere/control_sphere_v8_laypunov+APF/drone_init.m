@@ -11,14 +11,15 @@ Param.dTi = 0.01;  % inner-loop and simulation sampling period
 Nsim = round(Param.Tend/Param.dTi)+1;
 Param.g = 9.81;     % earth gravity
 Param.nD = 3; % number of drones
-Param.sphere_radius = 1;  % sphere radius
+Param.sphere_radius = 2;  % sphere radius
+Param.arena = 'free_world'; % simulation arena: 'lab', 'free_world'
 Param.k_rad = 0.3; % radius reduction gain
 
 %target motion reference
 target_ref = @(t) [ ...
     2*(t<=8).*sin(t*pi/8) + (t>8).*0; ...
     2*(t<=8).*cos(t*pi/8) + (t>8).*-2; ...
-    1 ];
+    1.5 ];
 
 Param.initial_target_pos = target_ref(0);
 
@@ -34,13 +35,13 @@ Param.K_w = diag([7.056 7.320 11.88]) * 1e-1;
 Param.p_ref_static = [1;1;3];
 Param.psi_ref_static = pi/3;
 
-Param.vz_d = 0.1;
-Param.dh = 0.05;      % safety height difference between drones
-Param.Rad = 5;        % radius of circle
-Param.omn = 2*pi/20;  % rotation frequency
-Param.dphase = -pi/12;% ref circle angular difference between drones
-
-Param.ref_mode = 2; % reference: 1 - square wave; 2 - circle
+% Param.vz_d = 0.1;
+% Param.dh = 0.05;      % safety height difference between drones
+% Param.Rad = 5;        % radius of circle
+% Param.omn = 2*pi/20;  % rotation frequency
+% Param.dphase = -pi/12;% ref circle angular difference between drones
+% 
+% Param.ref_mode = 2; % reference: 1 - square wave; 2 - circle
 
 % M690B drone 
 % (guessing parameters! needs identification or estimation from geometry)
@@ -58,27 +59,31 @@ Param.kR = diag([8,8,8]);
 Param.kom= diag([0.5,0.5,0.5]);
 
 % Encirclement position
-% if Param.nD <= 9
-%     theta0   = [0.175 0.698 1.222 1.745 2.269 2.793 3.491 4.189 4.712];
-%     phi0     = [1.484 1.222 1.396 1.047 1.484 1.222 0.698 1.396 0.960];
-%     Param.r0 = [13 15 11 20 15 30 25 20 15];
-% else
-%     theta0   = 2*pi*rand(1,Param.nD);
-%     phi0     = 2*pi*rand(1,Param.nD);
-%     Param.r0 = 15*rand(1, Param.nD);
-% end 
-% 
-% initial_pos = Param.r0.* [sin(theta0).*cos(phi0);
-%                 sin(theta0).*sin(phi0);
-%                 cos(theta0)] + Param.inital_target_pos;
-
-initial_pos = [-1, -1, -1, 0, 0, 0, 1, 1, 1;...
-               -1, 0, 1, -1, 0, 1, -1, 0, 1;...
-               0, 0, 0, 0, 0, 0, 0, 0, 0;];
-
-initial_pos = initial_pos(:, 1:Param.nD);
-
-Param.r0 = sqrt(sum((initial_pos - repmat(target_ref(0),1,Param.nD)) .^ 2));
+if strcmp(Param.arena, 'free_world')
+    if Param.nD <= 9
+        theta0   = [0.175 0.698 1.222 1.745 2.269 2.793 3.491 4.189 4.712];
+        phi0     = [1.484 1.222 1.396 1.047 1.484 1.222 0.698 1.396 0.960];
+        Param.r0 = [6 8 7 20 15 30 25 20 15];
+    else
+        theta0   = 2*pi*rand(1,Param.nD);
+        phi0     = 2*pi*rand(1,Param.nD);
+        Param.r0 = 15*rand(1, Param.nD);
+    end 
+    
+    initial_pos = Param.r0.* [sin(theta0).*cos(phi0);
+                    sin(theta0).*sin(phi0);
+                    cos(theta0)] + Param.initial_target_pos;
+elseif strcmp(Param.arena, 'lab')
+    initial_pos = [-1, -1, -1, 0, 0, 0, 1, 1, 1;...
+                   -1, 0, 1, -1, 0, 1, -1, 0, 1;...
+                   0, 0, 0, 0, 0, 0, 0, 0, 0;];
+    
+    initial_pos = initial_pos(:, 1:Param.nD);
+    
+    Param.r0 = sqrt(sum((initial_pos - repmat(target_ref(0),1,Param.nD)) .^ 2));
+else
+    error("One of the arenas must be chosen either: Param.arena='lab' or Param.arena='free_world'");
+end
 
 % initialize variables for all drones:
 t = 0:Param.dTi:Param.Tend;
@@ -100,35 +105,35 @@ for iD = 1:Param.nD
     lbd{iD} = zeros(3,Nsim);
     chaser{iD}(:,1) = [p0{iD};v0{iD};reshape(R0{iD},[],1);om0{iD}];
     
-    if Param.ref_mode == 1 % square wave reference
-        t_step = 10;
-        sw = mod(t,t_step)>=t_step/2; % boolean wave
-        p_ref{iD} = p0{iD}*ones(1,Tend/Param.dTi+1) + p_ref_static*sw;
-        v_ref{iD} = zeros(3,nt);
-        a_ref{iD} = zeros(3,nt);
-        j_ref{iD} = zeros(3,nt);
-        psi_ref{iD} = psi0{iD}*ones(1,Tend/Param.dTi+1) + psi_ref_static*sw;
-        dpsi_ref{iD} = zeros(1,Tend/Param.dTi+1);
-        
-    else % circle reference
-        phase{iD} = (iD-1)*Param.dphase;
-%         p_ref{iD} = [Param.Rad*cos(Param.omn*t+phase{iD});Param.Rad*sin(Param.omn*t+phase{iD});(1+dh*(iD-1))*ones(size(t))];
-%         v_ref{iD} = [-Param.Rad*Param.omn*sin(omn*t+phase{iD});Param.Rad*Param.omn*cos(Param.omn*t+phase{iD});0*ones(size(t))];
-        p_ref{iD} = [Param.Rad*cos(Param.omn*t+phase{iD});Param.Rad*sin(Param.omn*t+phase{iD});Param.vz_d*t+Param.p_ref_static(3)];
-        v_ref{iD} = [-Param.Rad*Param.omn*sin(Param.omn*t+phase{iD});Param.Rad*Param.omn*cos(Param.omn*t+phase{iD});Param.vz_d*ones(size(t))];
-        a_ref{iD} = [-Param.Rad*Param.omn^2*cos(Param.omn*t+phase{iD});-Param.Rad*Param.omn^2*sin(Param.omn*t+phase{iD});0*ones(size(t))];
-        j_ref{iD} = [ Param.Rad*Param.omn^3*sin(Param.omn*t+phase{iD});-Param.Rad*Param.omn^3*cos(Param.omn*t+phase{iD});0*ones(size(t))];
-        psi_ref{iD} = atan2(v_ref{iD}(2,:),v_ref{iD}(1,:));
-        dpsi_ref{iD} = Param.omn*ones(size(psi_ref{iD}));
-    end
-
-    p_ref_all{iD} = [p_ref{iD};v_ref{iD};a_ref{iD};j_ref{iD}];
-    psi_ref_all{iD} = [psi_ref{iD};dpsi_ref{iD}];
-    
-    % prepare data for simulink
-    Param.("p0_" + num2str(iD)) = p0{iD};
-    Param.("v0_" + num2str(iD)) = v0{iD};
-    Param.("psi0_" + num2str(iD)) = psi0{iD};
-    Param.("R0_" + num2str(iD)) = R0{iD};
-    Param.("om0_" + num2str(iD)) = om0{iD};
+%     if Param.ref_mode == 1 % square wave reference
+%         t_step = 10;
+%         sw = mod(t,t_step)>=t_step/2; % boolean wave
+%         p_ref{iD} = p0{iD}*ones(1,Tend/Param.dTi+1) + p_ref_static*sw;
+%         v_ref{iD} = zeros(3,nt);
+%         a_ref{iD} = zeros(3,nt);
+%         j_ref{iD} = zeros(3,nt);
+%         psi_ref{iD} = psi0{iD}*ones(1,Tend/Param.dTi+1) + psi_ref_static*sw;
+%         dpsi_ref{iD} = zeros(1,Tend/Param.dTi+1);
+% 
+%     else % circle reference
+%         phase{iD} = (iD-1)*Param.dphase;
+% %         p_ref{iD} = [Param.Rad*cos(Param.omn*t+phase{iD});Param.Rad*sin(Param.omn*t+phase{iD});(1+dh*(iD-1))*ones(size(t))];
+% %         v_ref{iD} = [-Param.Rad*Param.omn*sin(omn*t+phase{iD});Param.Rad*Param.omn*cos(Param.omn*t+phase{iD});0*ones(size(t))];
+%         p_ref{iD} = [Param.Rad*cos(Param.omn*t+phase{iD});Param.Rad*sin(Param.omn*t+phase{iD});Param.vz_d*t+Param.p_ref_static(3)];
+%         v_ref{iD} = [-Param.Rad*Param.omn*sin(Param.omn*t+phase{iD});Param.Rad*Param.omn*cos(Param.omn*t+phase{iD});Param.vz_d*ones(size(t))];
+%         a_ref{iD} = [-Param.Rad*Param.omn^2*cos(Param.omn*t+phase{iD});-Param.Rad*Param.omn^2*sin(Param.omn*t+phase{iD});0*ones(size(t))];
+%         j_ref{iD} = [ Param.Rad*Param.omn^3*sin(Param.omn*t+phase{iD});-Param.Rad*Param.omn^3*cos(Param.omn*t+phase{iD});0*ones(size(t))];
+%         psi_ref{iD} = atan2(v_ref{iD}(2,:),v_ref{iD}(1,:));
+%         dpsi_ref{iD} = Param.omn*ones(size(psi_ref{iD}));
+%     end
+% 
+%     p_ref_all{iD} = [p_ref{iD};v_ref{iD};a_ref{iD};j_ref{iD}];
+%     psi_ref_all{iD} = [psi_ref{iD};dpsi_ref{iD}];
+% 
+%     % prepare data for simulink
+%     Param.("p0_" + num2str(iD)) = p0{iD};
+%     Param.("v0_" + num2str(iD)) = v0{iD};
+%     Param.("psi0_" + num2str(iD)) = psi0{iD};
+%     Param.("R0_" + num2str(iD)) = R0{iD};
+%     Param.("om0_" + num2str(iD)) = om0{iD};
 end
