@@ -50,9 +50,9 @@ lgd = legend([hInit, hProj, hdrone, hq, hq_d], ...
     {'Initial Positions', 'Final Objective', 'drone', ...
      '$\tilde{q}_i$', '$q_i^\star$'});
 
-lgd.FontSize = 14; 
+lgd.FontSize = 10; 
 lgd.Interpreter = 'latex';
-lgd.Position = [0.65 0.65 0.1 0.2];  % [x y width height]
+lgd.Position = [0.45 0.45 0.05 0.1];  % [x y width height]
 lgd.AutoUpdate = 'off';
 % === End of create a label ===
 

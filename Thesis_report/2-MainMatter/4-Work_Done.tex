@@ -511,3 +511,91 @@ In Figure~\ref{fig.4:Lyapunov_solution_final} the final result obtained with the
   \caption{Trajectory obtained using the Lyapunov for three drones. ($t$ in seconds)}
   \label{fig.4:Lyapunov_solution_final}
 \end{figure}
+
+\section{Safe Guard methods} \label{sec.5:Safe Guard methods}
+Despite having a trajectory from the chasers to their respective final desired position no guarantee about collision avoidance is given, in this section that exact subject is discussed, two main methods will be discussed \gls{APF}, \gls{CBF} or \gls{HOCBF}. To introduce more formally the subject it will be first \gls{APF} since they are the simpler of the presented methods.
+
+\subsection{Artificial Potential Fields}
+\gls{APF} have been introduced previously at \ref{sec.4:Control loop architecture}
+
+The safeguard operates directly on the spherical manifold
+$\Gamma^2$ and modifies only the reference position ${q}_i$, preserving the
+nonlinear controller stability and the Lyapunov controller convergence structure.
+Specifically, at each control step, the current UAV positions are
+projected onto the sphere of radius $r^\star$ centered at the target
+\begin{equation}
+    q_{i}^{r^\star} = \Pi_{\Gamma^2}^{r^\star,p_T}(\dot{q}_i)
+\end{equation}
+
+Pairwise geodesic distances on $\Gamma^2$ are then computed.
+Let $d_{ij}$ denote the spherical geodesic distance between UAVs $i$
+and $j$. A minimum safe separation $d_{\min} > 0$ is defined, in this case half of the the average geodesic distance between the fibonacci points $p^\star$ is used.
+For each neighboring UAV satisfying $d_{ij} < d_{\min}$, a repulsive
+tangential displacement is generated.
+
+Let
+\begin{equation}
+    n_i = \frac{q_{i}^{r^\star} - p_T}{\|q_{i}^{r^\star} - p_T\|}
+\end{equation}
+denote the outward normal direction at UAV $i$.
+The relative displacement vector
+\begin{equation}
+    \Delta_{ij} = q_{i}^{r^\star} - q_{j}^{\mathrm{proj}}
+\end{equation}
+is decomposed into radial and tangential components.
+Only the tangential component
+\begin{equation}
+    \Delta_{ij}^{\top}
+    =
+    \Delta_{ij}
+    -
+    (\Delta_{ij}^{\top} n_i) n_i
+\end{equation}
+is retained, ensuring that the safeguard does not interfere with
+radial stabilization.
+
+The repulsive contribution from agent $j$ to agent $i$ is defined as
+\begin{equation}
+    f_{ij}
+    =
+    (d_{\min} - d_{ij})
+    \frac{\Delta_{ij}^{\top}}{\|\Delta_{ij}^{\top}\|},
+    \quad d_{ij} < d_{\min},
+\end{equation}
+The total artificial potential displacement is obtained by summing all
+active pairwise contributions
+\begin{equation}
+    f_i = \sum_{j \neq i} f_{ij}.
+\end{equation}
+
+To prevent excessive deviation from the nominal reference, the
+resulting displacement is saturated to a bounded magnitude of a maximum of $d_{min}$ and the
+corrected reference is re-projected onto the sphere:
+\begin{equation}
+    \tilde{q}_i =
+    \Pi_{\Gamma^2}^{r_i,p_T}
+    \left(
+        q_{i}^{r^\star} + f_i
+    \right),
+    \label{eq:apf_result}
+\end{equation}
+The safeguard therefore produces a modified reference direction
+$\tilde{q}_i$ that maintains spherical consistency while enforcing
+minimum separation during transients.
+
+\paragraph*{Stability Discussion}
+
+The APF term acts as a bounded perturbation to the nominal
+reduced-attitude reference. Since the artificial potential vanishes
+whenever $d_{ij} \ge d_{\min}$ for all $j$, the nominal equilibrium
+configuration remains unchanged. Furthermore, because the perturbation
+is tangential and bounded, the almost-global asymptotic stability of
+the reduced-attitude equilibrium is preserved in the sense of
+input-to-state stability with respect to the safeguard perturbation.
+
+In practice, this mechanism alleviates collision avoidance during
+convergence while allowing the Lyapunov-based controller to recover
+the desired encirclement configuration once agents are safely
+separated. But it cannot guarantee collision avoidance unlike the \gls{CBF} which does guarantee.
+
+\subsection{Control Barrier Functions}

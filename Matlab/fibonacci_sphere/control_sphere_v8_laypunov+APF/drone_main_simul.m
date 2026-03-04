@@ -109,6 +109,7 @@ for k = 1:Nsim
         pos{iD} = chaser{iD}(1:3,k);
         v{iD} = chaser{iD}(4:6,k);
         R = reshape(chaser{iD}(7:15,k),3,3);
+
         om = chaser{iD}(16:18,k);
         
         % Position reference generation
@@ -171,25 +172,25 @@ for k = 1:Nsim
 end
 
 %%
-% figure;
-% hold on;
-% grid on;
-% 
-% t = (0:Nsim-1) * Param.dTi;
-% 
-% plot(t, Rad_hist{1}, 'LineWidth', 3);
-% plot(t, vecnorm(target_hist(1:3,:)-chaser{1}(1:3,1:end-1), 2, 1), 'LineWidth', 3);
-% plot(t, vecnorm(target_hist(4:6,:), 2, 1) ...
-%        - vecnorm(chaser{1}(4:6,2:end), 2, 1), 'LineWidth', 3);
-% 
-% xlabel('Time [s]');
-% lgd = legend( ...
-%     'Radial history', ...
-%     'Position difference (norm)', ...
-%     'Velocity difference (norm)' ...
-% );
-% 
-% lgd.FontSize = 12; 
-% lgd.Interpreter = 'latex';
+figure;
+hold on;
+grid on;
 
+t = (0:Nsim-1) * Param.dTi;
+
+plot(t, Rad_hist{1}, 'LineWidth', 3);
+plot(t, vecnorm(target_hist(1:3,:)-chaser{1}(1:3,1:end-1), 2, 1), 'LineWidth', 3);
+plot(t, vecnorm(target_hist(4:6,:), 2, 1) ...
+       - vecnorm(chaser{1}(4:6,2:end), 2, 1), 'LineWidth', 3);
+
+xlabel('Time [s]');
+lgd = legend( ...
+    'Radial history', ...
+    'Position difference (norm)', ...
+    'Velocity difference (norm)' ...
+);
+
+lgd.FontSize = 12; 
+lgd.Interpreter = 'latex';
+%%
 animate_simulation(chaser, q_hist, q_d_hist, fib_ref_points, c_sphere, Param, Nsim);

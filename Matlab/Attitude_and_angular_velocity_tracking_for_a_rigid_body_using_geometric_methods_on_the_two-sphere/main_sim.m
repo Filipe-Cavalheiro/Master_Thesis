@@ -54,13 +54,18 @@ for k = 1:Nsim
     % --- Attitude error function (Eq. 8)
     Psi = 2 - sqrt(2) * sqrt(1 + q' * q_d);
 
+
     % --- Configuration error vector (Eq. 12)
     e_q = (1 / (sqrt(2) * sqrt(1 + q' * q_d))) * Q' * S(q_d) * q;
 
     % --- Angular velocity error
     e_w = omega - omega_d;
+    
+    % --- Psi dot was wrongly defined missing the transpose (Eq. 14)
+    Psi_dot = ((1 / (sqrt(2) * sqrt(1 + q' * q_d))) * Q' * S(q_d) * q)'*e_w;
 
     % --- Control law (Eq. 28, reduced to S^2)
+    
     u = Q'* (-K_r * Q * e_q ...
         -K_w * e_w )...
         + S(omega) * J * omega ...

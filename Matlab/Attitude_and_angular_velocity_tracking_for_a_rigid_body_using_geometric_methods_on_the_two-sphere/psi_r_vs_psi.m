@@ -20,8 +20,8 @@ Psi = 2 - 2/(sqrt(2))*sqrt(1 + cos(theta));
 e_q = sin(theta)./(sqrt(2)*sqrt(1+cos(theta)));
 
 figure;
-plot(theta, Psi, 'LineWidth', 1.5); hold on;
-plot(theta, e_q, 'LineWidth', 1.5);
+plot(theta, Psi, 'LineWidth', 3); hold on;
+plot(theta, e_q, 'LineWidth', 3);
 grid on;
 xlabel('$\theta\;[\mathrm{rad}]$', 'Interpreter', 'latex');
-legend({'$\Psi$', '$e_{q,3}$'}, 'Interpreter', 'latex');
+legend({'$\Psi$', '$e_{q,1}$'}, 'Interpreter', 'latex');
