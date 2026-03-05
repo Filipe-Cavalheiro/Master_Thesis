@@ -3,7 +3,7 @@
 %obstacles while doing so. 
 %Multiple simulations are ran where the obstacle position is varied
 
-clc; clear; close all;
+clc; clear all; close all;
 
 % === Simulation parameters ===
 Tend = 10;
@@ -20,9 +20,9 @@ theta_safe = r_safe*pi;
 y_rad = deg2rad(y);
 center_z = sin(y_rad);
 
-k0_cbf = 1;     % CBF gain 1st order
-k1_cbf = 1;     % CBF gain 2nd order
-k_clf = 0.01;     % CLF gain 1st order
+k0_cbf = 2;     % CBF gain 1st order
+k1_cbf = 2;     % CBF gain 2nd order
+k_clf = 0.015;     % CLF gain 1st order
 
 % System parameters (V. Numerical Simulations)
 c = 0.3;                             % Nm (s/rad)
@@ -99,14 +99,7 @@ for x = 1:steps
 
         % Angular velocity error
         e_w = omega - omega_d;
-    
-        % Control law (Eq. 28, reduced to S^2)
-        % u_nom = Q'* (-K_r * Q * e_q ...
-        %     -K_w * e_w )...
-        %     + S(omega) * J * omega ...
-        %     + c * omega ...
-        %     - tau;
-        
+            
         % === Control Barrier Functions for multiple obstacles ============      
         A_all = [];
         b_all = [];
@@ -120,9 +113,10 @@ for x = 1:steps
             % L2fh = -obs'*S(omega)*(S(omega)*q) ...
             %      + (S(obs)*q)'*(inv(J)*( -c*omega - S(omega)*J*omega));
 
-            L2fh = -obs'*S(omega)*S(omega)*q - obs'*S(q)*inv(J)*( -c*omega - S(omega)*J*omega);
+            L2fh = (S(omega)*obs)'*(S(omega)*q) ...
+                 + (S(obs)*q)'*(J\( -c*omega - S(omega)*J*omega ));
 
-            LgLfh = -obs'*S(q)*inv(J);
+            LgLfh = -q'*S(obs)'/J;
 
             % -LgLfh*u <= L2fh + k1_cbf*h_dot + k0_cbf*h (=)
             % -L2fh - LgLfh*u <= k1_cbf*h_dot + k0_cbf*h (=)
@@ -135,33 +129,11 @@ for x = 1:steps
         end
         
         % === Control Lyapunov Functions for multiple obstacles ===========  
-        %formula with out psi
-        % V = 0.5*omega'*J*omega;
-        % LfV = -omega' * K_r * e_q-omega' * K_w * omega;
-        % LgV = omega';
-
-        % ---closed loop formula (supposedly wrong)---
-        % V = 0.5*omega'*J*omega + Psi;
-        % LfV = -omega' * (K_r-eye(3)) * e_q-omega' * K_w * omega;
-        % LgV = omega';
-        % H = eye(3);
-        % f = zeros(3,1);
-        
-        % ---open loop formula---
-        V = 0.5*omega'*J*omega + Psi;
-        LfV = -c * (omega' * omega) + e_q' * omega;
-        LgV = omega';
+        % ---closed loop formula---
+        % there is no CLF since a nominal actuation is given
         u_nom = -K_r*e_q - K_w*e_w + S(omega)*J*omega + c*omega;
         H = eye(3);
         f = -u_nom;
-        
-        % LgV*u <= -LfV - k_clf * V (=)
-        % LgV + LfV*u <= k_clf * V
-        A_clf = LgV;
-        b_clf = -LfV - k_clf * V;
-
-        A_all = [A_all; A_clf];
-        b_all = [b_all; b_clf];
 
         options = optimoptions('quadprog','Display','off');
         [u,~,exitflag] = quadprog(H,f,A_all,b_all,[],[],[],[],[],options);
@@ -231,8 +203,8 @@ for x = 1:steps
         plot3(circle_points(1,:), circle_points(2,:), circle_points(3,:), 'LineWidth',1.5);
     end
 
-    plot3(q_hist_current(1,1:k), q_hist_current(2,1:k), q_hist_current(3,1:k));
-    plot3(q_hist_current(1,k), q_hist_current(2,k), q_hist_current(3,k));     
+    plot3(q_hist_current(1,1:end), q_hist_current(2,1:end), q_hist_current(3,1:end));
+    plot3(q_hist_current(1,end), q_hist_current(2,end), q_hist_current(3,end));     
                  
     drawnow;
     pause(0.5);
