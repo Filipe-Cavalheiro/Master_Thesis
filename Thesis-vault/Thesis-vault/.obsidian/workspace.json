@@ -4,21 +4,35 @@
     "type": "split",
     "children": [
       {
-        "id": "244ae1d22319e60f",
+        "id": "d4e75b6d2441a165",
         "type": "tabs",
         "children": [
           {
-            "id": "5aa5cb35a1eceba2",
+            "id": "0cc68a6e5a065177",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "CBF+CLF/Drone S2 CLF+HOCBF QP geodesic.md",
-                "mode": "preview",
+                "file": "Work Done.md",
+                "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Drone S2 CLF+HOCBF QP geodesic"
+              "title": "Work Done"
+            }
+          },
+          {
+            "id": "c80774943477a90c",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Voronoi.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Voronoi"
             }
           }
         ]
@@ -78,8 +92,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "right": {
     "id": "bdf094145ce7a2cc",
@@ -181,8 +194,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -195,14 +207,23 @@
       "bases:Create new base": false
     }
   },
-  "active": "5aa5cb35a1eceba2",
+  "active": "0cc68a6e5a065177",
   "lastOpenFiles": [
+    "Voronoi.md",
+    "Work Done.md",
+    "Untitled.base",
+    "Spacing points on manifols/Untitled.md",
+    "Spacing points on manifols/Fibonacci Lattice.md",
+    "Untitled",
+    "Consensus.md",
+    "Spacing points on manifols",
+    "Exponential Moving Average (EMA).md",
+    "CBF+CLF/Drone S2 CLF+HOCBF QP geodesic.md",
+    "CBF/HOCBF R(3).md",
     "Transpose Rules.md",
     "Transpose derivatives.md",
-    "CBF+CLF/Drone S2 CLF+HOCBF QP geodesic.md",
     "CBF/HOCBF SO(2)/geodesic v2 inverted.md",
     "CBF/HOCBF SO(2)/geodesic V2.md",
-    "Consensus.md",
     "CBF+CLF/geodesic 1.md",
     "CBF+CLF/geodesic.md",
     "CBF/Control Barrier Function (CBF).md",
@@ -211,21 +232,17 @@
     "CBF/HOCBF SO(2)/cartisian.md",
     "Lie Derivatives.md",
     "CBF/HOCBF SO(2)/vector based (theta_safe).md",
-    "CBF/HOCBF R(3).md",
     "CBF/HOCBF in SO(2).md",
     "Untitled 1.md",
     "CBF/HOCBF R(3)",
     "CBF/HOCBF SO(2)",
-    "Work Done.md",
     "CBF",
     "Internal and external product.md",
     "Higher Order Control Barrier Functions (HOCBF).md",
     "1.md",
     "2026-02-20.md",
-    "Untitled.base",
     "Untitled 1.base",
     "Untitled.canvas",
-    "create a link.md",
-    "Welcome.md"
+    "create a link.md"
   ]
 }

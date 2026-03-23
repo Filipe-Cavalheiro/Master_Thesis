@@ -237,7 +237,7 @@ if strcmp(Param.arena, 'free_world')
             frame = getframe(animation);
             writeVideo(v,frame);
         else
-            pause(0.01); % adjust speed of animation
+            pause(0.5); % adjust speed of animation
         end
     end
 end

@@ -21,7 +21,7 @@ target_ref = @(t) [ ...
     2*(t<=8).*cos(t*pi/8) + (t>8).*-2; ...
     1.5 ];
 
-target_ref = @(t) [0;0;1.5];
+%target_ref = @(t) [0;0;1.5];
 
 Param.initial_target_pos = target_ref(0);
 

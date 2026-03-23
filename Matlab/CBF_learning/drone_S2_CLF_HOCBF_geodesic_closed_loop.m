@@ -30,8 +30,8 @@ J = diag([0.0294 0.0305 0.0495]);    % kg m^2
 tau = zeros(3,1);
 
 % Controller gains (29a, 29b)
-K_r = diag([3 3 3]);
-K_w = diag([7.056 7.320 11.88]) * 1e-1;
+k_r = 3;
+k_w = 0.7056;
 
 % Hat (skew) operator
 S = @(x) [   0   -x(3)  x(2);
@@ -131,7 +131,7 @@ for x = 1:steps
         % === Control Lyapunov Functions for multiple obstacles ===========  
         % ---closed loop formula---
         % there is no CLF since a nominal actuation is given
-        u_nom = -K_r*e_q - K_w*e_w + S(omega)*J*omega + c*omega;
+        u_nom = -k_r*e_q - k_w*e_w + S(omega)*J*omega + c*omega;
         H = eye(3);
         f = -u_nom;
 
