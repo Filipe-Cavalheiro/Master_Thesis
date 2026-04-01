@@ -1,4 +1,4 @@
-function points = poissonDiskSampling(width, height, r, k)
+function [points,iterCount] = poissonDiskSampling(width, height, r, k)
     % Bridson's Poisson Disk Sampling in 2D
     % width, height: dimensions of the domain
     % r: minimum distance between points
@@ -31,8 +31,10 @@ function points = poissonDiskSampling(width, height, r, k)
     gx = floor(x0 / cellSize) + 1;
     gy = floor(y0 / cellSize) + 1;
     grid{gy, gx} = [x0, y0];
+    iterCount = 0;
 
     while ~isempty(activeList)
+        iterCount = iterCount + 1;
         % Randomly pick a point from the active list
         idx = randi(size(activeList, 1));
         point = activeList(idx, :);

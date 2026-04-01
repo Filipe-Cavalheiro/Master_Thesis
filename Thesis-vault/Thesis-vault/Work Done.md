@@ -38,5 +38,22 @@ on the surface it self. At the moment it does not work for other sphere radii ot
 2026-03-20: Check the restricted air space of Lisbon.
 
 2026-03-23: Write thesis, it is over due for 2 months already.
+wrote the separation between centralized and decentralized systems
 
+2026-03-24: write thesis, wrote about the new controller architecture both centralized missing APF and consensus and decentralized APF small world network, decentralized Voronoi, decentralized Voronoi. 
 
+TODO: show simulations of decentralized version
+TODO: check every thing that was written for consistency and correctness
+TODO: stop calling it decentralized 
+
+2026-03-26: Write thesis, do the TODO above :)
+Ended up rewrite the code to not use K-nearest neighbour but instead Delaunay Triangulation.
+And some TODO.
+
+2026-03-27:  Write thesis, do the TODO above :)
+
+2026-03-30:  Write thesis, have to write the testes of the decentralized system, welp ended up non only writing the testing but noticing that it is terrible for N <= 12 this is due to the convexhull method not working for small k because the geodesic curve chosen is ALWAYS the smallest and that might not be the correct geodesic to use. I have implemented the R2 version of half plane method and need to try the S2 version to see if it works with 2+ agents. not only 12+
+
+2026-03-31: write thesis, see if I can finish this version by today. AKA no conclusions but the rest written with all the work done at the moment. Need to add the Voronoi half plane implementation I did yesterday to the method comparison, if I have time still need to simulate and implement the simulation with this method of point separation.
+
+2026-04-01: Write thesis and the code for the half plane simulations.

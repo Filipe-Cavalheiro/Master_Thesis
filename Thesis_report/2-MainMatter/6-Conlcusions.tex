@@ -1,0 +1,116 @@
+%!TEX root = ../template.tex
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 5-Conlcusions.tex
+%% NOVA thesis document file
+%%
+%% Chapter with the template manual
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\typeout{NT FILE 6-Conlcusions.tex}%
+
+\chapter{Conclusions and Future Work}
+\label{cha:Conclusions and Future Work}
+
+\glsresetall
+
+\section{Timeline} \label{sec.6:Timeline}
+The timeline for the thesis is shown in Figure~\ref{fig.5:Monthly view}. On a monthly basis, one week per month is reserved for writing the thesis. If the writing task requires less than one week, the remaining time can be allocated to subsequent tasks.  
+
+From a broader project perspective, shown in Figure~\ref{fig.5:Project view}, the main focuses of this thesis will be on collision free trajectories in a distance-based navigation environment as well expanding the obtained results to other manifolds. As before, if less time is required for writing, the schedule can be adjusted flexibly depending on the needs of the project at that time.
+
+\begin{figure}[htbp]
+    \begin{center}
+    \begin{ganttchart}[y unit title=0.4cm,
+    y unit chart=0.5cm,
+    vgrid,hgrid, 
+    title label anchor/.style={below=-1.6ex},
+    title left shift=.05,
+    title right shift=-.05,
+    title height=1,
+    progress label text={},
+    bar height=0.7,
+    group right shift=0,
+    group top shift=.6,
+    group height=.3]{1}{20}
+    %labels
+    \gantttitle{Week 1}{5}
+    \gantttitle{Week 2}{5}
+    \gantttitle{Week 3}{5}
+    \gantttitle{Week 4}{5}\\
+    %tasks
+    \ganttbar{task at hand}{1}{15} \\
+    \ganttbar{write thesis}{16}{20}
+    
+    %relations 
+    \ganttlink{elem0}{elem1} 
+    \end{ganttchart}
+    \end{center}
+    \caption{Monthly view}
+    \label{fig.5:Monthly view}
+\end{figure}
+
+\begin{figure}[htbp]
+    \hspace{-2.5cm}
+    \begin{ganttchart}[
+    x unit = 0.32 cm,
+    y unit title=0.4cm,
+    y unit chart=0.5cm,
+    vgrid,hgrid, 
+    title label anchor/.style={below=-1.6ex},
+    title left shift=.05,
+    title right shift=-.05,
+    title height=1,
+    progress label text={},
+    bar height=0.7,
+    group right shift=0,
+    group top shift=.6,
+    group height=.3]{1}{40}
+    %labels
+    \gantttitle{1$^{st}$ Semester}{8}
+    \gantttitle{Feb.}{4}
+    \gantttitle{Mar.}{4}
+    \gantttitle{Apr.}{4}
+    \gantttitle{May}{4}
+    \gantttitle{June}{4}
+    \gantttitle{July}{4}
+    \gantttitle{Aug.}{4}
+    \gantttitle{Sept.}{4}\\
+    %tasks
+    \ganttbar{Reasearch}{1}{4} \\
+    \ganttbar{Developed Work}{5}{8} \\
+    \ganttbar{collision free}{9}{12} \\
+    \ganttbar{Consensus}{13}{20} \\
+    \ganttbar{Poisson disk sampling}{21}{24} \\
+    \ganttbar{Other $\mathbb{S}^2$ Manifolds}{25}{31} \\
+    \ganttbar{\gls{IRL} testing}{32}{36} \\
+    \ganttbar{write thesis}{37}{40}
+    
+    %relations 
+    \ganttlink{elem0}{elem1} 
+    \ganttlink{elem1}{elem2} 
+    \ganttlink{elem2}{elem3} 
+    \ganttlink{elem3}{elem4} 
+    \ganttlink{elem4}{elem5}
+    \ganttlink{elem5}{elem6}
+    \ganttlink{elem6}{elem7}
+    \end{ganttchart}
+    \caption{Project view}
+    \label{fig.5:Project view}
+\end{figure}
+
+
+\section{Conclusion}
+
+This thesis plan addressed the problem of safely handling non-cooperative drones operating in restricted airspace by proposing a non-destructive, cooperative encirclement strategy in \gls{3D} space. Motivated by safety, regulatory, and ethical concerns, the work focused on guiding an intruding drone out of protected zones without physical interception, thereby avoiding risks associated with debris, infrastructure damage, or harm to human life.
+
+To achieve this objective, a novel multi-agent encirclement framework was developed, with particular emphasis on collision-free trajectory generation and coordinated motion. Unlike most existing approaches, which are predominantly restricted to \gls{2D} formulations, the proposed method explicitly considers \gls{3D} motion by formulating the encirclement problem on the two-sphere manifold. This representation allows agents to surround a target in a geometrically meaningful way while naturally capturing altitude variations and spatial constraints.
+
+Several strategies for distributing agents uniformly on the surface of the sphere were studied and compared, including latitude-longitude grids, Fibonacci lattices, Thomson minimum-energy configurations, and Poisson disk sampling. These methods were analyzed in terms of uniformity, scalability, and suitability for multi-agent encirclement, providing insight into how the final formation quality impacts coverage and collision avoidance.
+
+For trajectory tracking and control, a nonlinear control architecture combining a well-established quadrotor controller with an outer-loop guidance law based on \gls{CLF} defined on the two-sphere was employed. This approach ensures stable convergence to desired reference trajectories while constraining motion to the spherical surface.
+
+Simulation results demonstrate that the proposed framework is capable of generating stable, coordinated trajectories for multiple agents encircling a target in \gls{3D}. The results also highlight the flexibility of the approach, as different agent distributions and control strategies can be integrated within the same general framework.
+
+Overall, this work contributes a new perspective to the encirclement problem by combining geometric reasoning on manifolds with Lyapunov-based control design. While the current implementation focuses on centralized reference generation and simulation-based validation, the results provide a solid foundation for further developments toward more realistic and scalable solutions.
+
+Future work will focus on extending the proposed framework to manifolds beyond the two-sphere, enabling encirclement on more general surfaces and in more complex environments. Additionally, the development of decentralized and consensus-based coordination strategies among agents is a key direction, aiming to reduce reliance on centralized computation and improve robustness to communication failures. Finally, experimental validation using real UAV platforms is envisioned as a crucial next step, providing practical verification of the theoretical and simulation results and assessing the feasibility of deploying the proposed approach in real-world scenarios.

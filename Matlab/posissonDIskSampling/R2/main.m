@@ -3,21 +3,17 @@ clearvars all; clc; close all
 % Parameters
 width = 40;
 height = 40;
-r = 1.01;  % Minimum distance between points
+r = 1.0;  % Minimum distance between points
 
 times = zeros(1,100);
-start = clock;
-% Generate points
-while 1  
-    points = poissonDiskSampling(width, height, r);
-    disp(size(points))
-    dim = size(points);
-    if dim(1) == 1000
-        break;
-    end
-end
-etime(clock, start)
 
+for i = 1:length(times)
+    % Generate points
+    start = clock;
+    [points,iterCount] = poissonDiskSampling(width, height, r);
+    total_time = etime(clock, start);
+    times(i) = total_time / iterCount;
+end
 % Plot
 figure;
 scatter(points(:,1), points(:,2), 15, 'k', 'filled'); % black dots, size 15

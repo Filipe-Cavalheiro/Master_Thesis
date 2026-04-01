@@ -1,4 +1,4 @@
-function [X, E] = thomson11(varargin)
+function [X, E, iter] = thomson11(varargin)
 % THOMSON11  Find ~minimum-energy arrangement of 11 points on the unit sphere
 %
 %  [X, E] = THOMSON11() runs the solver and plots the result. X is 11x3
@@ -121,7 +121,7 @@ surf(R*XS, R*YS, R*ZS, ...
     'FaceColor', [0.7647 0.7647 0.7647]);
 
 % Plot latitude-longitude points
-scatter3(X(:,1),X(:,2),X(:,3),15, 'k', 'filled');
+scatter3(X(:,1),X(:,2),X(:,3), 50, 'k', 'filled');
 % Formatting for paper
 axis equal
 axis off

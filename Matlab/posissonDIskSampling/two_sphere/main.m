@@ -2,9 +2,10 @@ clearvars all; clc; close all
 
 % Parameters
 k = 30;
-r = 0.1;
+r = 0.093;
 
 points = poissonDiskSampling(r, k);
+disp(length(points));
 
 figure;
 hold on;
@@ -17,7 +18,7 @@ surf(XS, YS, ZS, ...
     'FaceColor', [0.7647 0.7647 0.7647]); 
 
 % Plot points
-scatter3(points(:,1), points(:,2), points(:,3), 15, 'k', 'filled');  % small black filled points (paper-friendly)
+scatter3(points(:,1), points(:,2), points(:,3), 15, 'k', 'filled');  % small black filled points
 
 % Formatting for paper
 axis equal
@@ -26,5 +27,9 @@ set(gca, 'Visible', 'off')
 set(gcf, 'Color', 'w');          % white background
 set(gca, 'Position', [0 0 1 1]); % fill figure
 view(90,0);
-
+print2pdf("poisson_disk_side.pdf", 1)
+view(0,90);
+print2pdf("poisson_disk_top.pdf", 1)
+view(3);
+print2pdf("poisson_disk_normal.pdf", 1)
 hold off;

@@ -1,6 +1,6 @@
-<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36" version="29.3.6">
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36" version="29.6.6">
   <diagram name="Page-1" id="mkW1n6cxEP21Gr4JDE-i">
-    <mxGraphModel dx="1924" dy="602" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="1" shadow="0">
+    <mxGraphModel dx="1924" dy="595" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="1" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -50,16 +50,13 @@
             <mxPoint x="260" y="295" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="2Veo026gyHDVhys_ORcZ-12" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="$$\dot{\psi}_{D}^{ref}$$" vertex="1">
+        <mxCell id="2Veo026gyHDVhys_ORcZ-12" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="$$\dot{\psi}^\star$$" vertex="1">
           <mxGeometry height="10" width="30" x="198" y="260" as="geometry" />
         </mxCell>
-        <mxCell id="2Veo026gyHDVhys_ORcZ-13" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="$$\psi_{D}^{ref}$$" vertex="1">
-          <mxGeometry height="10" width="30" x="170" y="275" as="geometry" />
+        <mxCell id="2Veo026gyHDVhys_ORcZ-14" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="$$\dot{a}^\star$$" vertex="1">
+          <mxGeometry height="10" width="30" x="157" y="288" as="geometry" />
         </mxCell>
-        <mxCell id="2Veo026gyHDVhys_ORcZ-14" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="$$\dot{a}_{D}^{ref}$$" vertex="1">
-          <mxGeometry height="10" width="30" x="150" y="295" as="geometry" />
-        </mxCell>
-        <mxCell id="2Veo026gyHDVhys_ORcZ-15" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="$$F_{des}$$" vertex="1">
+        <mxCell id="2Veo026gyHDVhys_ORcZ-15" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="$$F^\star$$" vertex="1">
           <mxGeometry height="30" width="60" x="220" y="230" as="geometry" />
         </mxCell>
         <mxCell id="2Veo026gyHDVhys_ORcZ-30" edge="1" parent="1" source="2Veo026gyHDVhys_ORcZ-16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;">
@@ -70,10 +67,10 @@
         <mxCell id="2Veo026gyHDVhys_ORcZ-16" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#55B288,#718769);strokeColor=#3A5431;fillStyle=auto;fontColor=light-dark(#000000, #121212);" value="RUAV&amp;nbsp;&lt;div&gt;model&lt;/div&gt;" vertex="1">
           <mxGeometry height="60" width="120" x="440" y="215" as="geometry" />
         </mxCell>
-        <mxCell id="2Veo026gyHDVhys_ORcZ-19" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="$$f_e$$" vertex="1">
+        <mxCell id="2Veo026gyHDVhys_ORcZ-19" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="$$f_a$$" vertex="1">
           <mxGeometry height="30" width="60" x="390" y="200" as="geometry" />
         </mxCell>
-        <mxCell id="2Veo026gyHDVhys_ORcZ-20" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="$$\tau_e$$" vertex="1">
+        <mxCell id="2Veo026gyHDVhys_ORcZ-20" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="$$\tau_a$$" vertex="1">
           <mxGeometry height="30" width="60" x="390" y="265" as="geometry" />
         </mxCell>
         <mxCell id="2Veo026gyHDVhys_ORcZ-21" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;" value="">
@@ -94,14 +91,14 @@
             <mxPoint x="100" y="229" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="2Veo026gyHDVhys_ORcZ-24" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="$$p_{D}^{ref}$$" vertex="1">
+        <mxCell id="2Veo026gyHDVhys_ORcZ-24" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="$$p^\star$$" vertex="1">
           <mxGeometry height="10" width="30" x="43" y="190" as="geometry" />
         </mxCell>
-        <mxCell id="2Veo026gyHDVhys_ORcZ-25" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="$$v_D^{ref}$$" vertex="1">
+        <mxCell id="2Veo026gyHDVhys_ORcZ-25" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="$$v^\star$$" vertex="1">
           <mxGeometry height="10" width="30" x="13" y="205" as="geometry" />
         </mxCell>
-        <mxCell id="2Veo026gyHDVhys_ORcZ-26" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="$$a_D^{ref}$$" vertex="1">
-          <mxGeometry height="10" width="30" x="-17" y="220" as="geometry" />
+        <mxCell id="2Veo026gyHDVhys_ORcZ-26" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="$$a^\star$$" vertex="1">
+          <mxGeometry height="10" width="30" x="-10" y="220" as="geometry" />
         </mxCell>
         <mxCell id="2Veo026gyHDVhys_ORcZ-32" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" target="2Veo026gyHDVhys_ORcZ-2" value="">
           <mxGeometry height="50" relative="1" width="50" as="geometry">
@@ -125,8 +122,11 @@
             <mxPoint x="259.28" y="302.66" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="2Veo026gyHDVhys_ORcZ-34" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="$$x_D$$" vertex="1">
+        <mxCell id="2Veo026gyHDVhys_ORcZ-34" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="$$x$$" vertex="1">
           <mxGeometry height="30" width="60" x="560" y="220" as="geometry" />
+        </mxCell>
+        <mxCell id="B2kIj9uiPQ0YtRsAbFgg-1" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="$$\psi^\star$$" vertex="1">
+          <mxGeometry height="15" width="16" x="187" y="273" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

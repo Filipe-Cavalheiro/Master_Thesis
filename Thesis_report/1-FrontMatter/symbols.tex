@@ -7,39 +7,64 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \typeout{NT FILE symbols.tex}%
 
-%simulation
-\glsxtrnewsymbol[description={time step}]{k}{\ensuremath{k}}
-\glsxtrnewsymbol[description={minimal desired intra distance between agents}]{d_avg}{\ensuremath{d_{avg}}}
+% simulation
+\glsxtrnewsymbol[description={time step}]{time step}{\ensuremath{\nabla t}}
+\glsxtrnewsymbol[description={minimal desired intra distance between agents}]{min_dist}{\ensuremath{d_{min}}}
 \glsxtrnewsymbol[description={number of drones}]{n_D}{\ensuremath{n_D}}
-\glsxtrnewsymbol[description={desired sphere radius}]{r_s}{\ensuremath{r_s}}
-\glsxtrnewsymbol[description={sphere radius}]{r}{\ensuremath{r}}
-\glsxtrnewsymbol[description={gravity}]{g}{\ensuremath{g}}
 
-%drone variables
-\glsxtrnewsymbol[description={Drone Mass}]{m_D}{\ensuremath{m_D}}
-\glsxtrnewsymbol[description={Drone Inertial frame}]{I_D}{\ensuremath{\mathbf{I}\{E_1, E_2, E_3\}}}
-\glsxtrnewsymbol[description={Drone Body frame}]{B_D}{\ensuremath{\mathbf{B}\{e_1, e_2, e_3\}}}
+\glsxtrnewsymbol[description={gravity}]{gravity}{\ensuremath{g}}
 
-%drone references prob 'q'
-\glsxtrnewsymbol[description={reference drone position}]{p_D_ref}{\ensuremath{p_D^{\mathrm{ref}}}}
-\glsxtrnewsymbol[description={reference drone velocity}]{v_D_ref}{\ensuremath{v_D^{\mathrm{ref}}}}
-\glsxtrnewsymbol[description={reference drone attitude}]{a_D_ref}{\ensuremath{a_D^{\mathrm{ref}}}}
-\glsxtrnewsymbol[description={reference drone orientation }]{phi_D_ref}{\ensuremath{\psi_D^{\mathrm{ref}}}}
-\glsxtrnewsymbol[description={help prof i do not know}]{phi_dot_D_ref}{\ensuremath{\dot{\Phi}_D^{\mathrm{ref}}}}
-
-%drone current values
-\glsxtrnewsymbol[description={current drone position}]{p_D}{\ensuremath{p_D}}
-\glsxtrnewsymbol[description={current drone velocity}]{v_D}{\ensuremath{v_D}}
-\glsxtrnewsymbol[description={current drone orientation}]{phi_D}{\ensuremath{\Phi_D}}
-\glsxtrnewsymbol[description={angular velocity}]{omega_D}{\ensuremath{\omega_D}}
+% drone variables
+\glsxtrnewsymbol[description={Drone Mass}]{drone_mass}{\ensuremath{p_m}}
+\glsxtrnewsymbol[description={Drone Inertial matrix}]{drone_inertial_matrix}{\ensuremath{I_{D_R}}}
+\glsxtrnewsymbol[description={Drone Body matrix}]{drone_body_matrix}{\ensuremath{I_{D_b}}}
+\glsxtrnewsymbol[description={Drone aerodynamic force}]{p_force}{\ensuremath{\mathbf{f}_a}}
+\glsxtrnewsymbol[description={Drone torque}]{p_torque}{\ensuremath{\boldsymbol{\tau}_a}}
+\glsxtrnewsymbol[description={Drone aerodynamic drag force}]{p_drag_force}{\ensuremath{\mathbf{f}_e}}
+\glsxtrnewsymbol[description={Drone aerodynamic drag torque}]{p_drag_torque}{\ensuremath{\boldsymbol{\tau}_e}}
 
 
-%outer loop
-\glsxtrnewsymbol[description={outerloop current position}]{q}{\ensuremath{q}}
-\glsxtrnewsymbol[description={desired waypoint on the two-sphere}]{q_d}{\ensuremath{q_d}}
-\glsxtrnewsymbol[description={desired velocity on the two-sphere}]{omega_d}{\ensuremath{\omega_d}}
-\glsxtrnewsymbol[description={Inertia of q}]{I_q}{\ensuremath{I_q}}
+% drone current values
+\glsxtrnewsymbol[description={target drone position}]{target_pos}{\ensuremath{p_T}}
 
+\glsxtrnewsymbol[description={current drone position}]{chaser_pos}{\ensuremath{p}}
+\glsxtrnewsymbol[description={current i-th drone position}]{chaser_i_pos}{\ensuremath{p_i}}
+
+\glsxtrnewsymbol[description={current drone velocity}]{chaser_vel}{\ensuremath{v}}
+\glsxtrnewsymbol[description={current drone orientation}]{chaser_ori}{\ensuremath{\Phi_p}}
+\glsxtrnewsymbol[description={current drone angular velocity}]{chaser_ang_vel}{\ensuremath{\omega_p}}
+
+% drone references mellinger
+\glsxtrnewsymbol[description={desired drone position}]{p_desired}{\ensuremath{p^\star}}
+\glsxtrnewsymbol[description={desired i-th drone position}]{p_i_desired}{\ensuremath{p_i^\star}}
+
+\glsxtrnewsymbol[description={desired drone velocity}]{v_desired}{\ensuremath{v^\star}}
+\glsxtrnewsymbol[description={desired drone attitude}]{a_desired}{\ensuremath{a^\star}}
+\glsxtrnewsymbol[description={desired drone orientation }]{phi_desired}{\ensuremath{\psi^\star}}
+
+% geometric controller
+\glsxtrnewsymbol[description={current position on the two-sphere}]{q}{\ensuremath{q}}
+\glsxtrnewsymbol[description={desired waypoint on the two-sphere}]{q_desired}{\ensuremath{q^\star}}
+
+\glsxtrnewsymbol[description={i-th position on the two-sphere}]{q_i}{\ensuremath{q_i}}
+\glsxtrnewsymbol[description={i-th desired waypoint on the two-sphere}]{q_i_desired}{\ensuremath{q_i^\star}}
+
+\glsxtrnewsymbol[description={geometric point inertial matrix}]{q_inertial_matrix}{\ensuremath{I_{q_R}}}
+\glsxtrnewsymbol[description={geometric point body matrix}]{q_body_matrix}{\ensuremath{I_{q_b}}}
+
+\glsxtrnewsymbol[description={geometric point angular velocity}]{q_omega}{\ensuremath{\omega_q}}
+\glsxtrnewsymbol[description={geometric point desired angular velocity}]{q_omega_desired}{\ensuremath{\omega_q^\star}}
+
+% Lloyd algorithm
+\glsxtrnewsymbol[description={Voronoi region}]{voronoi_region}{\ensuremath{V}}
+\glsxtrnewsymbol[description={i-th Voronoi region}]{ith_voronoi_region}{\ensuremath{V_i}}
+\glsxtrnewsymbol[description={centroid of a Voronoi region}]{voronoi_centroid}{\ensuremath{c}}
+\glsxtrnewsymbol[description={centroid of the i-th Voronoi region}]{ith_voronoi_centroid}{\ensuremath{c_i}}
+
+% radii controller
+\glsxtrnewsymbol[description={desired sphere radius}]{desired_sphere_radius}{\ensuremath{r^\star}}
+\glsxtrnewsymbol[description={sphere radius}]{sphere_radius}{\ensuremath{r}}
+\glsxtrnewsymbol[description={drone i-th sphere radius}]{ith_sphere_radius}{\ensuremath{r_i}}
 
 %poisson
 \glsxtrnewsymbol[description={number of tries per poisson point}]{P_k}{\ensuremath{P_k}}

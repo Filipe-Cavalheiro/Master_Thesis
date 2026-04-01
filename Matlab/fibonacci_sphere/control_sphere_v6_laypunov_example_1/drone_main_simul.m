@@ -125,6 +125,7 @@ for k = 1:Nsim
         Rp = rot_integrate(R,om,Param.dTi);
         omp = om + Param.dTi*dot_om;
         x{iD}(:,k+1) = [pp;vp;reshape(Rp,[],1);omp];
+        
     
         % auxiliary drone attitude computation from rotation matrix
         lbd{iD}(:,k) = R2Euler(R);
@@ -135,6 +136,28 @@ for k = 1:Nsim
         end
     end
 end
+
+%%
+figure;
+hold on;
+grid on;
+
+t = (0:Nsim-1) * Param.dTi;
+
+plot(t, Rad_hist{1}, 'LineWidth', 3);
+plot(t, vecnorm([0;0;0]-x{1}(1:3,1:end-1), 2, 1), 'LineWidth', 3);
+plot(t, vecnorm([0;0;0], 2, 1) ...
+       - vecnorm(x{1}(4:6,2:end), 2, 1), 'LineWidth', 3);
+
+xlabel('Time [s]');
+lgd = legend( ...
+    'Radial history', ...
+    'Position difference (norm)', ...
+    'Velocity difference (norm)' ...
+);
+
+lgd.FontSize = 12; 
+lgd.Interpreter = 'latex';
 
 %%
 animate_simulation(x, q_hist, q_d_hist, Rad_hist, fib_ref_points, Param, Nsim)

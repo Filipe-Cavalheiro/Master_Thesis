@@ -6,7 +6,7 @@
 clear all;
 
 % Model and simulation parameters
-Param.Tend = 10;
+Param.Tend = 100;
 Param.dTi = 0.01;  % inner-loop and simulation sampling period
 Nsim = round(Param.Tend/Param.dTi)+1;
 Param.g = 9.81;     % earth gravity

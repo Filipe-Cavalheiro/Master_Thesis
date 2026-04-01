@@ -65,7 +65,8 @@ for k = 1:Nsim
         om = x{iD}(16:18,k);
     
         % --- Configuration error vector (Eq. 12)
-        q_hat   = q{iD}   / Param.sphere_radius;
+        q{iD} = pos{iD};
+        q_hat = pos{iD} / norm(pos{iD});
         qd_hat  = q_d{iD} / Param.sphere_radius;
         e_q{iD} = (1 / (sqrt(2) * sqrt(1 + (q_hat' * qd_hat)))) * Q' * S(qd_hat) * q_hat;
     
@@ -94,8 +95,8 @@ for k = 1:Nsim
         % --- Store
         q_hist{iD}(:,k)   = q{iD};
         
-        q_d_dot = S(omega_d{iD}) * q_d{iD};
-        q_d{iD} = q_d{iD} + Param.dTi * q_d_dot;
+        %q_d_dot = S(omega_d{iD}) * q_d{iD};
+        %q_d{iD} = q_d{iD} + Param.dTi * q_d_dot;
         
         % get reference
         p_d =  q_hist{iD}(:,k);
@@ -142,6 +143,7 @@ for iD = 1:Param.nD
     pos{iD} = x{iD}(1:3,:);
 end
 
+%%
 figure; hold on; grid on; axis equal
 [x, y, z] = sphere;
 x = x * Param.sphere_radius;
@@ -196,6 +198,7 @@ view(3);
 
 % Animation loop
 for k = 1:Nsim
+    fprintf("Animating: %f", k);
     
     % Index range: last 100 steps (or fewer at the beginning)
     k_start = max(1, k-99);
@@ -230,4 +233,57 @@ for k = 1:Nsim
 
     drawnow;
     pause(0.01);
+end
+
+%%
+figure; hold on; grid on; axis equal
+[x, y, z] = sphere;
+x = x * Param.sphere_radius;
+y = y * Param.sphere_radius;
+z = z * Param.sphere_radius;
+
+% Draw reference sphere
+hSphere = surf(x, y, z);
+hSphere.FaceAlpha = 0.3; 
+hSphere.EdgeColor = 'b';
+hSphere.EdgeAlpha = 0.1;
+hSphere.FaceColor = [0.8627,0.8627,0.8627];
+
+colors = lines(Param.nD);
+for iD = 1:Param.nD
+    scatter3( ...
+        pos{iD}(1,1), pos{iD}(2,1), pos{iD}(3,1), ...
+        50, colors(iD,:), 'x', 'LineWidth', 2, ...
+        'HandleVisibility','off');
+
+    scatter3( ...
+        q_hist{iD}(1,1), q_hist{iD}(2,1), q_hist{iD}(3,1), ...
+        50, colors(iD,:), 'o', 'LineWidth', 2, ...
+        'HandleVisibility','off');
+end
+
+hInit = scatter3(NaN, NaN, NaN, ...
+    50, 'k', 'x', 'LineWidth', 2);
+
+hProj = scatter3(NaN, NaN, NaN, ...
+    50, 'k', 'o', 'LineWidth', 2);
+
+legend([hInit, hProj], ...
+    {'Initial Positions', 'Initial Position Projection'});
+lgd = legend;
+lgd.Position = [0.65 0.75 0.2 0.1];  % [x y width height]
+lgd.AutoUpdate = 'off';
+
+xlabel('x'); ylabel('y'); zlabel('z');
+set(gca, 'Visible', 'off')
+set(gcf, 'Color', 'w');          % white background
+set(gca, 'Position', [0 0 1 1]); % fill figure
+view(3);
+
+for iD = 1:Param.nD
+    plot3(q_hist{iD}(1, :), q_hist{iD}(2, :), q_hist{iD}(3, :), 'Color', colors(iD,:), 'LineWidth', 1);
+    plot3(pos{iD}(1, :), pos{iD}(2, :), pos{iD}(3, :), 'Color', colors(iD,:), 'LineWidth', 1);
+    
+    plot3(q_hist{iD}(1, end), q_hist{iD}(2, end), q_hist{iD}(3, end), 'o', 'Color', 'k', 'MarkerSize', 6, 'MarkerFaceColor', colors(iD,:));
+    plot3(pos{iD}(1, end), pos{iD}(2, end), pos{iD}(3, end), 'x', 'Color', colors(iD,:), 'MarkerSize', 6, 'MarkerFaceColor', colors(iD,:));
 end

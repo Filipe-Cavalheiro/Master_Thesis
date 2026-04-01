@@ -14,19 +14,25 @@ L = n_drones*eye(n_drones) - ones(n_drones);
 alpha = 0.2;          % exponential moving average weight
 noise_std = 0.2;      % measurement noise
 
+% circular motion parameters
+R = 5;
+omega = 0.5;
+
 % initial estimates
-target_position = randn(3,n_drones);
+% ---- true moving target (circle in XY plane) ----
+true_pos = [R*cos(0);
+            R*sin(0);
+            1];
+        
+% ---- noisy measurements ----
+measurements = true_pos + noise_std*randn(3,n_drones);
 
 % EMA memory
-ema_estimate = target_position;
+ema_estimate = measurements;
 
 % storage
 target = zeros(3,n_drones,Nsim);
 target_true = zeros(3,Nsim);
-
-% circular motion parameters
-R = 5;
-omega = 0.5;
 
 for k = 1:Nsim
     
@@ -76,9 +82,9 @@ for i = 1:n_drones
     scatter3(x(end),y(end),z(end),80,'d','filled')
 end
 
-xlabel('X')
-ylabel('Y')
-zlabel('Z')
+% xlabel('X')
+% ylabel('Y')
+% zlabel('Z')
 
-title('Consensus Tracking of Moving Target (EMA + Noisy Measurements)')
+%title('Consensus Tracking of Moving Target (EMA + Noisy Measurements)')
 legend('True target','Drone 1 est','Drone 2 est','Drone 3 est')
