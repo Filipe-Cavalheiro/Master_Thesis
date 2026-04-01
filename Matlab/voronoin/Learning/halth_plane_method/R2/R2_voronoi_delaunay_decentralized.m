@@ -10,13 +10,6 @@ Tend = 2;           % seconds
 dTi = 0.01;         % inner-loop and simulation sampling period
 Nsim = round(Tend/dTi)+1;
 
-% Small-world network parameters
-k = 4;                  % Number of nearest neighbors (initial local connections)
-gamma = 0.2;            % Rewiring probability (0 = only local, 1 = fully random)
-comm_range = 1;         % Maximum communication distance (relative to domain size)
-update_interval = 10;    % Update connections every N steps
-k_neighbours = 4;
-
 % INITIALIZATION
 % Random initialization of agents
 agents = [world_X*rand(numAgents,1), world_Y*rand(numAgents,1)];
@@ -58,7 +51,7 @@ for k = 1:Nsim
     % --- SMALL-WORLD CONSENSUS STEP ---
     % Update connections based on current positions
     %if mod(k, update_interval) == 1 || k == 1
-    [connections, Laplacian, degree_matrix]  = build_small_world_network(agents, k_neighbours, gamma, comm_range);
+    [connections, Laplacian, degree_matrix]  = Delaunay_triangulation_network(agents);
     %end
     connections_history{k} = connections;
     

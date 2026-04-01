@@ -1,6 +1,6 @@
 clear; clc; close all;
 
-Tend = 1.5;
+Tend = 10;
 dTi = 0.01;
 Nsim = round(Tend/dTi);
 
@@ -13,28 +13,34 @@ gamma = 0.2;
 comm_range = 1;
 
 agents_unit = randn(numAgents,3);
+% agents_unit =  [1.5699   -3.8016   -2.8431;
+%     4.7066    0.4967   -1.6129;
+%    -0.6909    3.2458    3.7400;
+%    -3.1271   -3.3776    1.9527];
 agents_unit = agents_unit ./ vecnorm(agents_unit,2,2);
 agents = agents_unit*R;
  
 agents_history = cell(Nsim+1,numAgents);
 cells_history = cell(Nsim,numAgents);
 numAgents_history = zeros(Nsim,1);
+verbose = true;
+update_interval = 2;
 
 for k = 1:Nsim
-
-    if k == 100
-        removeIdx = randperm(size(agents,1), round(numAgents/2));
-        agents(removeIdx,:) = [];
-        numAgents = size(agents,1);
-    end
+    
+    % if k == 100
+    %     removeIdx = randperm(size(agents,1), round(numAgents/2));
+    %     agents(removeIdx,:) = [];
+    %     numAgents = size(agents,1);
+    % end
     numAgents_history(k) = numAgents;
 
     agents_history{k} = agents;
     new_agents = zeros(numAgents,3);
 
-    % --- SMALL WORLD NETWORK ---
-    [connections,~,~] = build_small_world_network_geo(agents, ...
-                                k_neighbours,gamma,comm_range);
+    % --- Delaunay triangulation network ---
+    [connections, Laplacian, degree_matrix]  = Delaunay_triangulation_network(...
+        agents);
     
     % Cells and centroids
     for i = 1:numAgents
@@ -47,29 +53,33 @@ for k = 1:Nsim
         
         % compute convex hull
         K = convhull(neigh_pos);
+
+        % K = K(1:length(neighbours), :);
         
-        % % --- plot points ---
-        % figure;
-        % hold on;
-        % axis equal;
-        % view(3);
-        % 
-        % [xs,ys,zs] = sphere(60);
-        % surf(xs,ys,zs,'FaceColor','none','EdgeColor','b','EdgeAlpha',0.1)
-        % 
-        % %plot all neighbors
-        % plot3(neigh_pos(:,1), neigh_pos(:,2), neigh_pos(:,3), 'ro', 'MarkerSize', 8, 'MarkerFaceColor', 'r');
-        % 
-        % %--- annotate points with their index ---
-        % for idx = 1:size(neigh_pos,1)
-        %     text(neigh_pos(idx,1), neigh_pos(idx,2), neigh_pos(idx,3), sprintf('%d', idx), ...
-        %         'FontSize', 12, 'FontWeight', 'bold', 'Color', 'k', 'HorizontalAlignment', 'right');
-        % end
-        % 
-        % %--- plot convex hull ---
-        % trisurf(K, neigh_pos(:,1), neigh_pos(:,2), neigh_pos(:,3), ...
-        %     'FaceAlpha', 0.3, 'EdgeColor', 'k');
-        
+        if verbose
+            % --- plot points ---
+            figure;
+            hold on;
+            axis equal;
+            view(3);
+    
+            [xs,ys,zs] = sphere(60);
+            surf(xs,ys,zs,'FaceColor','none','EdgeColor','b','EdgeAlpha',0.1)
+    
+            %plot all neighbors
+            plot3(neigh_pos(:,1), neigh_pos(:,2), neigh_pos(:,3), 'ro', 'MarkerSize', 8, 'MarkerFaceColor', 'r');
+    
+            %--- annotate points with their index ---
+            for idx = 1:size(neigh_pos,1)
+                text(neigh_pos(idx,1), neigh_pos(idx,2), neigh_pos(idx,3), sprintf('%d', idx), ...
+                    'FontSize', 12, 'FontWeight', 'bold', 'Color', 'k', 'HorizontalAlignment', 'right');
+            end
+    
+            %--- plot convex hull ---
+            trisurf(K, neigh_pos(:,1), neigh_pos(:,2), neigh_pos(:,3), ...
+                'FaceAlpha', 1.0, 'EdgeColor', 'k');
+            pause;
+        end
         % --- compute outward-pointing normals for faces including the agent ---
         voronoi_vertices = [];
         
@@ -117,7 +127,7 @@ for k = 1:Nsim
             c = voronoi_vertices(j+1,:);
             
             % Spherical Excess Formula (L'Huilier formula)
-            A = spherical_triangle_area(a,b,c, 1);
+            A = spherical_triangle_area(a,b,c);
             
             % Area is calculated for varying R no need to also scale this
             tri_centroid_dir = (a + b + c);

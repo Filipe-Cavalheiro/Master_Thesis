@@ -11,7 +11,7 @@ agents = randn(numAgents,3);
 agents = agents ./ vecnorm(agents,2,2);
 
 % store positions for animation (maximum possible size)
-history = zeros(numAgents,3,iterations);
+history = cell(iterations,1);
 
 % ================= COMPUTATION =================
 for k = 1:iterations
@@ -21,7 +21,6 @@ for k = 1:iterations
         removeIdx = randperm(numAgents, numRemove);
         agents(removeIdx,:) = [];
         numAgents = size(agents,1);
-        history(removeIdx,:,:) = []; % remove corresponding history
     end
 
     % Compute convex hull
@@ -74,7 +73,7 @@ for k = 1:iterations
     agents = newAgents;
 
     % store for animation
-    history(1:numAgents,:,k) = agents;
+    history{k} = agents;
 
 end
 
@@ -90,8 +89,7 @@ hold on;
 surf(xs,ys,zs,'FaceAlpha',0.1,'EdgeColor','none')
 
 % initial points
-pts = history(:,:,1);
-pts = pts(~all(pts==0,2),:); % remove empty rows from removed agents
+pts = history{1};
 points = scatter3(pts(:,1),pts(:,2),pts(:,3),60,'r','filled');
 
 % create UI label
@@ -101,8 +99,7 @@ agentLabel = uicontrol('Style','text', ...
                        'Position',[20 20 120 30]); % [left bottom width height]
 
 for k = 1:iterations
-    pts = history(:,:,k);
-    pts = pts(~all(pts==0,2),:); % remove empty rows from removed agents
+    pts = history{k};
 
     set(points, ...
         'XData', pts(:,1), ...

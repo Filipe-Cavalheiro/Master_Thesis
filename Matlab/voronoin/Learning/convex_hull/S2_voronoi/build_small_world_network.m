@@ -19,29 +19,30 @@ function [connections, Laplacian, degree_matrix] = build_small_world_network(pos
         [~, idx] = sort(dist_matrix(i, :));
         neighbors = idx(2:min(k_neighbours+1, N_agents));
         A(i, neighbors) = true;
+        A(neighbors, i) = true;
     end
     
     % Step 2: Rewire connections with probability gamma
     for i = 1:N_agents
         current_neighbors = find(A(i, :));
-        
+
         for j = 1:length(current_neighbors)
             neighbor = current_neighbors(j);
-            
+
             if i < neighbor && rand() < gamma
                 A(i, neighbor) = false;
-                
+
                 available = setdiff(1:N_agents, [i, current_neighbors]);
-                
+
                 if ~isempty(available)
                     new_neighbor = available(randi(length(available)));
-                    
+
                     if dist_matrix(i, new_neighbor) <= comm_range
                         A(i, new_neighbor) = true;
                     else
                         in_range = find(dist_matrix(i, :) <= comm_range & dist_matrix(i, :) > 0);
                         in_range = setdiff(in_range, [i, current_neighbors]);
-                        
+
                         if ~isempty(in_range)
                             new_neighbor = in_range(randi(length(in_range)));
                             A(i, new_neighbor) = true;
@@ -53,9 +54,6 @@ function [connections, Laplacian, degree_matrix] = build_small_world_network(pos
             end
         end
     end
-    
-    % Ensure symmetry (undirected graph)
-    A = A | A';
     
     % Step 3: Compute degree matrix and Laplacian
     % Degree matrix D (diagonal)

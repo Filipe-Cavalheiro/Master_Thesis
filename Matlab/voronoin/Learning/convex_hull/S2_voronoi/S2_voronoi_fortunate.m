@@ -3,21 +3,55 @@ clear; clc; close all;
 Tend = 3;
 dTi = 0.01;
 Nsim = round(Tend/dTi);
+Nsim = 100;
 
-numAgents = 25;
+numAgents = 30;
 
 agents = randn(numAgents,3);
 agents = agents ./ vecnorm(agents,2,2);
 
 agents_history = zeros(numAgents,3,Nsim);
 cells_history = cell(Nsim,numAgents);
+verbose = false;
 
 for k = 1:Nsim
+    fprintf("Computing simulation interation: %04d\n", k);
     agents_history(:,:,k) = agents;
 
     K = convhull(agents);
     numFaces = size(K,1);
 
+    if verbose == true
+        % --- plot points ---
+        figure;
+        hold on;
+        axis equal;
+        view(3);
+
+        axis equal
+        axis off
+        set(gca, 'Visible', 'off')
+        set(gcf, 'Color', 'w');          % white background
+        set(gca, 'Position', [0 0 1 1]); % fill figure
+
+        [xs,ys,zs] = sphere(60);
+        surf(xs,ys,zs,'FaceColor','none','EdgeColor','b','EdgeAlpha',0.1)
+
+        %plot all neighbors
+        plot3(agents(:,1), agents(:,2), agents(:,3), 'ko', 'MarkerSize', 8, 'MarkerFaceColor', 'k');
+
+        % %--- annotate points with their index ---
+        % for idx = 1:size(agents,1)
+        %     text(agents(idx,1), agents(idx,2), agents(idx,3), sprintf('%d', idx), ...
+        %         'FontSize', 12, 'FontWeight', 'bold', 'Color', 'k', 'HorizontalAlignment', 'right');
+        % end
+
+        %--- plot convex hull ---
+        trisurf(K, agents(:,1), agents(:,2), agents(:,3), ...
+            'FaceAlpha', 1, 'EdgeColor', 'k');
+        hold off;
+        pause;
+    end
     voronoi_vertices = zeros(numFaces,3);
 
     % Voronoi vertices
@@ -71,11 +105,9 @@ for k = 1:Nsim
         new_agents(i,:) = true_centroid;
 
     end
-
     agents = new_agents;
 end
 
-%%
 %% Visualization (Geodesic Voronoi on S2)
 
 figure('Color','w');
@@ -86,14 +118,19 @@ hold on
 title_handle = title('');
 
 % Sphere
-[xs,ys,zs] = sphere(60);
-surf(xs,ys,zs,'FaceColor','none','EdgeColor','b','EdgeAlpha',0.1)
+% Draw semi-transparent sphere
+[XS, YS, ZS] = sphere(100);   
+surf(XS, YS, ZS, ...
+    'FaceAlpha', 1.0, ...
+    'EdgeColor', 'none', ...
+    'FaceColor', [0.7647 0.7647 0.7647]); 
 
 % Agent points
 hAgents = plot3(agents_history(:,1,1),...
                 agents_history(:,2,1),...
                 agents_history(:,3,1),...
-                'k.','MarkerSize',25);
+                'k.','MarkerSize',15);
+
 
 % Line handles
 hEdges = gobjects(numAgents,1);
@@ -160,4 +197,16 @@ for k = 1:Nsim
     drawnow;
 end
 
-
+%%
+% Formatting for paper
+axis equal
+axis off
+set(gca, 'Visible', 'off')
+set(gcf, 'Color', 'w');          % white background
+set(gca, 'Position', [0 0 1 1]); % fill figure
+view(3);
+print2pdf('Lloyd_normal.pdf', 1);
+view(90,0);
+print2pdf('Lloyd_side.pdf', 1);
+view(0,90);
+print2pdf('Lloyd_top.pdf', 1);
