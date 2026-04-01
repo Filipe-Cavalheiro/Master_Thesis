@@ -10,8 +10,8 @@ Param.Tend = 30;
 Param.dTi = 0.01;  % inner-loop and simulation sampling period
 Nsim = round(Param.Tend/Param.dTi)+1;
 Param.g = 9.81;     % earth gravity
-Param.nD = 25; % number of drones
-Param.sphere_radius = 5;  % sphere radius
+Param.nD = 32; % number of drones
+Param.sphere_radius = 2;  % sphere radius
 Param.arena = 'free_world'; % simulation arena: 'lab', 'free_world'
 Param.k_rad = 0.3; % radius reduction gain
 

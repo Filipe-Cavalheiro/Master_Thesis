@@ -64,14 +64,14 @@ for k = 1:Nsim
     fprintf("Computing simulation interation: %04d\n", k);
 
     % drop some agents mid simulation
-    if k == round(Nsim/3)
-        removeIdx = randperm(size(q_d,2), round(Param.nD/3));
-        q_d(removeIdx) = [];
-        new_q_d(removeIdx) = [];
-        ema_estimated(:,removeIdx) = [];
-        estimated_target_position(:,removeIdx) = [];
-        Param.nD = size(q_d,2);
-    end
+    % if k == round(Nsim/3)
+    %     removeIdx = randperm(size(q_d,2), round(Param.nD/3));
+    %     q_d(removeIdx) = [];
+    %     new_q_d(removeIdx) = [];
+    %     ema_estimated(:,removeIdx) = [];
+    %     estimated_target_position(:,removeIdx) = [];
+    %     Param.nD = size(q_d,2);
+    % end
     numAgents_history(k) = Param.nD;
     
     % move actual target
@@ -81,9 +81,7 @@ for k = 1:Nsim
     target_true_hist(:,k) = target.x;
     
     % --- SMALL WORLD NETWORK ---
-    [connections,connection_Laplacian,~] = build_small_world_network_geo(cell2mat(q_d), ...
-                                Param.k_neighbours, Param.gamma,...
-                                Param.comm_range, target.x(1:3), Param);
+    [connections,connection_Laplacian,~] = Delaunay_triangulation_network(cell2mat(q_d)');
     
     for iD = 1:Param.nD
         % get state vector
@@ -192,6 +190,7 @@ lgd = legend( ...
 lgd.FontSize = 12; 
 lgd.Interpreter = 'latex';
 
+print2pdf("decentralized_results_drone_1.pdf", 1)
 %%
 figure;
 hold on;

@@ -1,58 +1,55 @@
 function animate_simulation(x, q_hist, q_d_hist, c_sphere, cells_history, numAgents_history, Param, Nsim)
+    
+    % === Video settings ===
+    save_to_mp4 = 0;
+    frameStep   = 10;                       % must match animation loop
+    sim_dt      = Param.dTi * frameStep;    % simulated time per frame
+    videoFPS    = 1 / sim_dt;               % makes video exactly 10 sec
+    
+    if save_to_mp4
+        mp4File = fullfile(pwd,'control_sphere_v6_laypunov_example_3.mp4');
+        v = VideoWriter(mp4File,'MPEG-4');
+        v.FrameRate = videoFPS;
+        open(v);
+    end
+    
+    animation = figure('units','normalized','outerposition',[0 0 1 1]);
+    hold on; grid on; 
+    axis equal; 
+    view(3);
+    
+    %Colors
+    colors = lines(Param.nD);
 
-% === Video settings ===
-save_to_mp4 = 0;
-frameStep   = 10;                       % must match animation loop
-sim_dt      = Param.dTi * frameStep;    % simulated time per frame
-videoFPS    = 1 / sim_dt;               % makes video exactly 10 sec
+    for iD = 1:Param.nD
+        initial_pos{iD} = scatter3(x{iD}(1,1), x{iD}(2,1), x{iD}(3,1), ...
+            50, colors(iD,:), 'x', 'LineWidth', 2, ...
+            'HandleVisibility','off');
+    end
 
-if save_to_mp4
-    mp4File = fullfile(pwd,'control_sphere_v6_laypunov_example_3.mp4');
-    v = VideoWriter(mp4File,'MPEG-4');
-    v.FrameRate = videoFPS;
-    open(v);
-end
+    %=== Create a label ===
+    hInit = scatter3(NaN, NaN, NaN, ...
+        50, 'k', 'x', 'LineWidth', 2);
 
-animation = figure('units','normalized','outerposition',[0 0 1 1]);
-hold on; grid on; 
-axis equal; 
-view(3);
+    hdrone = scatter3(NaN, NaN, NaN, ...
+        50, 'k', 'x');
 
-% Colors
-colors = lines(Param.nD);
-% % === Create a label ===
-% for iD = 1:Param.nD
-%     scatter3(x{iD}(1,1), x{iD}(2,1), x{iD}(3,1), ...
-%         50, colors(iD,:), 'x', 'LineWidth', 2, ...
-%         'HandleVisibility','off');
-% end
-% 
-% hInit = scatter3(NaN, NaN, NaN, ...
-%     50, 'k', 'x', 'LineWidth', 2);
-% 
-% hProj = scatter3(NaN, NaN, NaN, ...
-%     50, 'k', 'd', 'LineWidth', 2);
-% 
-% hdrone = scatter3(NaN, NaN, NaN, ...
-%     50, 'k', 'x');
-% 
-% hq = scatter3(NaN, NaN, NaN, ...
-%     50, 'k', 'o', 'filled');
-% 
-% hq_d = scatter3(NaN, NaN, NaN, ...
-%     50, 'k', '+');
-% 
-% lgd = legend([hInit, hProj, hdrone, hq, hq_d], ...
-%     {'Initial Positions', 'Final Objective', 'drone', ...
-%      '$\tilde{q}_i$', '$q_i^\star$'});
-% 
-% lgd.FontSize = 10; 
-% lgd.Interpreter = 'latex';
-% lgd.Position = [0.45 0.45 0.05 0.1];  % [x y width height]
-% lgd.AutoUpdate = 'off';
-% % === End of create a label ===
+    hq = scatter3(NaN, NaN, NaN, ...
+        50, 'k', 'o', 'filled');
 
-if strcmp(Param.arena, 'free_world')
+    hq_d = scatter3(NaN, NaN, NaN, ...
+        50, 'k', '+');
+
+    lgd = legend([hInit, hdrone, hq, hq_d], ...
+        {'Initial Positions', 'drone', ...
+         '$\tilde{q}_i$', '$q_i^\star$'});
+
+    lgd.FontSize = 10; 
+    lgd.Interpreter = 'latex';
+    lgd.Position = [0.6208    0.6642    0.0752    0.1055];  % [x y width height]
+    lgd.AutoUpdate = 'off';
+    % === End of create a label ===
+
     % campos([55.2158  -78.4364   53.1560]);
     % camtarget([2.6397    2.5720    1.7751]);
     % camup([0     0     1]);
@@ -97,12 +94,23 @@ if strcmp(Param.arena, 'free_world')
     %title('3D Agent Trajectories');
     
     % Animation loop
-    trail_length = 150;
-    step = 5;
+    trail_length = 50;
+    step = 1;
+    removed_initial_pos = false;
 
     for k = 1:step:Nsim
         fprintf("Showing simulation interation: %04d\n", k);
         idx = max(1,k-trail_length):k;
+        numAgents = numAgents_history(k);
+        sphere_center = c_sphere(:,k);
+
+
+        if idx(1) ~= 1 && removed_initial_pos == false
+            removed_initial_pos = true;
+            for iD = 1:numAgents
+                set(initial_pos{iD}, 'Visible', 'off');
+            end
+        end
 
         
         if (k > 1) && (numAgents_history(k) ~= numAgents_history(k-step))
@@ -111,9 +119,6 @@ if strcmp(Param.arena, 'free_world')
                set(hEdges(i),'XData',NaN,'YData',NaN,'ZData',NaN);
             end
         end
-
-        numAgents = numAgents_history(k);
-        sphere_center = c_sphere(:,k);
 
         for iD = 1:numAgents
             set(outer_traj{iD}, ...
@@ -163,19 +168,72 @@ if strcmp(Param.arena, 'free_world')
             'ZData', sphere_center(3)+z_sphere);
     
         set(hCenter, ...
-            'XData', c_sphere(1,idx), ...
-            'YData', c_sphere(2,idx), ...
-            'ZData', c_sphere(3,idx));     
+            'XData', c_sphere(1,1:k), ...
+            'YData', c_sphere(2,1:k), ...
+            'ZData', c_sphere(3,1:k));     
     
         drawnow limitrate nocallbacks;
+
+        if k == 50
+            print2pdf("decentralized_moving_t_0.5.pdf", 1);
+        end
+
+        if k == 300
+            print2pdf("decentralized_moving_t_3.pdf", 1);
+        end
+
+        if k == 600
+            print2pdf("decentralized_moving_t_6.pdf", 1);
+        end
+
+        if k == 3000
+            print2pdf("decentralized_moving_t_30.pdf", 1);
+        end
     
         if save_to_mp4
             frame = getframe(animation);
             writeVideo(v,frame);
         else
-            %pause(0.01); % adjust speed of animation
+            % pause(0.01); % adjust speed of animation
         end
-    end
-end
+    end    
 
+    %=== Create a label ===
+    hdrone = scatter3(NaN, NaN, NaN, ...
+        50, 'k', 'x');
+
+    hq = scatter3(NaN, NaN, NaN, ...
+        50, 'k', 'o', 'filled');
+
+    hq_d = scatter3(NaN, NaN, NaN, ...
+        50, 'k', '+');
+
+    lgd = legend([hdrone, hq, hq_d], ...
+        {'drone', ...
+         '$\tilde{q}_i$', '$q_i^\star$'});
+
+    lgd.FontSize = 10; 
+    lgd.Interpreter = 'latex';
+    lgd.Position = [0.6208    0.6642    0.0752    0.1055];  % [x y width height]
+    lgd.AutoUpdate = 'off';
+    % === End of create a label ===
+
+    r = Param.sphere_radius+1; % ensure cubic box
+    
+    xlim(sphere_center(1) + [-r r]);
+    ylim(sphere_center(2) + [-r r]);
+    zlim(sphere_center(3) + [-r r]);
+
+    view(3);
+    camtarget(sphere_center);
+    print2pdf("decentralized_simulation_normal.pdf", 1);
+    
+    lgd.Position = [0.7090    0.8005    0.0752    0.1055];  % [x y width height]
+    view(90,0);
+    camtarget(sphere_center);
+    print2pdf("decentralized_simulation_side.pdf", 1);
+
+    view(0,90);
+    camtarget(sphere_center);
+    print2pdf("decentralized_simulation_top.pdf", 1);
 end
