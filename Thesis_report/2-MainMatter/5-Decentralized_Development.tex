@@ -118,7 +118,6 @@ In Figure~\ref{fig.5:run_time_comparison} it is possible to see all three method
   \label{fig.5:run_time_comparison}
 \end{figure}
 
-
 \begin{figure}[htbp]
     \centering
     \subfloat[Thomson]{\includegraphics[width=3cm]{5-Figures/Chapter5/Comparisions/thomson_normal_100_iter.pdf}}\hfil
@@ -175,76 +174,7 @@ Although each agent operates using only local information, the collective behavi
 
 A key advantage of this method is that it requires only local communication. Each agent needs access solely to the positions of its neighboring agents, and no global knowledge such as the total number of agents in the system is required. This makes the approach scalable and well-suited for distributed implementations.
 
-However, this method assumes that the domain in which the agents operate is bounded. In Euclidean space ($\mathbb{R}^2$), this corresponds to environments with well-defined boundaries. In the case of a spherical surface, the domain is inherently bounded by the geometry of the sphere itself, which naturally constrains the Voronoi regions. The implementation of this methods is as follows, for a given agent $i$, a local set of points is first constructed as
-\begin{equation}
-\mathcal{P}_i = \left\{ \mathbf{q}_i \right\} \cup \left\{ \mathbf{q}_j \mid j \in \mathcal{N}_i \right\},
-\end{equation}
-where $\mathbf{q}_i \in \mathbb{R}^3$ is the desired position of agent $i$ and $\mathcal{N}_i$ denotes its set of neighbors, obtained from the  delaunay triangulation. These points are projected onto the unit sphere according to
-
-\begin{equation*}
-\hat{\mathbf{p}} = \Pi_{\Gamma^2}^{1,0} \mathcal{P}
-\end{equation*}
-
-The convex hull of the normalized set $\hat{\mathcal{P}}_i$ is then computed using the internal \(\text{MATLAB}^\text{\textregistered}\) \cite{MATLAB:R2024a} function \cite{MATLAB_convhull}, and only the triangular faces that include agent $i$ are retained. For each triangular face defined by three points $\hat{\mathbf{p}}_a$, $\hat{\mathbf{p}}_b$, and $\hat{\mathbf{p}}_c$, a candidate Voronoi vertex is obtained as the normalized cross product
-\begin{equation}
-\mathbf{v} = \frac{(\hat{\mathbf{p}}_b - \hat{\mathbf{p}}_a) \times (\hat{\mathbf{p}}_c - \hat{\mathbf{p}}_a)}{\|(\hat{\mathbf{p}}_b - \hat{\mathbf{p}}_a) \times (\hat{\mathbf{p}}_c - \hat{\mathbf{p}}_a)\|}.
-\end{equation}
-To ensure consistent orientation, each vertex is aligned with the outward radial direction of agent $i$:
-\begin{equation}
-\mathbf{v} \leftarrow 
-\begin{cases}
-\mathbf{v}, & \text{if } \mathbf{v} \cdot \hat{\mathbf{q}}_i > 0, \\
--\mathbf{v}, & \text{otherwise}.
-\end{cases}
-\end{equation}
-
-The resulting set of Voronoi vertices is then projected onto a local tangent plane for ordering. Let $\mathbf{V} \in \mathbb{R}^{m \times 3}$ be the matrix of vertices and $\hat{\mathbf{q}}_i$ the agent position. A local 2D parametrization is obtained via singular value decomposition:
-\begin{equation}
-\mathbf{V} - \hat{\mathbf{q}}_i = \mathbf{U} \mathbf{\Sigma} \mathbf{W}^\top,
-\end{equation}
-and the projection onto the first two principal directions yields
-\begin{equation}
-\mathbf{p}_k = (\mathbf{v}_k - \hat{\mathbf{q}}_i)\mathbf{W}_{(:,1:2)}.
-\end{equation}
-The vertices are then ordered according to their angular coordinate
-\begin{equation}
-\theta_k = \mathrm{atan2}(p_{k,2}, p_{k,1}).
-\end{equation}
-
-The centroid of the spherical Voronoi region is approximated by decomposing it into spherical triangles. For a triangle defined by unit vectors $\mathbf{a}$, $\mathbf{b}$, and $\mathbf{c}$ on the sphere, the side lengths are first computed using angular distances
-\begin{equation}
-\alpha = \arccos(\mathbf{b} \cdot \mathbf{c}), \quad
-\beta  = \arccos(\mathbf{a} \cdot \mathbf{c}), \quad
-\gamma = \arccos(\mathbf{a} \cdot \mathbf{b}).
-\end{equation}
-The area of the spherical triangle is then computed using L'Huilier's theorem \cite{L_Huilier1809} as
-\begin{equation}
-A = 4 \arctan \left( \sqrt{
-\tan\left(\frac{s}{2}\right)
-\tan\left(\frac{s-\alpha}{2}\right)
-\tan\left(\frac{s-\beta}{2}\right)
-\tan\left(\frac{s-\gamma}{2}\right)
-} \right).
-\end{equation}
-where
-\begin{equation}
-s = \frac{\alpha + \beta + \gamma}{2}
-\end{equation}
-is the semi-perimeter. 
-
-The centroid of each spherical triangle is approximated by the normalized sum of its vertices,
-\begin{equation}
-\mathbf{g} = \frac{\mathbf{a} + \mathbf{b} + \mathbf{c}}{\|\mathbf{a} + \mathbf{b} + \mathbf{c}\|},
-\end{equation}
-and the overall Voronoi centroid is obtained as the area-weighted average of these triangle centroids.
-\begin{equation}
-\mathbf{g}_i = \frac{\sum_{k} A_k \mathbf{g}_k}{\left\|\sum_{k} A_k \mathbf{g}_k \right\|}.
-\end{equation}
-
-Finally, the updated desired position of the agent is computed by projecting this centroid back onto the sphere:
-\begin{equation*}
-\gls{q_i_desired} = \Pi_{\Gamma^2}^{r_i,P_T} \mathbf{g}_i
-\end{equation*}
+However, this method assumes that the domain in which the agents operate is bounded. In Euclidean space ($\mathbb{R}^2$), this corresponds to environments with well-defined boundaries. In the case of a spherical surface, the domain is inherently bounded by the geometry of the sphere itself, which naturally constrains the Voronoi regions. The formal description of the convex hull method can be viewed in Section~\ref{sec.3:Lloyd's algorithm}.
 
 \section{Simulation Results (convex hull)}
 
@@ -252,7 +182,7 @@ The system was evaluated using a total of 12 agents performing the encirclement 
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.85\columnwidth]{5-Figures/Chapter5/Simulations/decentralized_results_drone_1.pdf}
+    \includegraphics[width=0.85\columnwidth]{5-Figures/Chapter5/Simulations_convex_hull/decentralized_results_drone_1.pdf}
     \caption{Distance and velocity between drone 1 and a moving target}
     \label{fig.5:decentralized_results_drone_1}
 \end{figure}
@@ -260,32 +190,106 @@ The system was evaluated using a total of 12 agents performing the encirclement 
 \begin{figure}[htbp]
     \centering
     \subfloat[$t=0.5~\mathrm{s}$]{%
-        \includegraphics[width=0.5\columnwidth]{5-Figures/Chapter5/Simulations/decentralized_moving_t_0.5.pdf}\hfil
+        \includegraphics[width=0.5\columnwidth]{5-Figures/Chapter5/Simulations_convex_hull/decentralized_moving_t_0.5.pdf}\hfil
         \label{fig.5:lyapunov_solution_t_0.5}
     }
         \subfloat[$t=3~\mathrm{s}$]{%
-        \includegraphics[width=0.5\columnwidth]{5-Figures/Chapter5/Simulations/decentralized_moving_t_3.pdf}\hfil
+        \includegraphics[width=0.5\columnwidth]{5-Figures/Chapter5/Simulations_convex_hull/decentralized_moving_t_3.pdf}\hfil
         \label{fig.5:lyapunov_solution_t_3}
     }\\
     \subfloat[$t=6~\mathrm{s}$]{%
-        \includegraphics[width=0.5\columnwidth]{5-Figures/Chapter5/Simulations/decentralized_moving_t_6.pdf}\hfil
+        \includegraphics[width=0.5\columnwidth]{5-Figures/Chapter5/Simulations_convex_hull/decentralized_moving_t_6.pdf}\hfil
         \label{fig.5:lyapunov_solution_t_6}
     }
     \subfloat[$t=30~\mathrm{s}$]{%
-        \includegraphics[width=0.5\columnwidth]{5-Figures/Chapter5/Simulations/decentralized_moving_t_30.pdf}
+        \includegraphics[width=0.5\columnwidth]{5-Figures/Chapter5/Simulations_convex_hull/decentralized_moving_t_30.pdf}
         \label{fig.5:lyapunov_solution_t_30}
     }
     \caption{Encirclement of a moving target using the Lyapunov-based control strategy for three drones at different time instants.}
-    \label{fig.4:lyapunov_solution}
+    \label{fig.5:lyapunov_solution}
 \end{figure}
 
 \begin{figure}[htbp]
   \centering
-  \subfloat[Normal]{\includegraphics[width=5cm]{5-Figures/Chapter5/Simulations/decentralized_simulation_normal.pdf}}\hfil   
-  \subfloat[Top]{\includegraphics[width=5cm]{5-Figures/Chapter5/Simulations/decentralized_simulation_top.pdf}}\hfil
-  \subfloat[Side]{\includegraphics[width=5cm]{5-Figures/Chapter5/Simulations/decentralized_simulation_side.pdf}}
+  \subfloat[Normal]{\includegraphics[width=5cm]{5-Figures/Chapter5/Simulations_convex_hull/decentralized_simulation_normal.pdf}}\hfil   
+  \subfloat[Top]{\includegraphics[width=5cm]{5-Figures/Chapter5/Simulations_convex_hull/decentralized_simulation_top.pdf}}\hfil
+  \subfloat[Side]{\includegraphics[width=5cm]{5-Figures/Chapter5/Simulations_convex_hull/decentralized_simulation_side.pdf}}
   \caption{3 views of final simulation drone positioning}
-  \label{fig.3:fibonacci_lattice_demonstration}
+  \label{fig.5:lyapunov_solution_demonstration}
 \end{figure}
 
 \section{Simulation Results (half plane)}
+
+In this section it is shown the simulation for a decentralized approach using the control architecture previously and Lloyds half plane implementation method.
+The results are presented in Figures \ref{fig.5:decentralized_half_plane_results_drone_1} and \ref{fig.5:decentralized_half_plane_solution_t_0.5}--\ref{fig.5:decentralized_half_plane_solution_t_30}. The parameters used are identical to those of the centralized system and are listed in Tables~\ref{tab.4:all_params} and \ref{tab.4:Drone_positions}. The reference target position, $\gls{target_pos}^\star$, was chosen to be the same as in the centralized system experiments.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\columnwidth]{5-Figures/Chapter5/Simulations_half_plane/decentralized_results_drone_1.pdf}
+    \caption{Distance and velocity between drone 1 and a moving target}
+    \label{fig.5:decentralized_half_plane_results_drone_1}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \subfloat[$t=0.5~\mathrm{s}$]{%
+        \includegraphics[width=0.5\columnwidth]{5-Figures/Chapter5/Simulations_half_plane/decentralized_half_plane_moving_t_0.5.pdf}\hfil
+        \label{fig.5:decentralized_half_plane_solution_t_0.5}
+    }
+        \subfloat[$t=3~\mathrm{s}$]{%
+        \includegraphics[width=0.5\columnwidth]{5-Figures/Chapter5/Simulations_half_plane/decentralized_half_plane_moving_t_3.pdf}\hfil
+        \label{fig.5:decentralized_half_plane_solution_t_3}
+    }\\
+    \subfloat[$t=6~\mathrm{s}$]{%
+        \includegraphics[width=0.5\columnwidth]{5-Figures/Chapter5/Simulations_half_plane/decentralized_half_plane_moving_t_6.pdf}\hfil
+        \label{fig.5:decentralized_half_plane_solution_t_6}
+    }
+    \subfloat[$t=30~\mathrm{s}$]{%
+        \includegraphics[width=0.5\columnwidth]{5-Figures/Chapter5/Simulations_half_plane/decentralized_half_plane_moving_t_30.pdf}
+        \label{fig.5:decentralized_half_plane_solution_t_30}
+    }
+    \caption{Decentralized encirclement of a moving target using the Lyapunov-based control strategy for eight drones at different time instants.}
+    \label{fig.5:decentralized_half_plane_solution}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \subfloat[Normal]{\includegraphics[width=5cm]{5-Figures/Chapter5/Simulations_half_plane/decentralized_half_plane_simulation_normal.pdf}}\hfil   
+  \subfloat[Top]{\includegraphics[width=5cm]{5-Figures/Chapter5/Simulations_half_plane/decentralized_half_plane_simulation_top.pdf}}\hfil
+  \subfloat[Side]{\includegraphics[width=5cm]{5-Figures/Chapter5/Simulations_half_plane/decentralized_half_plane_simulation_side.pdf}}
+  \caption{3 views of final simulation drone positioning}
+  \label{fig.5:decentralized_half_plane_demonstration}
+\end{figure}
+
+It will also be shown the ability of the system to re distribute agents on the sphere in case of some agents leaving/failing or droping out of the formation. In this case a inital formation of 8 drones will pass to a formation of 5, 15 seconds after initiation.
+
+\begin{figure}[htbp]
+    \centering
+    \subfloat[$t=0.5~\mathrm{s}$]{%
+        \includegraphics[width=0.5\columnwidth]{5-Figures/Chapter5/Simulations_half_plane_dropped/decentralized_half_plane_dropped_moving_t_0.5.pdf}\hfil
+        \label{fig.5:decentralized_half_plane_dropped_solution_t_0.5}
+    }
+        \subfloat[$t=3~\mathrm{s}$]{%
+        \includegraphics[width=0.5\columnwidth]{5-Figures/Chapter5/Simulations_half_plane_dropped/decentralized_half_plane_dropped_moving_t_3.pdf}\hfil
+        \label{fig.5:decentralized_half_plane_dropped_solution_t_3}
+    }\\
+    \subfloat[$t=6~\mathrm{s}$]{%
+        \includegraphics[width=0.5\columnwidth]{5-Figures/Chapter5/Simulations_half_plane_dropped/decentralized_half_plane_dropped_moving_t_6.pdf}\hfil
+        \label{fig.5:decentralized_half_plane_dropped_solution_t_6}
+    }
+    \subfloat[$t=30~\mathrm{s}$]{%
+        \includegraphics[width=0.5\columnwidth]{5-Figures/Chapter5/Simulations_half_plane_dropped/decentralized_half_plane_dropped_moving_t_30.pdf}
+        \label{fig.5:decentralized_half_plane_dropped_solution_t_30}
+    }
+    \caption{Decentralized encirclement of a moving target using the Lyapunov-based control strategy from eight to five drones at different time instants.}
+    \label{fig.5:decentralized_half_plane_dropped_solution}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \subfloat[Normal]{\includegraphics[width=5cm]{5-Figures/Chapter5/Simulations_half_plane_dropped/decentralized_half_plane_dropped_simulation_normal.pdf}}\hfil   
+  \subfloat[Top]{\includegraphics[width=5cm]{5-Figures/Chapter5/Simulations_half_plane_dropped/decentralized_half_plane_dropped_simulation_top.pdf}}\hfil
+  \subfloat[Side]{\includegraphics[width=5cm]{5-Figures/Chapter5/Simulations_half_plane_dropped/decentralized_half_plane_dropped_simulation_side.pdf}}
+  \caption{3 views of final simulation drone positioning}
+  \label{fig.5:decentralized_half_plane_dropped_demonstration}
+\end{figure}

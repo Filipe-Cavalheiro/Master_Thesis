@@ -210,7 +210,7 @@ E(\mathbf{X}) = \sum_{i=1}^{N} \int_{V_i} |y - x_i|_2^2 , dA.
 Two different method implementations where achieved for this algorithm, they differ in the way of calculation of the Voronoi region \gls{voronoi_region} and centroid \gls{voronoi_centroid}. 
 
 
-\paragraph{Voronoi convex hull}
+\paragraph{Voronoi convex hull} 
 
 This method calculated the Voronoi region \gls{voronoi_region} from the convex hull, this is a shape that given $N$ points creates the connected edges that will enclose all points in such a way that no point is located outside of the shape. In this case the internal  \(\text{MATLAB}^\text{\textregistered}\) \cite{MATLAB:R2024a} function \cite{MATLAB_convhull} the Delaunay triangulation between all points in obtained. With this triangulation it is possible to know what points are directly connected to a point and what triangles belong to the convex hull of said point, with this it is possible to calculate the area of the surface of the Voronoi region \gls{voronoi_region}, since the region is located in the two-sphere the vertexes and said triangles of the convex hull are passed to the sphere surface and the ara is calculated directly in the manifold using L'Huilier formula. In Figure~\ref{fig.3:Convex_hull_demonstration} it is possible to visualize the created convex hull and Delaunay triangulation for a random formation of 30 points on the two-sphere surface.
 
