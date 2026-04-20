@@ -115,27 +115,27 @@ for k = 1:Nsim
         %     surf(X, Y, Z, 'FaceAlpha', 0.4, 'FaceColor', 'r', 'EdgeColor', 'none');
         % end
 
-        % %%
-        % figure;
-        % view(3);
-        % axis equal;
-        % hold on;
-        % [xs,ys,zs] = sphere(60);
-        % 
-        % surf(xs,ys,zs,'FaceColor','none','EdgeColor','b','EdgeAlpha',0.1)
-        % scatter3(voronoi_vertices(:,1), voronoi_vertices(:,2), voronoi_vertices(:,3), 'k');
-        % scatter3(neigh_pos(:,1), neigh_pos(:,2), neigh_pos(:,3), 'r', 'filled');
-        % 
-        % edge_pts = [];
-        % for j = 2:length(neigh_idx)
-        %     p1 = neigh_pos(1,:);        % current agent
-        %     p2 = neigh_pos(j,:);        % neighbor
-        % 
-        %     arc = geodesic_arc(p1, p2, 50);  % 50 points along the arc
-        %     edge_pts = [edge_pts; arc; NaN NaN NaN];  % add NaN to break line between arcs
-        % end
-        % 
-        % plot3(edge_pts(:,1), edge_pts(:,2), edge_pts(:,3), 'k', 'LineWidth', 1.5);
+        %%
+        figure;
+        view(3);
+        axis equal;
+        hold on;
+        [xs,ys,zs] = sphere(60);
+
+        surf(xs,ys,zs,'FaceColor','none','EdgeColor','b','EdgeAlpha',0.1)
+        scatter3(voronoi_vertices(:,1), voronoi_vertices(:,2), voronoi_vertices(:,3), 'k');
+        scatter3(neigh_pos(:,1), neigh_pos(:,2), neigh_pos(:,3), 'r', 'filled');
+
+        edge_pts = [];
+        for j = 2:length(neigh_idx)
+            p1 = neigh_pos(1,:);        % current agent
+            p2 = neigh_pos(j,:);        % neighbor
+
+            arc = geodesic_arc(p1, p2, 50);  % 50 points along the arc
+            edge_pts = [edge_pts; arc; NaN NaN NaN];  % add NaN to break line between arcs
+        end
+
+        plot3(edge_pts(:,1), edge_pts(:,2), edge_pts(:,3), 'k', 'LineWidth', 1.5);
         
         % Points on sphere (centered at origin)
         [X,Y,Z] = sphere(50);

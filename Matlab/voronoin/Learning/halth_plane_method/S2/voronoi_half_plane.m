@@ -3,7 +3,6 @@ clear; clc; close all;
 Tend = 1;
 dTi = 0.01;
 Nsim = round(Tend/dTi);
-Nsim = 100;
 
 numAgents = 30;
 R = 1.0;
@@ -19,7 +18,7 @@ verbose = false;
 update_interval = 2;
 
 for k = 1:Nsim
-    start = clock;
+    %start = clock;
     fprintf("Computing simulation interation: %04d\n", k);
     numAgents_history(k) = numAgents;
 
@@ -128,7 +127,7 @@ for k = 1:Nsim
         new_agents(iD,:) = centroid./norm(centroid);
     end
     agents = new_agents;
-    times(k) = etime(clock, start);
+    %times(k) = etime(clock, start);
 end
 
 %%

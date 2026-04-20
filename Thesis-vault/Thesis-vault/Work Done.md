@@ -57,3 +57,15 @@ And some TODO.
 2026-03-31: write thesis, see if I can finish this version by today. AKA no conclusions but the rest written with all the work done at the moment. Need to add the Voronoi half plane implementation I did yesterday to the method comparison, if I have time still need to simulate and implement the simulation with this method of point separation.
 
 2026-04-01: Write thesis and the code for the half plane simulations.
+
+*SPRING BREAK*
+
+2026-04-07: started working on a general version of the system that works for any manifold, also made a transformation of a circle to a cone to a sphere to intersect the target when its at the edge of the forbidden region. 
+
+2026-04-07: Trying to make the half plane version work using mesh grid instead of circle since I need to be able to cut sections of the mesh and discover new centres of region.
+
+(Forgot to log) mostly writing matlab for voronoi on meshgrids
+
+2026-04-15: EXPO FCT
+
+2026-04-16: Read @mengEfficientAlgorithmApproximate2023 and trying to understand/implement it 
