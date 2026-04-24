@@ -11,6 +11,7 @@ state.vertices = [];
 state.faces = [];
 state.sites = []; 
 
+
 disp('Controls:');
 disp('↑  : new random sites (same object)');
 disp('←/→: switch object');
