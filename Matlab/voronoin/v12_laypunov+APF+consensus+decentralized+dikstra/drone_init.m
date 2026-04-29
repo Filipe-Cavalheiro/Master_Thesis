@@ -10,18 +10,18 @@ Param.dTi = 0.01;  % inner-loop and simulation sampling period
 Nsim = round(Param.Tend/Param.dTi)+1;
 Param.Nsim = Nsim;
 Param.g = 9.81;     % earth gravity
-Param.nD = 21; % number of drones
+Param.nD = 8; % number of drones
 Param.arena = 'free_world'; % simulation arena: 'lab', 'free_world'
 Param.k_rad = 0.3; % radius reduction gain
 Param.sphere_radius = 2.0;
 
 % target motion reference
-target_ref = @(t) [ ...
-    -5 + (t<=8).*10*t/8 + (t>8).*10; ...
-    0; ...
-    1.5 ];
+% target_ref = @(t) [ ...
+%     -5 + (t<=8).*10*t/8 + (t>8).*10; ...
+%     0; ...
+%     1.5 ];
 
-% target_ref = @(t) [0;0;1.5];
+target_ref = @(t) [0;0;1.5];
 
 Param.initial_target_pos = target_ref(0);
 

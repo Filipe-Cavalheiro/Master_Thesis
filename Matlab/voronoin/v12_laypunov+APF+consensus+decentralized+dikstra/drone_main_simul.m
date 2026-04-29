@@ -321,4 +321,4 @@ animate_simulation(chaser, q_hist, q_d_hist, target_position,...
     data.state.faces, p_d_hist, Param);
 
 % clean path after it runs so that I can modify folders
-% rmpath(genpath(pwd))
+rmpath(genpath(pwd))
