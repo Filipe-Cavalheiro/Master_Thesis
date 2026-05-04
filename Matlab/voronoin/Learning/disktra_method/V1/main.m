@@ -2,7 +2,7 @@ clear; clc; close all;
 
 % Parameters
 state.mesh_resolution = 40;
-state.numSites = 8;
+state.numSites = 1001;
 state.maxIter = 20;
 
 state.obj_index = 1;
@@ -10,7 +10,6 @@ state.objList = {'circle','sphere','ellipsoid','paraboloid','frog.stl','bust.stl
 state.vertices = [];
 state.faces = [];
 state.sites = []; 
-
 
 disp('Controls:');
 disp('↑  : new random sites (same object)');
@@ -30,14 +29,14 @@ gfx.surf = trisurf(state.faces, state.vertices(:,1), state.vertices(:,2), state.
     'EdgeColor','none');
 
 axis equal;
-camlight;
-lighting gouraud;
-shading interp
-lightangle(-45,30)
-h.AmbientStrength = 0.3;
-h.DiffuseStrength = 0.8;
-h.SpecularStrength = 0.9;
-h.SpecularExponent = 25;
+% camlight;
+% lighting gouraud;
+% shading interp
+% lightangle(-45,30)
+% h.AmbientStrength = 0.3;
+% h.DiffuseStrength = 0.8;
+% h.SpecularStrength = 0.9;
+% h.SpecularExponent = 25;
 
 gfx.sites = scatter3(nan, nan, nan, 60, 'g', 'x');
 gfx.voronoi_edges = scatter3(nan, nan, nan, 60, 'r', 'x');
@@ -46,6 +45,44 @@ data.state = state;
 data.gfx   = gfx;
 guidata(hFig, data);
 visualizeState(state, 'New random sites', gfx);
+uiwait(hFig);
+
+set(gfx.surf, 'FaceColor', [0.7647 0.7647 0.7647]);
+set(gfx.sites, ...
+    'SizeData', 120, ...
+    'MarkerEdgeColor', 'k', ...
+    'Marker', '.');
+
+set(gfx.voronoi_edges, ...
+    'XData', nan, ...
+    'YData', nan, ...
+    'ZData', nan);
+
+drawnow;
+pause(0.1);
+
+axis equal;
+axis vis3d;
+camproj('orthographic');
+
+% Freeze axis limits so they don't change per view
+xlim manual;
+ylim manual;
+zlim manual;
+
+% Ensure axes fully fill the figure
+set(gca, 'Position', [0 0 1 1]);
+set(gca, 'LooseInset', [0 0 0 0]);  % remove extra padding
+axis off
+set(gca, 'Visible', 'off')
+set(gcf, 'Color', 'w');          % white background
+set(gca, 'Position', [0 0 1 1]); % fill figure
+view(3);
+exportgraphics(gcf, 'Voronoi_dijkstra_normal.pdf', 'Resolution', 200);
+view(90,0);
+exportgraphics(gcf, 'Voronoi_dijkstra_side.pdf', 'Resolution', 200);
+view(0,90);
+exportgraphics(gcf, 'Voronoi_dijkstra_top.pdf', 'Resolution', 200);
 
 %% --- functions
 function V = buildVertexObjects(vertices, faces)
@@ -180,11 +217,17 @@ function [vertices, faces] = generateMesh(shapeType, res)
             [faces, vertices] = surf2patch(x, y, z, 'triangles');
 
         case 'sphere'
-            [X,Y,Z] = sphere(res);
-            [faces, vertices] = surf2patch(X,Y,Z,'triangles');
-
-            % normalize (important if using sphere())
-            vertices = vertices ./ vecnorm(vertices,2,2);
+            P = 10001;
+            phi_golden = (1 + sqrt(5)) / 2; 
+            i = (0:P-1)';
+            phi = 2*pi*i/phi_golden;
+            theta = acos(1 - 2*(i+0.5)/P);
+            
+            x_s = cos(theta);
+            y_s = sin(theta).*sin(phi);
+            z_s = sin(theta).*cos(phi);
+            vertices = [x_s(:), y_s(:), z_s(:)];
+            faces = convhull(vertices(:,1), vertices(:,2), vertices(:,3));
 
         case 'ellipsoid'
             a = 1; b = 0.6; c = 0.4; % axis scales
@@ -223,7 +266,7 @@ function [vertices, faces] = generateMesh(shapeType, res)
     faces    = facesW;
 end
 
-function runCVT(state, gfx)
+function runCVT(state, gfx, src)
     vertices = state.vertices;
     faces    = state.faces;
     sites    = state.sites;    
@@ -274,10 +317,10 @@ function runCVT(state, gfx)
         end
         sites = newSites;
     end
+    uiresume(src)
 end
 
 function visualizeState(state, ttl, gfx)
-
     V = state.vertices;
     F = state.faces;
     N = size(V,1);
@@ -288,11 +331,6 @@ function visualizeState(state, ttl, gfx)
         'FaceVertexCData', zeros(N,1));
 
     pts = V(state.sites,:);
-
-    set(gfx.voronoi_edges, ...
-        'XData', nan, ...
-        'YData', nan, ...
-        'ZData', nan);
 
     set(gfx.sites, ...
         'XData', pts(:,1), ...
@@ -351,7 +389,7 @@ function keyHandler(src, event)
 
         case 'return'
             % run algorithm
-            runCVT(state, gfx);
+            runCVT(state, gfx, src);
 
         otherwise
             return;

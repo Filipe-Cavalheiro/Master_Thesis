@@ -7,7 +7,7 @@ clear; clc; close all;
 addpath(genpath(pwd)); % load all sub folders
 drone_init;            % initialize variables
 clearvars iD;
-% Parameters
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Simulation initialization
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -86,6 +86,9 @@ target.xiep = zeros(3,1);                      % Integral error
 ema_estimated = repmat(target.x, 1,Param.nD);
 newSite = zeros(1, Param.nD);
 
+active_mask = true(1, Param.nD);  % all active initially
+active_ids = find(active_mask);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Main time loop for simulation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -93,15 +96,13 @@ for k = 1:Nsim
     fprintf("Computing simulation interation: %04d\n", k);
 
     % drop some agents mid simulation
-    if k == round(3000)
-        removeIdx = randperm(size(p_d,2), round(Param.nD/3));
-        p_d(:,removeIdx) = [];
-        ema_estimated(:,removeIdx) = [];
-        estimated_target_variables(:,removeIdx) = [];
-        state.sites(removeIdx) = [];
-        Param.nD = size(p_d,2);
+    if k == Param.nD_drop_time
+        removeIdx_local = randperm(length(active_ids), round(Param.nD_drop));
+        removeIdx = active_ids(removeIdx_local);
+        active_mask(removeIdx) = false;
+        active_ids = find(active_mask);
+        ema_estimated(:, removeIdx) = [];
     end
-    numAgents_history(k) = Param.nD;
     
     % move actual target
     t = (k-1)*Param.dTi;
@@ -110,7 +111,7 @@ for k = 1:Nsim
     target_true_hist(:,k) = target.x;
     
     % --- SMALL WORLD NETWORK ---
-    [connections,connection_Laplacian,~] = Delaunay_triangulation_network(p_d');
+    [connections,connection_Laplacian,~] = Delaunay_triangulation_network(p_d(:, active_ids)');
 
     % --- Voronoi update (centralized) ---
     % if mod(k,20) == 0 || k == 1
@@ -122,8 +123,30 @@ for k = 1:Nsim
     %     state.sites = newSite;
     % end
     % p_d = state.vertices(state.sites, :)';
+    
+    
+    inactive_ids = find(~active_mask);
+    for iD = inactive_ids
+        % inactive drones will just fall from the sky
+        p_d_hist{iD}(:,k) = NaN;
+        pos = chaser{iD}(1:3,k);
+        if pos(3) <= 0
+            chaser{iD}(:,k+1) = [[pos(1); pos(2); 0]; zeros(15,1)];
+        else
+            v = chaser{iD}(4:6,k);
+            R = reshape(chaser{iD}(7:15,k),3,3);
+            om = chaser{iD}(16:18,k);
+            [dot_p,dot_v,dot_R,dot_om] = drone_3dfull_dyn(v,R,om,0,zeros(3,1),Param);
+            % discretization
+            pp = pos + Param.dTi*dot_p;
+            vp = v + Param.dTi*dot_v;
+            Rp = rot_integrate(R,om,Param.dTi);
+            omp = om + Param.dTi*dot_om;
+            chaser{iD}(:,k+1) = [pp;vp;reshape(Rp,[],1);omp];
+        end
+    end
         
-    for iD = 1:Param.nD
+    for iD = active_ids
         % get data.state vector
         pos = chaser{iD}(1:3,k);
         v = chaser{iD}(4:6,k);
@@ -133,9 +156,11 @@ for k = 1:Nsim
         % get target estimated position
         noisey_target = target.x + [Param.noise_std*randn(3,1); zeros(length(target.x)-3, 1)];
         % exponential moving average filter
-        ema_estimated(:,iD) = (1-Param.ema_alpha)*ema_estimated(:,iD) + Param.ema_alpha*noisey_target;
+        laplacian_idx = find(active_ids == iD);
+        ema_estimated(:,laplacian_idx) = (1-Param.ema_alpha)*ema_estimated(:,laplacian_idx) + Param.ema_alpha*noisey_target;
         % consensus update
-        estimated_target_variables(:,iD) = ema_estimated(:,iD) - Param.dTi*ema_estimated*connection_Laplacian(:,iD);
+        estimated_target_variables(:,iD) = ema_estimated(:,laplacian_idx)...
+            - Param.dTi*ema_estimated*connection_Laplacian(:,laplacian_idx);
         estimated_target_position = estimated_target_variables(1:3,iD);
         perceived_target_hist{k,iD} = estimated_target_variables(:,iD);
 
@@ -149,7 +174,7 @@ for k = 1:Nsim
             state.faces, ...
             Param);
 
-        neighbours = find(connections(iD,:) > 0);
+        neighbours = active_ids(connections(laplacian_idx,:));
         if mod(k,100) == 0 || k == 1
             sites = state.sites([iD, neighbours]);
             newSite(iD) = runCVT(state, sites, gfx);
@@ -191,7 +216,7 @@ for k = 1:Nsim
         end
     end
 
-    if any(isnan(p_d))
+    if any(isnan(p_d(:, active_ids)))
         save('log_vars.mat');
         error('A position value is NaN! exiting');
     end
@@ -254,9 +279,10 @@ legend_entries = [{'True target'}, ...
 legend(legend_entries{:});
 
 %%
+close all;
 animate_simulation(chaser, target_true_hist(1:3,:),...
      numAgents_history, state.vertices, ...
      p_d_hist, Param);
 
 % clean path after it runs so that I can modify folders
-rmpath(genpath(pwd))
+%rmpath(genpath(pwd))

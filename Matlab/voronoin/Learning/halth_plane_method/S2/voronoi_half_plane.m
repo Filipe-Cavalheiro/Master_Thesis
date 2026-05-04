@@ -32,12 +32,11 @@ for k = 1:Nsim
 
         current_agent = agents(iD,:);
         other_agents = agents(1:end ~= iD, :);
-
                 
         % Clip sphere points by each neighbor's half-plane
         for j = 1:length(other_agents)
             p1 = current_agent;        % current agent
-            p2 = other_agents(j,:);        % neighbor
+            p2 = other_agents(j,:);    % neighbor
             
             % Geodesic midpoint
             theta = acos(dot(p1, p2));

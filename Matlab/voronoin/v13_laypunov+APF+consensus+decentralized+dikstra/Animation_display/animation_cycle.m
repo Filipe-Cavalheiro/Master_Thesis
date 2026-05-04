@@ -4,15 +4,12 @@ function animation_cycle(k, data, gfx, Param)
 
     fprintf("Showing simulation interation: %04d\n", k);
     idx = max(1,k-Param.animation.trail_length):k;
-    numAgents = data.numAgents_history(k);
-    maxAgents = data.numAgents_history(1);
-
     if idx(1) ~= 1 && data.removed_initial_pos == false
         data.removed_initial_pos = true;
-        for iD = 1:numAgents
+        for iD = 1:Param.nD
             set(gfx.initial_pos{iD}, 'Visible', 'off');
         end
-        lgd = legend([gfx.hdrone, gfx.hp_d], ...
+        legend([gfx.hdrone, gfx.hp_d], ...
             {'drone', ...
              '$p_i^\star$'}, ...
             'Interpreter', 'latex');
@@ -20,12 +17,17 @@ function animation_cycle(k, data, gfx, Param)
     
     if (k > 1) && (data.numAgents_history(k) ~= data.numAgents_history(k-Param.animation.step))
         % Reset all cells
-        for iD = 1:maxAgents
+        for iD = 1:Param.nD
            set(gfx.href_ref_final{iD}, 'XData',NaN,'YData',NaN,'ZData',NaN);
         end
     end
 
-    for iD = 1:numAgents
+    set(gfx.hp_T, ...
+        'XData', data.target_position(1,k), ...
+        'YData', data.target_position(2,k), ...
+        'ZData', data.target_position(3,k));
+
+    for iD = 1:Param.nD
         set(gfx.inner_traj{iD}, ...
             'XData', data.x{iD}(1,idx), ...
             'YData', data.x{iD}(2,idx), ...

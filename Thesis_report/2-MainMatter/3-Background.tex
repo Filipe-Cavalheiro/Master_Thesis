@@ -175,44 +175,21 @@ The only found benefit of using this method, for the desired formation purposes,
 
 \subsection{Lloyd's algorithm} \label{sec.3:Lloyd's algorithm}
 
-Lloyd's algorithm is an iterative optimization method commonly used to compute \gls{CVT} \cite{duCentroidalVoronoiTessellations1999} , which provide highly uniform point distributions over a domain. The method alternates between partitioning the space into Voronoi regions and relocating each sample point to the centroid of its corresponding region. When applied to the two-sphere, this process yields configurations in which points tend to distribute almost evenly across the surface, making it well suited for agent spacing problems.
+Lloyd's algorithm is an iterative optimization method commonly used to compute \gls{CVT} \cite{duCentroidalVoronoiTessellations1999}, which yield highly uniform point distributions over a domain. The method alternates between partitioning the space into Voronoi regions and relocating each sample point (also called a site) to the centroid of its corresponding region. Both steps can be implemented in multiple ways, some of which are discussed in Section~\ref{subsec.3:Voronoi diagrams}. When applied to the two-sphere, this process produces configurations in which points tend to distribute evenly across the surface, making it well suited for agent spacing problems, the examples of this distribution are shown per method implemented.
 
-Let $\mathbf{X} = [x_1, x_2, \dots, x_N], x_i \in \mathbb{S}^2 \text{ for } i = 1, \dots, N$ denote the set of $N$ points on the unit sphere. For a given configuration, the sphere is partitioned into Voronoi cells \gls{voronoi_region}, where each region \gls{ith_voronoi_region} consists of all points on the sphere closer to $\mathbf{x}_i$ than to any other sample point. This can be given formally by Equation~\eqref{eq.3:voronoi_distance}, being then the centroid \gls{ith_voronoi_centroid} of each Voronoi region \gls{ith_voronoi_region} given by Equation~\eqref{eq.3:voronoi_centroid} as shown in \cite{duCentroidalVoronoiTessellations1999}.
+\subsection{Voronoi diagrams} \label{subsec.3:Voronoi diagrams}
+A Voronoi diagram partitions a metric space into regions based on proximity to a given set of sites. The i-th Voronoi \gls{ith_voronoi_region} region consists of all points that are closer to site \gls{ith_voronoi_centroid} than to any other site.
 
+Formally, let $X$ be a metric space with distance function $d$, which may be Euclidean or geodesic depending on the domain. $K$ be an index set, and \gls{ith_voronoi_centroid}${i \in K}$ be a collection of nonempty subsets of $X$ (called sites). The i-th voronoi region \gls{ith_voronoi_region} associated with the i-th site \gls{ith_voronoi_centroid} is defined as
 \begin{equation}
-\gls{ith_voronoi_region} = \left(
-    y \in \mathbb{S}^2: |y - x_i|_2 \leq |y - x_j|_2, 
-    \forall j \neq i\right)
-    \label{eq.3:voronoi_distance}
+    \gls{ith_voronoi_centroid} = \{ x \in X \mid d(x, \gls{ith_voronoi_centroid}) \leq d(x, c_j) \text{ for all } j \neq i \}.
 \end{equation}
 
-\begin{equation}
-\gls{ith_voronoi_centroid} = \frac{\int_{V_i} y dA}{\int_{V_i} dA}
-\label{eq.3:voronoi_centroid}
-\end{equation}
-where $dA$ denotes the surface area element on the sphere. Since $\gls{ith_voronoi_centroid}$ does not generally lie on the sphere, it must be projected back onto the surface via normalization,
+Three different methods were implemented to compute both the Voronoi regions and their centroids. For further reading, see \cite{boseSurveyGeodesicPaths2011} for geodesic distance computation and \cite{senechalMathematicalStructuresSpatial1993,aurenhammerVoronoiDiagramsSurvey1991} for Voronoi diagrams.
 
-\begin{equation}
-x_i^{k+1} = \frac{\gls{ith_voronoi_centroid}}{|\gls{ith_voronoi_centroid}|_2}.
-\end{equation}
-The algorithm proceeds iteratively by through the above equations repeating the following steps:
-\begin{enumerate}
-\item Compute the Voronoi tessellation of the current point set on the sphere.
-\item Calculate the centroid of each Voronoi region.
-\item Project each centroid back onto the sphere to obtain updated point positions.
-\end{enumerate}
-This process converges to a centroidal Voronoi tessellation, which corresponds to a local minimum of the energy functional
+\paragraph{Voronoi convex hull}
 
-\begin{equation}
-E(\mathbf{X}) = \sum_{i=1}^{N} \int_{V_i} |y - x_i|_2^2 , dA.
-\end{equation}
-
-Two different method implementations where achieved for this algorithm, they differ in the way of calculation of the Voronoi region \gls{voronoi_region} and centroid \gls{voronoi_centroid}. 
-
-
-\paragraph{Voronoi convex hull} 
-
-This method calculated the Voronoi region \gls{voronoi_region} from the convex hull, this is a shape that given $N$ points creates the connected edges that will enclose all points in such a way that no point is located outside of the shape. In this case the internal  \(\text{MATLAB}^\text{\textregistered}\) \cite{MATLAB:R2024a} function \cite{MATLAB_convhull} the Delaunay triangulation between all points in obtained. With this triangulation it is possible to know what points are directly connected to a point and what triangles belong to the convex hull of said point, with this it is possible to calculate the area of the surface of the Voronoi region \gls{voronoi_region}, since the region is located in the two-sphere the vertexes and said triangles of the convex hull are passed to the sphere surface and the ara is calculated directly in the manifold using L'Huilier formula. In Figure~\ref{fig.3:Convex_hull_demonstration} it is possible to visualize the created convex hull and Delaunay triangulation for a random formation of 30 points on the two-sphere surface.
+This method calculated the Voronoi region \gls{voronoi_region} from the convex hull, this is a shape that given $N$ points creates the connected edges that will enclose all points in such a way that no point is located outside of the shape. In this case the internal  $\text{MATLAB}^\text{\textregistered}$ \cite{MATLAB:R2024a} function \cite{MATLAB_convhull} the Delaunay triangulation between all points in obtained. With this triangulation it is possible to know what points are directly connected to a point and what triangles belong to the convex hull of said point, with this it is possible to calculate the area of the surface of the Voronoi region \gls{voronoi_region}, since the region is located in the two-sphere the vertices and said triangles of the convex hull are passed to the sphere surface and the area is calculated directly in the manifold using L'Huilier formula. In Figure~\ref{fig.3:Convex_hull_demonstration} it is possible to visualize the created convex hull and Delaunay triangulation for a random formation of 30 points on the two-sphere surface.
 
 \begin{figure}[htbp]
     \centering
@@ -221,20 +198,19 @@ This method calculated the Voronoi region \gls{voronoi_region} from the convex h
     \label{fig.3:Convex_hull_demonstration}
 \end{figure}
 
-The centroid of the region \gls{voronoi_centroid} is aproximated as the weighted average of the sum of the vertexes of each triangle normalized with the area of the given triangle. Formally
+The centroid of the region \gls{voronoi_centroid} is approximated as the weighted average of the sum of the vertices of each triangle, formed by the current centroid and its convex hull vertices, normalized with the area of the given triangle. Formally
 
 \begin{equation}
     \gls{voronoi_centroid} \approx 
-    \frac{\sum_{j=2}^{M-1} 
+    \sum_{j=2}^{M-1} 
     A(\mathbf{v}_0, \mathbf{v}_j, \mathbf{v}_{j+1}) \,
     \dfrac{\mathbf{v}_0 + \mathbf{v}_j + \mathbf{v}_{j+1}}
-    {\left\| \mathbf{v}_0 + \mathbf{v}_j + \mathbf{v}_{j+1} \right\|}}
-    {\sum_{j=2}^{M-1} A(\mathbf{v}_0, \mathbf{v}_j, \mathbf{v}_{j+1})}
+    {\left\| \mathbf{v}_0 + \mathbf{v}_j + \mathbf{v}_{j+1} \right\|}
 \end{equation}
 
-being $A$ the area of the triangular surface given by the vertexes $v0$, the center vertex, the points to be moved to the new center \gls{voronoi_centroid}, and the two other points composing the convex hull $\mathbf{v}_j, \mathbf{v}_{j+1}$. This algorithm has a computational complexity of O($kn$) \cite{giffonQuicKmeansAcceleratingInference2021}, being k the number of edges a given point has and n the number of points. 
+being $A$ the area of the triangular surface given by the vertices $v0$, the center vertex, and M the number of vertices composing the edges of the voronoi area of the site $v0$. The new center \gls{voronoi_centroid} becomes the new site and subsequent $v0$ for the next iteration. This algorithm has a computational complexity per iteration of O($kn$) \cite{giffonQuicKmeansAcceleratingInference2021}, being k the number of edges a given point has and n the number of points, being the tital number of iterations necessary for the sites to stabilize dependent on the mesh shape, its resolution and number of agents. 
 
-This method suffers that it required at least 4 agents, this is a hard constraint on the convex hull function and for a small number of agents or some particular formations the algorithm fails and all points collapse to a single position as can be seen in the example given by Figure~\ref{fig.3:Convex_hull_problems} 
+This method suffers that it required at least 4 agents, this is a hard constraint from the convex hull function and for a small number of agents or some particular formations the algorithm fails and all points collapse to a single position as can be seen in the example given by Figure~\ref{fig.3:Convex_hull_problems} 
 
 \begin{figure}[htbp]
     \centering
@@ -243,7 +219,7 @@ This method suffers that it required at least 4 agents, this is a hard constrain
     \label{fig.3:Convex_hull_problems}
 \end{figure}
 
-What is happening here is that as per design the convex hull is enclosing all agents in a triangulations but since the manifold is a closed form two-sphere and the smaller geodesic curve is chosen for the area and centroid calculation the geodesic and respective areas are wrongly defined, since they are being defined as the smaller geodesic curve on the sphere and should be defined as the bigger geodesic curve, for example it can be seen that the purple line at the bottom of the rectangle shape if extended to connected the two vertexes of the geodesic curve via the other side of the sphere, would separate the left top and bottom points. Since the geodesics being considered are the smaller ones, the points will update to inside this rectangular shape in the following iteration, worsening the problem, until all points are situated on the same position.
+What is happening here is that as per design the convex hull creates 4 vertices that separate the Voronoi regions but since the manifold is a closed form two-sphere and the defined implementation always uses the smallest geodesic curve for the area and centroid calculation the geodesic and respective areas are wrongly defined, since they are being defined as the smaller geodesic curve on the sphere and should be defined as the geodesic curve that does almost a full rotation along the sphere, for example it can be seen that the purple line at the bottom of the rectangle shape if extended to connected the two vertices of the geodesic curve via the other side of the sphere, would separate the left top and bottom points. Since the geodesics being considered are the smaller ones, the points will update to inside this rectangular shape in the following iteration, worsening the problem, until all points are situated on the same position.
 
 The results of this methods can be seen in Figure~\ref{fig.3:llyod_convex_hull_algorithm_distribution} showing not only the final position of the points after 300 iteration but also the voronoi lines separating each area. 
 
@@ -258,7 +234,7 @@ The results of this methods can be seen in Figure~\ref{fig.3:llyod_convex_hull_a
 
 \paragraph{Voronoi half plane}
 
-The second implementation of Lloyd's algorithm is referred to as the \emph{half-plane method}. In contrast with the convex hull approach, this method is robust for any number of agents and does not suffer from the geometric inconsistencies associated with spherical convex hull constructions. However, this robustness comes at the expense of a higher computational cost, with complexity on the order of $\mathcal{O}(n^2)$ \cite{fanHalfPlaneVoronoiDiagram2011}.
+The second implementation of Lloyd's algorithm is referred to as the \emph{half-plane method}. In contrast with the convex hull approach, this method is robust for any number of agents and does not suffer from the geometric inconsistencies associated with spherical convex hull constructions. However, this robustness comes at the expense of a higher computational cost, with complexity on the order of $\mathcal{O}(n^2)$ \cite{fanHalfPlaneVoronoiDiagram2011}, being n the number of boundary lines.
 
 The main idea of this method is to construct each Voronoi region \gls{voronoi_region} as the intersection of a set of half-spaces defined on the sphere. For a given agent, its Voronoi cell is obtained by iteratively clipping the sphere using bisector planes defined with respect to its neighboring agents.
 
@@ -286,8 +262,7 @@ In practice, the region is approximated by discretizing the sphere into a finite
 
 The centroid of the Voronoi region \gls{voronoi_centroid} is then computed numerically by triangulating the valid surface elements of the discretized sphere. Each quadrilateral patch is divided into two triangles, and the centroid is approximated as the area-weighted average of the centroids of these triangles.
 \begin{equation}
-    \gls{voronoi_centroid} \approx 
-    \frac{\sum_{i} A_i \mathbf{c}_i}{\sum_{i} A_i},
+    \gls{voronoi_centroid} \approx \sum_{i} A_i \mathbf{c}_i
 \end{equation}
 
 where $A_i$ and $\mathbf{c}_i$ denote the area and centroid of the $i$-th triangle, respectively. The resulting centroid is then projected back onto the unit sphere.
@@ -303,6 +278,24 @@ Despite its robustness, the main limitation of this approach is its computationa
     \subfloat[Side]{\includegraphics[width=3cm]{5-Figures/Chapter3/Lloyd_half_plane/Lloyd_half_plane_side.pdf}}
     \caption{Lloyd's algorithm (half plane) distribution. (30 points)}
     \label{fig.3:llyod_half_plane_algorithm_distribution}
+\end{figure}
+
+\paragraph{Voronoi Dijkstra}
+Voronoi separation using the Dijkstra method is a graph-based approach for constructing discrete Voronoi regions on generalized, well-defined meshes. In this framework, the mesh is interpreted as a weighted graph whose vertices correspond to mesh nodes and whose edges encode adjacency, with weights typically derived from geometric properties such as edge lengths or anisotropic metrics.
+
+Given a set of seed points (sites), the algorithm simultaneously propagates fronts from each site across the mesh using Dijkstra's shortest-path procedure. Each vertex is assigned to the site from which it has the minimal geodesic distance, resulting in a partition of the mesh into Voronoi cells.
+
+Voronoi edges are implicitly defined along mesh edges that connect vertices assigned to different sites. In other words, if two adjacent vertices have different nearest sites, the edge between them lies on the boundary between Voronoi regions. Some implementations refine this by detecting where distance fronts from different sites meet or by interpolating along edges to obtain a more precise boundary location. A more complex and complete algorithm than the one implemented in this thesis can be found in \ref{mengEfficientAlgorithmApproximate2023}.
+
+This approach is particularly suitable for irregular or non-Euclidean domains, as it does not rely on explicit geometric constructions but instead leverages the intrinsic connectivity of the mesh. For generalized meshes that are well-defined—i.e., manifolds with consistent connectivity and non-degenerate elements—the method ensures robustness and convergence to a discrete approximation of the continuous Voronoi diagram.
+
+\begin{figure}[htbp]
+    \centering
+    \subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Chapter3/Lloyd_disktra/Voronoi_dijkstra_normal.pdf}}\hfil
+    \subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Chapter3/Lloyd_disktra/Voronoi_dijkstra_top.pdf}}\hfil
+    \subfloat[Side]{\includegraphics[width=3cm]{5-Figures/Chapter3/Lloyd_disktra/Voronoi_dijkstra_side.pdf}}
+    \caption{Lloyd's algorithm (dijkstra) distribution. (1001 points)}
+    \label{fig.3:llyod_dijkstra_algorithm_distribution}
 \end{figure}
 
 \section{Vehicle model and nonlinear control}

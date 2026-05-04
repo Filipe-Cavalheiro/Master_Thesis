@@ -114,7 +114,7 @@ for t = 1:nFrames
         mesh_pos = [0; p(2); p(3)];
     else
         u1 = 1;
-        u2 = u_target - 1;
+        u2 = min(u_target - 1, 1);
         mesh_pos = [p(1) - Param.sphere_radius/2 + u2*Param.sphere_radius/2; p(2); p(3)];
     end
 

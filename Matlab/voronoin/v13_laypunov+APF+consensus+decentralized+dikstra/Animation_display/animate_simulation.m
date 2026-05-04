@@ -20,10 +20,13 @@ function animate_simulation(x, target_position, numAgents_history, mesh_vertices
 
     hp_d = scatter3(NaN, NaN, NaN, ...
         50, 'k', 'd', 'LineWidth', 2);
+    
+    hp_T = scatter3(NaN, NaN, NaN, ...
+        50, 'k', 'x', 'LineWidth', 2);
 
-    lgd = legend([hInit, hdrone, hp_d], ...
+    lgd = legend([hInit, hdrone, hp_d, hp_T], ...
         {'Initial Positions', 'drone', ...
-         '$p_i^\star$'}, ...
+         '$p_i^\star$', '$p_T$'}, ...
         'Interpreter', 'latex');
 
     lgd.FontSize = 10; 
@@ -38,16 +41,15 @@ function animate_simulation(x, target_position, numAgents_history, mesh_vertices
     % camup([0     0     1]);
     % camva(8.3316);    
 
-    maxAgents = numAgents_history(1);
-    colors = lines(maxAgents);
+    colors = lines(Param.nD);
     
-    initial_pos = cell(1,maxAgents);
-    outer_traj = cell(1,maxAgents);
-    inner_traj = cell(1,maxAgents);
-    hAgent = cell(1,maxAgents);
-    href_ref_final = cell(1,maxAgents);
+    initial_pos = cell(1,Param.nD);
+    outer_traj = cell(1,Param.nD);
+    inner_traj = cell(1,Param.nD);
+    hAgent = cell(1,Param.nD);
+    href_ref_final = cell(1,Param.nD);
      % Graphics handles
-    for iD = 1:maxAgents
+    for iD = 1:Param.nD
         initial_pos{iD} = scatter3(x{iD}(1,1), x{iD}(2,1), x{iD}(3,1), ...
             50, colors(iD,:), 'x', 'LineWidth', 2, ...
             'HandleVisibility','off');
@@ -57,21 +59,19 @@ function animate_simulation(x, target_position, numAgents_history, mesh_vertices
         href_ref_final{iD} = scatter3(NaN, NaN, NaN, 50, colors(iD,:), 'd', 'LineWidth', 2);
     end
     
-   
     hCenter = plot3(NaN,NaN,NaN,'k','LineWidth',1.5);
-        
+
     xlabel('x'); ylabel('y'); zlabel('z');
-    %title('3D Agent Trajectories');
     
     % reference  target trajectory
     plot3(Param.ref_target_traj(1,:), Param.ref_target_traj(2,:), Param.ref_target_traj(3,:));
     
     data.x = x;
     data.target_position = target_position;
-    data.numAgents_history = numAgents_history;
     data.removed_initial_pos = false;
     data.mesh_vertices = mesh_vertices;
     data.p_d_hist = p_d_hist;
+    data.numAgents_history = numAgents_history;
     
     gfx.initial_pos = initial_pos;
     gfx.outer_traj = outer_traj;
@@ -82,6 +82,7 @@ function animate_simulation(x, target_position, numAgents_history, mesh_vertices
     gfx.hdrone = hdrone;
     gfx.hInit = hInit;
     gfx.hp_d = hp_d;
+    gfx.hp_T = hp_T;
     
     if Param.animation.animate == true
         for k = 1:Param.animation.step:Param.Nsim
@@ -91,57 +92,46 @@ function animate_simulation(x, target_position, numAgents_history, mesh_vertices
     end
 
     if Param.animation.create_pdf == true
-        animation_cycle(50, data, gfx, Param);
-        print2pdf("decentralized_half_plane_dropped_moving_t_0.5.pdf", 1);
-        
-        animation_cycle(300, data, gfx, Param);
-        print2pdf("decentralized_half_plane_dropped_moving_t_3.pdf", 1);
+        %initialize patch
+        gfx.patch = patch( ...
+            'Vertices', zeros(0,3), ...
+            'Faces', zeros(0,3), ...
+            'FaceColor', [0.5 0.5 0.5], ...
+            'EdgeColor', 'b', ...
+            'EdgeAlpha', 0.03, ...
+            'FaceAlpha', 0.01);
+        [v_circle, v_cone, v_sphere] = pre_compute_meshes(1001,Param);
+        surf_direction = [1, 0, 0];
+        faces = NaN;
 
-        animation_cycle(600, data, gfx, Param);
-        print2pdf("decentralized_half_plane_dropped_moving_t_6.pdf", 1);
+        ax = gca;
+        origCameraPos = get(ax, 'CameraPosition');
+        origCameraTarget = get(ax, 'CameraTarget');
+        origCameraUp = get(ax, 'CameraUpVector');
+        origCameraViewAngle = get(ax, 'CameraViewAngle');
 
-        animation_cycle(3000, data, gfx, Param);
-        print2pdf("decentralized_half_plane_dropped_moving_t_30.pdf", 1);
-
-        %=== Create a label ===
-        hdrone = scatter3(NaN, NaN, NaN, ...
-            50, 'k', 'x');
-
-        hq = scatter3(NaN, NaN, NaN, ...
-            50, 'k', 'o', 'filled');
-
-        hq_d = scatter3(NaN, NaN, NaN, ...
-            50, 'k', '+');
-
-        lgd = legend([hdrone, hq, hq_d], ...
-            {'drone', ...
-             '$\tilde{q}_i$', '$q_i^\star$'});
-
-        lgd.FontSize = 10; 
-        lgd.Interpreter = 'latex';
-        lgd.Position = [0.6208    0.6642    0.0752    0.1055];  % [x y width height]
-        lgd.AutoUpdate = 'off';
-        % === End of create a label ===
-
-        r = Param.sphere_radius+1; % ensure cubic box
-        sphere_center = data.target_position(:,3000);
-
-        xlim(sphere_center(1) + [-r r]);
-        ylim(sphere_center(2) + [-r r]);
-        zlim(sphere_center(3) + [-r r]);
-
-        view(3);
-        camtarget(sphere_center);
-        print2pdf("decentralized_half_plane_dropped_simulation_normal.pdf", 1);
-
-        lgd.Position = [0.7090    0.8005    0.0752    0.1055];  % [x y width height]
-        view(90,0);
-        camtarget(sphere_center);
-        print2pdf("decentralized_half_plane_dropped_simulation_side.pdf", 1);
-
-        view(0,90);
-        camtarget(sphere_center);
-        print2pdf("decentralized_half_plane_dropped_simulation_top.pdf", 1);
+        steps = [50, 300, 600, 3000];
+        for k = steps
+            % normal view print
+            set(ax, ...
+                'CameraPosition', origCameraPos, ...
+                'CameraTarget', origCameraTarget, ...
+                'CameraUpVector', origCameraUp, ...
+                'CameraViewAngle', origCameraViewAngle);
+            animation_cycle(k, data, gfx, Param);
+            set(gfx.patch, 'Vertices', zeros(0,3), 'Faces', zeros(0,3));
+            print2pdf(sprintf("decentralized_dijktra_t_%g.pdf", k/100), 1);
+            
+            % close up view print
+            [vertices, faces, ~] = pos_based_mesh_transform( ...
+                target_position(:,k), ...
+                [0,0,0], ...
+                surf_direction, ...
+                v_circle, v_cone, v_sphere, faces, Param);
+            set(gfx.patch, 'Vertices', vertices, 'Faces', faces);
+            set_dynamic_camera(ax, target_position(:,k), [-1 -1 0.4], 60, 8);
+            print2pdf(sprintf("decentralized_dijktra_t_%g_close.pdf", k/100), 1);
+        end
     end 
 end
 

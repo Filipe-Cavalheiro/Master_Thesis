@@ -5,56 +5,34 @@
 clear all;
 
 % Model and simulation parameters
-Param.Tend = 5;
+Param.Tend = 30;
 Param.dTi = 0.01;  % inner-loop and simulation sampling period
 Nsim = round(Param.Tend/Param.dTi)+1;
 Param.Nsim = Nsim;
 Param.g = 9.81;     % earth gravity
-Param.nD = 8; % number of drones
-Param.arena = 'free_world'; % simulation arena: 'lab', 'free_world'
-Param.k_rad = 0.3; % radius reduction gain
+Param.nD = 12; % number of drones
 Param.sphere_radius = 2.0;
+Param.nD_drop = 3;
+Param.nD_drop_time = 500;
 
 % target parameters
 t = linspace(0, 2*pi, 200);
 Param.ref_target_traj = [-5 + 15*sin(t);...
              15*cos(t);...
-             zeros(1,length(t))];   % target trajectory
-Param.initial_target_pos = [0;15;0];
-
-% Outer-loop parameters
-Param.c = 0.3;                             % Nm (s/rad)
-Param.J = diag([0.0294 0.0305 0.0495]);    % kg m^2
-Param.tau = zeros(3,1);
-
-Param.K_r = diag([70 70 70]);
-Param.K_w = diag([7.056 7.320 11.88]) * 1e-1;
-
-% reference parameters
-Param.p_ref_static = [1;1;3];
-Param.psi_ref_static = pi/3;
+             5*ones(1,length(t))];   % target trajectory
+Param.initial_target_pos = Param.ref_target_traj(:,1);
 
 % exponential moving target parameters
 Param.ema_alpha = 0.2;
 Param.noise_std = 0.05; % a 5% error on reading target position
 
-% small world network
-Param.k_neighbours = 20;
-Param.gamma = 0.2;
-Param.comm_range = 1;
-
-% mesh settings
-Param.objList = {'circle','sphere','ellipsoid','paraboloid','Objects/frog.stl','Objects/bust.stl'};
-Param.mesh_resolution = 40;
-Param.maxIter = 20;
-
 % animation
 Param.verbose = false;
-Param.animation.animate = true;
+Param.animation.animate = false;
 Param.animation.trail_length = 150;
 Param.animation.step = 10;
 % === Create PDF ===
-Param.animation.create_pdf = false;
+Param.animation.create_pdf = true;
 % === Video settings ===
 Param.animation.save_to_mp4 = false;
 Param.animation.frameStep = 10;
@@ -76,47 +54,15 @@ Param.ki = diag([0,0,0]);
 Param.kR = diag([8,8,8]);
 Param.kom= diag([0.5,0.5,0.5]);
 
-% Encirclement position
-if strcmp(Param.arena, 'free_world')
-    if Param.nD <= 9
-        theta0   = [0.175 0.698 1.222 1.745 2.269 2.793 3.491 4.189 4.712];
-        phi0     = [1.484 1.222 1.396 1.047 1.484 1.222 0.698 1.396 0.960];
-        Param.r0 = [6 8 7 20 15 30 25 20 15];
-    else
-        theta0   = 2*pi*rand(1,Param.nD);
-        phi0     = 2*pi*rand(1,Param.nD);
-        Param.r0 = 15*rand(1, Param.nD);
-    end 
-    
-    initial_pos = Param.r0.* [sin(theta0).*cos(phi0);
-                    sin(theta0).*sin(phi0);
-                    cos(theta0)] + Param.initial_target_pos;
-elseif strcmp(Param.arena, 'lab')
-    initial_pos = [-1, -1, -1, 0, 0, 0, 1, 1, 1;...
-                   -1, 0, 1, -1, 0, 1, -1, 0, 1;...
-                   0, 0, 0, 0, 0, 0, 0, 0, 0;];
-    
-    initial_pos = initial_pos(:, 1:Param.nD);
-else
-    error("One of the arenas must be chosen either: Param.arena='lab' or Param.arena='free_world'");
-end
-
 % initialize variables for all drones:
-t = 0:Param.dTi:Param.Tend;
-nt = length(t);
-nx = 18;
-nu = 4;
 for iD = 1:Param.nD
     % set initial conditions
-    p0{iD} = initial_pos(:, iD);
+    p0{iD} = [0;0;0];
     v0{iD} = [0;0;0];
     psi0{iD} = pi/20*((Param.nD-1)/2-iD+1);
     R0{iD} = Euler2R([0;0;psi0{iD}]);
     om0{iD} = [0;0;0];
-    chaser{iD} = zeros(nx,Nsim+1);
+    chaser{iD} = zeros(18,Nsim+1);
     xiep{iD} = zeros(3,Nsim+1);
-    T{iD} = zeros(1,Nsim);
-    tau{iD} = zeros(3,Nsim);
-    lbd{iD} = zeros(3,Nsim);
     chaser{iD}(:,1) = [p0{iD};v0{iD};reshape(R0{iD},[],1);om0{iD}];
 end
