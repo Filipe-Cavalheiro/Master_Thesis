@@ -37,7 +37,7 @@ omega_d = zeros(3,1);
 % Storage
 q_hist     = zeros(3, Nsim);
 omega_hist = zeros(3, Nsim);
-u_hist     = zeros(3, Nsim);
+%u_hist     = zeros(3, Nsim);
 eq_hist    = zeros(3, Nsim);
 Psi_hist   = zeros(1, Nsim);
 
@@ -58,26 +58,8 @@ for k = 1:Nsim
     % --- Configuration error vector (Eq. 12)
     e_q = (1 / (sqrt(2) * sqrt(1 + q' * q_d))) * Q' * S(q_d) * q;
 
-    % --- Angular velocity error
-    e_w = omega - omega_d;
-    
-    % --- Psi dot was wrongly defined missing the transpose (Eq. 14)
-    Psi_dot = ((1 / (sqrt(2) * sqrt(1 + q' * q_d))) * Q' * S(q_d) * q)'*e_w;
-
-    % --- Control law (Eq. 28, reduced to S^2)
-    
-    u = Q'* (-K_r * Q * e_q ...
-        -K_w * e_w )...
-        + S(omega) * J * omega ...
-        + c * omega ...
-        - tau;
-
-    % --- Rigid body dynamics (Eq. 5)
-    omega_dot = J \ (u - c*omega - S(omega)*J*omega + tau);
-    omega = omega + dt * omega_dot;
-
-    % --- Reduced attitude kinematics (Eq. 4)
-    q_dot = S(omega) * q;
+    % ---------- Reduced attitude kinematics ----------
+    q_dot = 5*skew(q)*e_q;
     q = q + dt * q_dot;
 
     % --- Enforce S^2 constraint
@@ -86,7 +68,7 @@ for k = 1:Nsim
     % --- Store
     q_hist(:,k)     = q;
     omega_hist(:,k) = omega;
-    u_hist(:,k)     = u;
+%    u_hist(:,k)     = u;
     eq_hist(:,k)    = e_q;
     Psi_hist(k)     = Psi;
 end

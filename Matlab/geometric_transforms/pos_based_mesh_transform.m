@@ -22,7 +22,7 @@ v_circle = [x0(:), y0(:), z0(:)];
 
 % --- pre_compute cone  ---
 coneMap = @(V) [ ...
-    Param.sphere_radius * (1 - (sqrt(V(:,2).^2 + V(:,3).^2)/Param.sphere_radius).^2), ...
+    Param.sphere_radius + Param.sphere_radius * (1 - (sqrt(V(:,2).^2 + V(:,3).^2)/Param.sphere_radius).^2), ...
     V(:,2), ...
     V(:,3)];
 
@@ -92,19 +92,16 @@ for t = 1:nFrames
     
     % Distance along surface normal
     dist_surface = dot(p, surf_direction);
-    isOrigin = mesh_pos(1) < 1e-9;
 
     % Compute u_target
-    if dist_surface > -(Param.sphere_radius/2) && dist_surface < 0 && isOrigin
-        u_target = 0.5 - (-dist_surface / (Param.sphere_radius/2))/2;
-    elseif dist_surface >= 0 && isOrigin
-        u_target = 0.5 + (dist_surface / (Param.sphere_radius/2))/2;
-    elseif dist_surface >= Param.sphere_radius && ~isOrigin
-        u_target = 2;
-    elseif dist_surface >= Param.sphere_radius/2 && ~isOrigin
-        u_target = dist_surface / (Param.sphere_radius/2);
-    else
+    if dist_surface <= -(Param.sphere_radius/2)
         u_target = 0;
+    elseif dist_surface > -(Param.sphere_radius/2)
+        u_target = 0.5 + (dist_surface / Param.sphere_radius);
+    elseif dist_surface >= Param.sphere_radius/2
+        u_target = 2*dist_surface / (Param.sphere_radius);
+    else
+        u_target = 2;
     end
 
     % Split stages

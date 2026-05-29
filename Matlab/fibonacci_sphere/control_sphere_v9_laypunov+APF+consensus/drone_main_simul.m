@@ -126,6 +126,10 @@ for k = 1:Nsim
         % Position reference generation
         [q{iD}, e_q] = linear_motion_ref(Rad{iD}, pos{iD},omega{iD},q_d{iD},omega_d{iD}, c_sphere_estimated(:,iD), Param);
            
+        % Position reference shift to safe guard collisions
+        current_pos(:, iD) = q{iD};
+        q{iD} = APF_safe_guard(iD, current_pos, min_safe_dist, Param.sphere_radius, Rad{iD}, c_sphere(:,k), Param);
+
         % update radius
         Rad{iD} = update_radius(Rad{iD}, e_q, q{iD}, q_d{iD}, chaser{iD}(:,k), estimated_target_position(:,iD), Param);
 

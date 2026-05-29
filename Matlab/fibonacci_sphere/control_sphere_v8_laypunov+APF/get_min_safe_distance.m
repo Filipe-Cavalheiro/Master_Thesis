@@ -1,17 +1,11 @@
-function min_safe_dist = min_safe_distance(P, R, sphere_center, verbose)
-% MIN_SAFE_DISTANCE  Computes an average minimum geodesic distance
-%
-%   min_safe_dist = min_safe_distance(Param, verbose)
-%
-%   P            : number of points (must be odd and >= 3)
-%   R : sphere radius
-%   verbose             : logical (true / false)
+function min_safe_dist = get_min_safe_distance(fib_ref_points, Param, verbose)
+% MIN_SAFE_DISTANCE  Computes average neighbor (edge) distance on sphere
 
-    if P < 3
-        error('Not enough elements (nD must be >= 3).');
+    if Param.nD < 3
+        error('Not enough elements (Param.nD must be >= 3).');
     end
 
-    if mod(P, 2) == 0
+    if mod(Param.nD, 2) == 0
         error('Even number of elements is not allowed.');
     end
 
@@ -23,30 +17,35 @@ function min_safe_dist = min_safe_distance(P, R, sphere_center, verbose)
         verbose = false;
     end
 
-    % Generate Fibonacci reference points
-    fib_ref_points = get_fibonacci_points(P, R);
-
-    % Compute geodesic distances between all pairs
-    ref_geo_distances = geo_distances(fib_ref_points, R);
-
-    % Store distances excluding self-distance
-    dist_vals = zeros(P, P - 1);
-
-    for i = 1:P
-        distances = ref_geo_distances(i, :);
-
-        % Remove self-distance (zero)
-        distances(i) = [];
-
-        % Sort distances
-        dist_vals(i, :) = distances;
+    % Delaunay graph
+    [connections, ~, ~] = Delaunay_triangulation_network(fib_ref_points');
+    
+    if sum(connections(:)) == 0
+        connections = ones(Param.nD) - eye(Param.nD);
     end
 
-    % Mean of distances for each point, then overall mean
-    min_safe_dist = mean(dist_vals(:));
+    % Compute edge-based distances only
+    edge_dists = [];
+
+    for i = 1:Param.nD
+    
+        vals = geo_distances(fib_ref_points(:,connections(i,:) == 1), 1, sphere_center);
+        vals = vals(vals ~= 0);
+        
+        if isempty(vals)
+            min_val = NaN;   % or 0, depending on your use case
+        else
+            min_val = min(vals);
+        end
+
+        % indices of neighboring nodes
+        edge_dists = [edge_dists; min_val];
+    end
+
+    % Average neighbor distance
+    min_safe_dist = mean(edge_dists);
 
     if verbose
-        fprintf('overall_avg_distance: %.4f\n', min_safe_dist);
+        fprintf('average_neighbor_distance: %.4f\n', min_safe_dist);
     end
-
 end

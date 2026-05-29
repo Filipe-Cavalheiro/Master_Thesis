@@ -6,7 +6,7 @@ Nsim = round(Tend/dTi);
 world_X = 10;
 world_Y = 10;
 
-numAgents = 9;
+numAgents = 30;
 
 % Initial positions
 agents = 10*rand(numAgents,2);
@@ -25,8 +25,7 @@ for k = 1:Nsim
     numAgents_history(k) = numAgents;
     voronoi_centers = zeros(numAgents,2);
     
-    for i = 1:numAgents
-        
+    for i = 1:numAgents        
         cell_poly = domain;
         p_i = agents(i,:);
         
@@ -139,5 +138,4 @@ for k = 1:Nsim
     title(['Iteration ', num2str(k)]);
     
     drawnow;
-    pause(0.5);
 end

@@ -9,7 +9,7 @@ function print2pdf(outfilename, doprint)
         % Export at high resolution (only affects rasterized content)
         exportgraphics(fig, outfilename, ...
             'ContentType','vector', ...   % keeps text/lines vector
-            'Resolution',600);            % high DPI for images
+            'Resolution',200);            % high DPI for images
     end
 end
 

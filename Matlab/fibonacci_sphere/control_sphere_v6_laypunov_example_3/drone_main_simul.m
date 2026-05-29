@@ -144,4 +144,4 @@ for k = 1:Nsim
 end
 
 %%
-animate_simulation(x, q_hist, q_d_hist, c_sphere, fib_ref_points, Param, Nsim)
+animate_simulation(x, q_hist, q_d_hist, c_sphere, fib_ref_points, Param, Nsim);

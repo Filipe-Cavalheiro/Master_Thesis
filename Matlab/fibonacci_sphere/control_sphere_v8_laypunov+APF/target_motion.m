@@ -37,8 +37,8 @@ function [target, c_sphere] = target_motion(target, p_d, Param)
         drone_3dfull_dyn(v, R, om, T, tau, Param);
 
     % Discretization (same as your agents)
-    pos_p = pos + Param.dTi*dot_p * 0.5;
-    v_p   = v   + Param.dTi*dot_v * 0.5;
+    pos_p = pos + Param.dTi*dot_p*0.5;
+    v_p   = v   + Param.dTi*dot_v*0.5;
     R_p   = rot_integrate(R, om, Param.dTi);
     om_p  = om  + Param.dTi*dot_om;
 

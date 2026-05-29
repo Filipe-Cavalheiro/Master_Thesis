@@ -4,14 +4,15 @@
 
 % Summary: simulate simple dynamic system model of a drone
 clear; clc; close all;
-drone_init;
+addpath(genpath(pwd)); % load all sub folders
+drone_init;            % initialize variables
 clearvars iD;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Fibonacci sphere values
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-fib_ref_points = get_fibonacci_points(Param.nD, Param.sphere_radius, Param.initial_target_pos);
-min_safe_dist = get_min_safe_distance(Param.nD, Param.sphere_radius)*0.5;
+fib_ref_points = get_fibonacci_points(Param.nD, 1, [0;0;0]);
+min_safe_dist = get_min_safe_distance(fib_ref_points, Param)*0.5;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Assign each agent to nearest ref point
@@ -21,9 +22,9 @@ pos_on_sphere = projectToSphere(initial_pos, Param.sphere_radius, Param.initial_
 geo_distances_all = zeros(Param.nD, Param.nD);
 for i = 1:Param.nD
     for j = 1:Param.nD
-        a = fib_ref_points(:,i);
+        a = fib_ref_points(:,i) * Param.sphere_radius;
         b = pos_on_sphere(:,j);
-        dot_product = dot(a-Param.initial_target_pos, b-Param.initial_target_pos);
+        dot_product = dot(a, b-Param.initial_target_pos);
         geo_distances_all(i, j) = Param.sphere_radius * acos(dot_product / (Param.sphere_radius^2));
     end
 end
@@ -46,6 +47,11 @@ for i = 1:Param.nD
     organized_Rad(i) = Param.r0(assignments(i,1));
 end
 
+pair_idx = nchoosek(1:Param.nD,2);
+nPairs = size(pair_idx,1);
+
+geo_distances_hist = zeros(nPairs,Nsim);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Simulation initialization
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -58,25 +64,18 @@ for iD = 1:Param.nD
     omega{iD} = [0; 0; 0];
     
     % desired values
-    q_d{iD} = projectToSphere(fib_ref_points(:,iD), Param.sphere_radius, Param.initial_target_pos);
+    q_d{iD} = fib_ref_points(:,iD);
     
     omega_d{iD} = [0; 0; 0];
 end
-
 
 % Storage
 for iD = 1:Param.nD
     q_hist{iD} = zeros(3, Nsim);
     Rad_hist{iD} = zeros(1, Nsim);
-    q_d_hist{iD} = zeros(3, Nsim);
 end
 c_sphere = zeros(3,Nsim);
 target_hist = zeros(18,Nsim);
-
-current_pos = zeros(3,Param.nD);
-for i = 1:Param.nD
-    current_pos(:, i) = q{i};
-end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Target drone initialization
@@ -92,6 +91,13 @@ target.x(16:18) = [0;0;0];                     % angular velocity
 % Integral error (if you want to reuse Mellinger)
 target.xiep = zeros(3,1);
 
+current_pos = zeros(3, Param.nD);
+for iD = 1:Param.nD
+        q_s  = q{iD} - c_sphere(:,1);
+        q_hat  = q_s/ norm(q_s);
+        current_pos(:,iD) = q_hat;
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Main time loop for simulation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -99,11 +105,27 @@ for k = 1:Nsim
     fprintf("Computing simulation interation: %04d\n", k);
     
     %move target
-    t = (k-1)*Param.dTi;
-    p_d_target = target_ref(t);
+    p_d_target = target_ref(Param.ref_target_traj, target.x(1:3));
     [target, c_sphere(:,k)] = target_motion(target, p_d_target, Param);
     target_hist(:,k) = target.x;
 
+    % Collect current drone positions
+    current_points = zeros(3, Param.nD);
+    for ii = 1:Param.nD
+        current_points(:,ii) = (chaser{ii}(1:3,k)-c_sphere(:,k))/norm(chaser{ii}(1:3,k)-c_sphere(:,k));
+    end
+
+    % Compute geodesic distance matrix
+    geo_matrix = geo_distances(current_points, 1);
+
+    % Store only unique pair distances
+    for p = 1:nPairs
+        i = pair_idx(p,1);
+        j = pair_idx(p,2);
+
+        geo_distances_hist(p,k) = geo_matrix(i,j);
+    end
+    
     for iD = 1:Param.nD
         % get state vector
         pos{iD} = chaser{iD}(1:3,k);
@@ -111,30 +133,26 @@ for k = 1:Nsim
         R = reshape(chaser{iD}(7:15,k),3,3);
 
         om = chaser{iD}(16:18,k);
-        
+
+        % ---------- Shift to sphere frame (back to origin)----------
+        q_s  = pos{iD} - c_sphere(:,k);
+        q_hat  = q_s/ norm(q_s);
+
         % Position reference generation
-        [q{iD}, e_q] = linear_motion_ref(Rad{iD}, pos{iD},omega{iD},q_d{iD},omega_d{iD},c_sphere(:,k), Param);
-            
+        [q_hat, e_q] = linear_motion_ref(q_hat, q_d{iD}, Param);
+
         % Position reference shift to safe guard collisions
-        current_pos(:, iD) = q{iD};
-        q{iD} = AFP_safe_guard(iD, current_pos, min_safe_dist, Param.sphere_radius, Rad{iD}, c_sphere(:,k), Param);
-        
-        % update radius
-        Rad{iD} = update_radius(Rad{iD}, e_q, q{iD}, q_d{iD}, chaser{iD}(:,k), target.x,Param);
+        current_pos(:, iD) = q_hat;
+        q_hat = APF_safe_guard(iD, current_pos, min_safe_dist, Param);
+
+        Rad{iD} = update_radius(Rad{iD}, e_q, Param);
+
+        % ---------- Enforce S² constraint (local) ----------
+        q{iD} = Rad{iD} * q_hat + c_sphere(:,k);
             
-        %shift q_d to new sphere pos
-        if k > 1
-            % update radius of q_d
-            q_d{iD} = q_d{iD} + c_sphere(:,k)  - c_sphere(:,k-1);
-        end
-
-        % update radius of q_d
-        q_d{iD} = projectToSphere(q_d{iD}, Rad{iD}, c_sphere(:,k));
-
         % --- Store
         Rad_hist{iD}(k) = Rad{iD};
         q_hist{iD}(:,k) = q{iD};
-        q_d_hist{iD}(:,k) = q_d{iD};
 
         % get reference
         p_d =  q{iD};
@@ -171,26 +189,43 @@ for k = 1:Nsim
     end
 end
 
+%% animations PDF and mp4
+close all; clc;
+create_figures(chaser, target_hist(1:3,:),...
+     cell2mat(q_d), Param);
+% clean path after it runs so that I can modify folders
+%rmpath(genpath(pwd))
+
 %%
+% data.chaser = chaser;
+% data.target_position = target_hist(1:3,:);
+% data.removed_initial_pos = false;
+% data.p_d = cell2mat(q_d)*Param.sphere_radius; 
+% data.colors = lines(Param.nD);
+% if Param.animation.radial_hist == true
+%     radial_hist_plot(data, Param);
+% end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Plot pairwise distances
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+time = (0:Nsim-1) * Param.dTi;
+
 figure;
 hold on;
 grid on;
 
-t = (0:Nsim-1) * Param.dTi;
+for p = 1:nPairs
+    i = pair_idx(p,1);
+    j = pair_idx(p,2);
 
-plot(t, Rad_hist{1}, 'LineWidth', 3);
-plot(t, vecnorm(target_hist(1:3,:)-chaser{1}(1:3,1:end-1), 2, 1), 'LineWidth', 3);
-plot(t, vecnorm(target_hist(4:6,:), 2, 1) ...
-       - vecnorm(chaser{1}(4:6,2:end), 2, 1), 'LineWidth', 3);
+    plot(time, geo_distances_hist(p,:));
+end
+
+yline(min_safe_dist, '--r', 'Minimum Safe Distance', ...
+    'LineWidth', 2);
+ylim([0 pi])
 
 xlabel('Time [s]');
-lgd = legend( ...
-    'Radial history', ...
-    'Position difference (norm)', ...
-    'Velocity difference (norm)' ...
-);
-
-lgd.FontSize = 12; 
-lgd.Interpreter = 'latex';
-%%
-animate_simulation(chaser, q_hist, q_d_hist, fib_ref_points, c_sphere, Param, Nsim);
+ylabel('Geodesic Distance [m]');
+print2pdf(sprintf("intra_agent_dist_apf_%d", Param.nD), 1);

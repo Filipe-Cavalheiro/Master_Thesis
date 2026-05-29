@@ -55,10 +55,35 @@ for k = 1:Nsim
     voronoi_vertices = zeros(numFaces,3);
 
     % Voronoi vertices
+    if verbose == true
+        figure;
+        hold on;
+    end
     for i = 1:numFaces
         p = agents(K(i,:),:);
         v = cross(p(2,:) - p(1,:), p(3,:) - p(1,:));
+
+        if dot(v, p(1,:)) < 0
+            v = -v;
+        end
+
         voronoi_vertices(i,:) = v / norm(v);
+        
+        if verbose == true
+            % Plot triangle points
+            scatter3(p(:,1), p(:,2), p(:,3));
+        
+            % Plot Voronoi vertex
+            scatter3(voronoi_vertices(i,1), voronoi_vertices(i,2), voronoi_vertices(i,3));
+        
+            % Arrow from origin to Voronoi vertex
+            quiver3(0, 0, 0, ...
+                    voronoi_vertices(i,1), ...
+                    voronoi_vertices(i,2), ...
+                    voronoi_vertices(i,3), ...
+                    0); % 0 disables automatic scaling
+            pause;
+        end
     end
 
     new_agents = zeros(numAgents,3);
@@ -199,14 +224,14 @@ end
 
 %%
 % Formatting for paper
-axis equal
-axis off
-set(gca, 'Visible', 'off')
-set(gcf, 'Color', 'w');          % white background
-set(gca, 'Position', [0 0 1 1]); % fill figure
-view(3);
-print2pdf('Lloyd_normal.pdf', 1);
-view(90,0);
-print2pdf('Lloyd_side.pdf', 1);
-view(0,90);
-print2pdf('Lloyd_top.pdf', 1);
+% axis equal
+% axis off
+% set(gca, 'Visible', 'off')
+% set(gcf, 'Color', 'w');          % white background
+% set(gca, 'Position', [0 0 1 1]); % fill figure
+% view(3);
+% print2pdf('Lloyd_normal.pdf', 1);
+% view(90,0);
+% print2pdf('Lloyd_side.pdf', 1);
+% view(0,90);
+% print2pdf('Lloyd_top.pdf', 1);

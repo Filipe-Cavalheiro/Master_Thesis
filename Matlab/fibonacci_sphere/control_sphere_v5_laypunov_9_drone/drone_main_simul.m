@@ -195,10 +195,11 @@ set(gca, 'Visible', 'off')
 set(gcf, 'Color', 'w');          % white background
 set(gca, 'Position', [0 0 1 1]); % fill figure
 view(3);
+scatter3(fib_ref_points(1,:), fib_ref_points(2,:), fib_ref_points(3,:), 'd');
 
 % Animation loop
-for k = 1:Nsim
-    fprintf("Animating: %f", k);
+for k = 1:100:Nsim
+    fprintf("Animating: %f\n", k);
     
     % Index range: last 100 steps (or fewer at the beginning)
     k_start = max(1, k-99);
@@ -280,7 +281,9 @@ set(gcf, 'Color', 'w');          % white background
 set(gca, 'Position', [0 0 1 1]); % fill figure
 view(3);
 
+
 for iD = 1:Param.nD
+    plot3(fib_ref_points(1,iD), fib_ref_points(2,iD), fib_ref_points(3,iD), 'd', 'Color', colors(iD,:), 'LineWidth', 2);
     plot3(q_hist{iD}(1, :), q_hist{iD}(2, :), q_hist{iD}(3, :), 'Color', colors(iD,:), 'LineWidth', 1);
     plot3(pos{iD}(1, :), pos{iD}(2, :), pos{iD}(3, :), 'Color', colors(iD,:), 'LineWidth', 1);
     

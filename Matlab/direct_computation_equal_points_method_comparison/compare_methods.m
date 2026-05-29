@@ -1,27 +1,52 @@
 clearvars; close all; clc;
 
-% Your data (100 samples each)
-t1 = load("latlon_execution_times.mat");
+% Load data
 t2 = load("fibonacci_execution_times.mat");
-t3 = load("poisson_disk_execution_times.mat");
 
-% Combine data
-data   = [t1.times'; t2.times'; t3.times'];
+% Data
+data = t2.times';
 
-groups = [ ...
-    repmat("latlon",100,1);
-    repmat("fibonacci",100,1);
-    repmat("poisson",100,1);
-    ];
-
-% Plot
+% Create figure
 figure;
-boxplot(data, groups);
-xlabel('Analysis Method');
-ylabel('Execution Time [Sec]');
-title('Execution Time Distribution per Method');
+
+% -----------------------------
+% LEFT: Boxplot WITH outliers
+% -----------------------------
+subplot(1,2,1)
+
+boxplot(data, 'Symbol','r+'); % show outliers
+set(gca,'XTickLabel',{})    % remove "1"
+xlabel('With Outliers');
+
+
+ylabel('Execution Time [ms]');
 grid on;
 
+% -----------------------------
+% RIGHT: Boxplot WITHOUT outliers
+% -----------------------------
+subplot(1,2,2)
+
+boxplot(data, 'Symbol',''); % hide outliers
+set(gca,'XTickLabel',{})    % remove "1"
+xlabel('Without Outliers');
+grid on;
+
+
+% Compute limits excluding outliers
+q1 = prctile(data,25);
+q3 = prctile(data,75);
+iqr_val = q3 - q1;
+
+lower_lim = q1 - 1.5*iqr_val;
+upper_lim = q3 + 1.5*iqr_val;
+
+ylim([lower_lim upper_lim])
+
+% Global title
+sgtitle('Execution Time Distribution');
+
+% Figure export settings
 set(gcf,'Units','centimeters');
 screenposition = get(gcf,'Position');
 
@@ -29,4 +54,4 @@ set(gcf, ...
     'PaperPosition',[0 0 screenposition(3:4)], ...
     'PaperSize',[screenposition(3:4)]);
 
-print -dpdf -painters result_fig
+print -dpdf -painters fibonacci_exec_time

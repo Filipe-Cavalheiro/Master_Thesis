@@ -10,7 +10,7 @@ Param.Tend = 100;
 Param.dTi = 0.01;  % inner-loop and simulation sampling period
 Nsim = round(Param.Tend/Param.dTi)+1;
 Param.g = 9.81;     % earth gravity
-Param.nD = 3; % number of drones
+Param.nD = 4; % number of drones
 Param.sphere_radius = 5;  % sphere radius
 
 % reference parameters
@@ -25,7 +25,7 @@ Param.dphase = -pi/12;% ref circle angular difference between drones
 
 Param.ref_mode = 2; % reference: 1 - square wave; 2 - circle
 
-% M690B drone 
+% M690B drone
 % (guessing parameters! needs identification or estimation from geometry)
 % from https://doi.org/10.23919/ACC45564.2020.9147948 we have: "The quadrotor’s mass is M = 1.73Kg and its arms length is L = 0.2m. The moments of inertia matrix used in the nonlinear model (3) is considered diagonal with values: Ixx0=Iyy0=0.03Kg.m2 and Izz0=0.04Kg.m2. "
 % from https://dspace.mit.edu/handle/1721.1/106777 we have as the result of a bifilar pendulum experiment: "mass 𝑚 = 1.28 kg; inertia (𝐽𝑥𝑥, 𝐽𝑦𝑦, 𝐽𝑧𝑧) = (6.9𝐸−3, 7.0𝐸−3, 12.4𝐸−3) Ns2; propeller diameter 0.165 m; propeller positions [±0.117 ±0.117 −0.012] m
@@ -72,9 +72,9 @@ Param.kom= diag([0.5,0.5,0.5]);
 % theta0 = [2.3005 2.3006 2.3004 1.745 2.269 2.793 3.491 4.189 4.712];
 % r0     = [8 8 8 20 15 30 25 20 15];
 % phi0   = [-3.8832 -3.8831 -3.8833 1.047 1.484 1.222 0.698 1.396 0.960];
-theta0 = [0.175 0.698 1.222 1.745 2.269 2.793 3.491 4.189 4.712];
+theta0 = [0.175 0.175 0.175 1.745 2.269 2.793 3.491 4.189 4.712];
 r0     = [11 6 8 20 15 30 25 20 15];
-phi0   = [1.484 1.222 1.396 1.047 1.484 1.222 0.698 1.396 0.960];
+phi0   = [1.484 1.484 1.484 1.047 1.484 1.222 0.698 1.396 0.960];
 
 initial_pos = r0.* [sin(theta0).*cos(phi0);
                 sin(theta0).*sin(phi0);

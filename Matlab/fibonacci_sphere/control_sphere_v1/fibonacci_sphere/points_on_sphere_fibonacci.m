@@ -1,8 +1,9 @@
-clear; clc; %close all;
-% times = zeros(1,100);
+clear; clc; close all;
+times = zeros(1,100);
 % % Generate points
-% for j = 1:100
-%     start = clock;
+for j = 1:100
+    clearvars -except times j
+    tStart = tic;
     % Number of points
     P = 1001;                  
     N = floor((P-1)/2);         % Since P = 2N + 1 works best for odd P
@@ -49,13 +50,13 @@ clear; clc; %close all;
     z(P) = R * cos(theta_tmp);
     
     points = [x(:), y(:), z(:)];
+    
+    times(j) = toc(tStart)*1000;
+end
 
-%     times(j) = etime(clock, start);
-% end
-% 
-% std(times) % 6.6848e-04 sec
-% figure;
-% histogram(times);
+std(times) % 6.6848e-04 sec
+figure;
+histogram(times);
 % % --- Plot ---
 figure;
 hold on;

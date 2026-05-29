@@ -172,8 +172,8 @@ for iD = 1:Param.nD
     pos{iD} = x{iD}(1:3,:);
 end
 
-%drone_show_data;
-
+%%
+close all;
 figure; hold on; grid on; axis equal
 [x, y, z] = sphere;
 x = x * Param.sphere_radius;
@@ -183,8 +183,10 @@ z = z * Param.sphere_radius;
 % Draw reference sphere
 hSphere = surf(x, y, z);
 hSphere.FaceAlpha = 0.3; 
-hSphere.EdgeColor = 'none';
+hSphere.EdgeColor = 'b';
+hSphere.EdgeAlpha = 0.2;
 hSphere.FaceColor = [0.8627,0.8627,0.8627];
+
 
 % Setup colors and plot handles for agents
 colors = lines(Param.nD);
@@ -230,27 +232,26 @@ view(3);
 
 % Animation loop
 nSteps = size(pos{1}, 2);  % number of time steps
-for k = 1:nSteps-1
-    for iD = 1:Param.nD
-        % Update trajectory up to current time
-        set(hTraj{iD}, 'XData', pos{iD}(1, 1:k), ...
-                       'YData', pos{iD}(2, 1:k), ...
-                       'ZData', pos{iD}(3, 1:k));
-        % Update agent position marker
-        set(hAgent{iD}, 'XData', pos{iD}(1, k), ...
-                        'YData', pos{iD}(2, k), ...
-                        'ZData', pos{iD}(3, k));
+k = nSteps-1;
+for iD = 1:Param.nD
+    % Update trajectory up to current time
+    set(hTraj{iD}, 'XData', pos{iD}(1, 1:k), ...
+                   'YData', pos{iD}(2, 1:k), ...
+                   'ZData', pos{iD}(3, 1:k));
+    % Update agent position marker
+    set(hAgent{iD}, 'XData', pos{iD}(1, k), ...
+                    'YData', pos{iD}(2, k), ...
+                    'ZData', pos{iD}(3, k));
 
-        % Update ref position marker
-        set(hrefTraj{iD}, 'XData', ref_pos{iD}(1, 1:k), ...
-                        'YData', ref_pos{iD}(2, 1:k), ...
-                        'ZData', ref_pos{iD}(3, 1:k));
+    % Update ref position marker
+    set(hrefTraj{iD}, 'XData', ref_pos{iD}(1, 1:k), ...
+                    'YData', ref_pos{iD}(2, 1:k), ...
+                    'ZData', ref_pos{iD}(3, 1:k));
 
-        % Update ref position marker
-        set(href{iD}, 'XData', ref_pos{iD}(1, k), ...
-                        'YData', ref_pos{iD}(2, k), ...
-                        'ZData', ref_pos{iD}(3, k));
-    end
-    drawnow;
-    pause(0.01); % adjust speed of animation
+    % Update ref position marker
+    set(href{iD}, 'XData', ref_pos{iD}(1, k), ...
+                    'YData', ref_pos{iD}(2, k), ...
+                    'ZData', ref_pos{iD}(3, k));
 end
+drawnow;
+pause(0.01); % adjust speed of animation

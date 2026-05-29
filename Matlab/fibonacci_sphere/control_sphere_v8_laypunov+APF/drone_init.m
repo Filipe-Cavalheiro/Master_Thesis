@@ -9,33 +9,43 @@ clear all;
 Param.Tend = 30;
 Param.dTi = 0.01;  % inner-loop and simulation sampling period
 Nsim = round(Param.Tend/Param.dTi)+1;
+Param.Nsim = Nsim;
 Param.g = 9.81;     % earth gravity
 Param.nD = 3; % number of drones
 Param.sphere_radius = 2;  % sphere radius
 Param.arena = 'free_world'; % simulation arena: 'lab', 'free_world'
+
 Param.k_rad = 0.3; % radius reduction gain
+Param.k_geometric = 5;
+Param.k_apf = 1;
 
-%target motion reference
-target_ref = @(t) [ ...
+t = linspace(0, Param.Tend, 200);
+Param.ref_target_traj  = [ ...
     2*(t<=8).*sin(t*pi/8) + (t>8).*0; ...
-    2*(t<=8).*cos(t*pi/8) + (t>8).*-2; ...
-    1.5 ];
+    2*(t<=8).*cos(t*pi/8) + (t>8).*(-2); ...
+    1.5*ones(size(t)) ...
+];
+% Param.ref_target_traj  = [ ...
+%     2*sin(t*pi/8); ...
+%     2*cos(t*pi/8); ...
+%     1.5*ones(size(t)) ...
+% ];
+Param.initial_target_pos = Param.ref_target_traj(:,1);
 
-%target_ref = @(t) [0;0;1.5];
-
-Param.initial_target_pos = target_ref(0);
-
-% Outer-loop parameters
-Param.c = 0.3;                             % Nm (s/rad)
-Param.J = diag([0.0294 0.0305 0.0495]);    % kg m^2
-Param.tau = zeros(3,1);
-
-Param.K_r = diag([70 70 70]);
-Param.K_w = diag([7.056 7.320 11.88]) * 1e-1;
-
-% reference parameters
-Param.p_ref_static = [1;1;3];
-Param.psi_ref_static = pi/3;
+% === Animation ===
+Param.verbose = false;
+Param.animation.animate = true;
+Param.animation.trail_length = 0;
+Param.animation.step = 50;
+% === Create PDF ===
+Param.animation.composed = true;
+Param.animation.radial_hist = true;
+Param.animation.create_pdf = true;
+% === Video settings ===
+Param.animation.save_to_mp4 = false;
+Param.animation.frameStep = 10;
+Param.animation.sim_dt = Param.dTi * Param.animation.frameStep;
+Param.animation.videoFPS = 1 / Param.animation.sim_dt;   
 
 % Param.vz_d = 0.1;
 % Param.dh = 0.05;      % safety height difference between drones
