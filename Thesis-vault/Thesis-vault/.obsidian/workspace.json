@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "d68f8f4528be2aee",
+        "id": "363aefece0c169a6",
         "type": "tabs",
         "children": [
           {
-            "id": "d7e7db8442a2137a",
+            "id": "19768abf342129af",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -180,7 +180,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 300,
+    "collapsed": true
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -193,11 +194,13 @@
       "bases:Create new base": false
     }
   },
-  "active": "d7e7db8442a2137a",
+  "active": "19768abf342129af",
   "lastOpenFiles": [
+    "Pasted image 20260512084758.png",
+    "Mellinger Controller.md",
+    "Work Done.md",
     "Spacing points on manifols/Fibonacci Lattice.md",
     "Spacing points on manifols/Untitled.md",
-    "Work Done.md",
     "Voronoi.md",
     "Untitled.base",
     "Untitled",
@@ -226,9 +229,7 @@
     "Internal and external product.md",
     "Higher Order Control Barrier Functions (HOCBF).md",
     "1.md",
-    "2026-02-20.md",
     "Untitled 1.base",
-    "Untitled.canvas",
-    "create a link.md"
+    "Untitled.canvas"
   ]
 }

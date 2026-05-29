@@ -69,3 +69,29 @@ And some TODO.
 2026-04-15: EXPO FCT
 
 2026-04-16: Read @mengEfficientAlgorithmApproximate2023 and trying to understand/implement it 
+
+Lmao this was be to much of a hassle to write so there is a giant gap here my bad.
+
+TIME  GAP:  things done in the mean time, finiches the voronoi implemnetation still with Lyapunov so that points move on the surface but had to vary the desired radius for each point since the shape might not be sphere, implemented a mesh update between a $\mathbb{R}^2$ circle to cone to sphere that its used to create a physical barrier against the drone and remove the Lyapunov geomtric control.
+
+2026-05-12: Reading papers about the Mellinger and Snap controller to try to prove stability
+
+TIME GAP: Implement the Lee controller and grab the rejected ICUAS paper and rewrite it for the APCA 2026
+
+2026-05-22: worked on the papers matlab figures and continues to write the paper .
+
+2026-05-24: (weekend I know) any way worked on the papers matlab figures and continues to write the paper, also kind of refactored the figure plots and funcs.
+
+2026-05-25: Finished paper for APCA 2026.
+
+2026-05-26:  Finished the revised version of the paper for APCA 2026 also add a line saying that I do not take into account communication delay based on time/distance for consensus also refactored the code for animation and what is being used in simulation (target path, fibonacci or dijstra,  what to plot).
+
+2026-05-27: yupiiii, guess what gota revise the Paper again, need more pictures and merge proposition 2 and 3 into one! yay
+
+Work to do:
+- Fix the dijkstra separation that is not working for 3 elements
+- add the possibility of following the target having into account pos, vel and acc or any combination of the three
+- work on maximal communication delay calculation
+- Kalman Filter to estimate the target variables?
+- run experimental trials
+- presentation in manim

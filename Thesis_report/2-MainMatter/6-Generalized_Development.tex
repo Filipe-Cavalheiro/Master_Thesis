@@ -30,7 +30,7 @@ As previously mentioned this version is not only useful for the two sphere but a
     \label{fig.6:llyod_dijkstra_algorithm_distribution}
 \end{figure}
 
-The spacing between agents is not desirable but this is due to the graphical limitation of the computer used for simulation since the mesh verticies define the positions each site can be located (this is implementation dependent) and for the use of 1001 sites a mesh of 10000 points was used, this points where placed using the fibonacci lattice method to ensure the mesh formation was as even as possible, ensuring a better site distribution on the mesh. The dijkstra method used in this implementation not only can only place sites on the location of vertices of the underlying mesh but also requires for the underlying mesh to be well defined (evenly spread forming the desired shape).
+The spacing between agents is not desirable but this is due to the graphical limitation of the computer used for simulation since the mesh verticies define the positions each site can be located (this is implementation dependent) and for the use of 1001 sites a mesh of 10000 points was used, this mesh points where placed using the fibonacci lattice method to ensure the mesh formation was as even as possible, ensuring a better site distribution on the mesh. The dijkstra method used in this implementation not only can only place sites on the location of vertices of the underlying mesh but also requires for the underlying mesh to be well defined (evenly spread forming the desired shape).
 
 \begin{figure}[htbp]
     \centering
@@ -55,9 +55,9 @@ As has been previously mentioned in the introduction the architecture of the con
 
 \subsection{Mesh Controller}
 
-The mesh controller is responsible for dynamically modifying the shape of the mesh (i.e., the position of its vertices) according to the relative position of a target with respect to a restricted airspace. The objective is to ensure that a swarm of drones, located at the boundary of this region, can physically block or contain the target while avoiding collisions.
+The mesh controller is responsible for dynamically modifying the shape of the mesh (i.e., the position of its vertices and the connectivity between them) according to the relative position of a target with respect to a restricted airspace. The objective is to ensure that a swarm of drones, located at the boundary of this region, can physically block or contain the target while avoiding collisions.
 
-When the target is outside the restricted airspace, the drones form a planar circular barrier. As the target approaches and reaches the boundary, the mesh deforms continuously by pushing the center of the circle inward, preventing penetration while maintaining a safe distance. If the target moves further inside—specifically more than one radius length—the mesh transitions into a closed spherical configuration, fully enclosing the target.
+When the target is outside the restricted airspace, the drones form a planar circular barrier. As the target approaches and reaches the boundary, the mesh deforms continuously by pushing the center of the circle inward, preventing penetration while maintaining a safe distance. If the target moves further inside, specifically more than one radius length, the mesh transitions into a closed spherical configuration, fully enclosing the target.
 
 In Figure~\ref{fig:mesh_controller_demonstration}, a mesh composed of $P = 1001$ vertices is shown, with a target (red point) located at positions corresponding to the three stages. The radius of the circle and sphere is $R = 5$.
 
@@ -70,32 +70,84 @@ In Figure~\ref{fig:mesh_controller_demonstration}, a mesh composed of $P = 1001$
     \label{fig:mesh_controller_demonstration}
 \end{figure}
 
-The algorithm pre-computes three configurations of the mesh vertices:
-\begin{itemize}
-    \item A circular configuration $\mathbf{v}_{\text{circle}} \in \mathbb{R}^{P \times 3}$,
-    \item A conical configuration $\mathbf{v}_{\text{cone}} \in \mathbb{R}^{P \times 3}$,
-    \item A spherical configuration $\mathbf{v}_{\text{sphere}} \in \mathbb{R}^{P \times 3}$.
-\end{itemize}
+The algorithm pre-computes three configurations of the mesh vertices, a circular configuration $\mathbf{v}_{\text{circle}} \in \mathbb{R}^{P \times 3}$, a conical configuration $\mathbf{v}_{\text{cone}} \in \mathbb{R}^{P \times 3}$ and a spherical configuration $\mathbf{v}_{\text{sphere}} \in \mathbb{R}^{P \times 3}$.
 
-The final mesh is obtained through a two-stage interpolation process based on the target position $\mathbf{p} \in \mathbb{R}^3$. Let $u_1, u_2 \in [0,1]$ be interpolation parameters derived from the signed distance of the target to the surface. The intermediate mesh is defined as:
+The final mesh is obtained through a two-stage interpolation process based on the target position $\mathbf{p} \in \mathbb{R}^3$. Let $u_1, u_2 \in [0,1]$ be interpolation parameters derived from the signed distance of the target to the surface. 
+
+The interpolation parameters are obtained from the signed distance between the target and the restricted airspace boundary. Let $d_s$ define the distance between the surface of the restricted air space and the target \gls{target_pos}.
+
+\begin{equation}
+    u_{\text{target}} =
+    \begin{cases}
+        0,                      & d_s \le -R/2\\
+        0.5 + \dfrac{d_s}{R},   & d_s > -R/2,\\
+        \dfrac{2 d_s}{R},       & d_s \ge R/2,\\
+        2, & \text{otherwise}
+    \end{cases}
+    \label{eq.6:u_target}
+\end{equation}
+
+where R is the mesh radius.
+
+The transition between configurations is divided into two stages. 
+The interpolation parameters \(u_1\) and \(u_2\) are computed from
+\(u_{\text{target}}\) as
+
+\begin{equation}
+(u_1,u_2)=
+\begin{cases}
+(u_{\text{target}},0), & u_{\text{target}} \le 1, \\[6pt]
+\left(1,\min(u_{\text{target}}-1,1)\right), & u_{\text{target}} > 1.
+\end{cases}
+\label{eq:u1u2}
+\end{equation}
+
+During the first stage (\(u_{\text{target}} \le 1\)), only the
+circle-to-cone interpolation is active, while the mesh remains attached
+to the restricted airspace boundary. In the second stage
+(\(u_{\text{target}} > 1\)), the cone-to-sphere interpolation is
+activated while the first interpolation remains fully completed
+(\(u_1=1\)).
+
+The mesh translation term is defined as
+
+\begin{equation}
+\mathbf{p}_{\text{mesh}}=
+\begin{cases}
+\begin{bmatrix}
+0 \\ p_y \\ p_z
+\end{bmatrix},
+& u_{\text{target}} \le 1, \\[14pt]
+\begin{bmatrix}
+p_x - \dfrac{R}{2} + u_2\dfrac{R}{2} \\
+p_y \\
+p_z
+\end{bmatrix},
+& u_{\text{target}} > 1,
+\end{cases}
+\label{eq:pmesh}
+\end{equation}
+
+where \(\mathbf{p} = [p_x,p_y,p_z]^T\) is the target position.
+This translation guarantees a continuous displacement of the mesh from
+the restricted airspace boundary toward the target center as the
+spherical enclosure is formed.
+
+The intermediate mesh is defined as:
 
 \begin{equation}
     \mathbf{v}^{(1)} = (1 - u_1)\,\mathbf{v}_{\text{circle}} + u_1\,\mathbf{v}_{\text{cone}},
 \end{equation}
-
 followed by a second interpolation:
 
 \begin{equation}
-    \mathbf{v}^{(2)} = (1 - u_2)\,\mathbf{v}^{(1)} + u_2\,\mathbf{v}_{\text{sphere}}.
+    \mathbf{v}^{(2)} = min((1 - u_2)\,\mathbf{v}^{(1)} + u_2\,\mathbf{v}_{\text{sphere}}).
 \end{equation}
-
 Thus, the final vertex positions are given by:
 
 \begin{equation}
     \mathbf{v}_{\text{final}} = \mathbf{v}^{(2)} + \mathbf{p}_{\text{mesh}},
 \end{equation}
-
-where $\mathbf{p}_{\text{mesh}}$ is a translation term that shifts the mesh according to the target position, being $\mathbf{p}_{\text{mesh}}$ the target position if $u_2 = 1$ (full circle) or in any other case the target position is projected on the restricted airspace surface and that is the position of the $\mathbf{p}_{\text{mesh}}$.
 This formulation guarantees that the mesh adapts continuously to the target position, enabling collision avoidance while maintaining containment of the target within the restricted airspace. 
 
 The mesh connectivity (i.e., the set of edges/faces) is computed dynamically. For partially open configurations—corresponding to $u_1 \in [0,1]$ and $u_2 \in [0,0.5)$ the \(\text{MATLAB}^\text{\textregistered}\)~\cite{MATLAB:R2024a} Delaunay triangulation \cite{MATLAB_delaunay} is used, as it provides a robust connection for non-closed surfaces. Once the mesh approaches a closed shape ($u_2 \ge 0.5$), the \(\text{MATLAB}^\text{\textregistered}\)~\cite{MATLAB:R2024a} convex hull \cite{MATLAB_convhull} is computed instead, ensuring a fully enclosed 3D surface.
@@ -104,46 +156,46 @@ The mesh connectivity (i.e., the set of edges/faces) is computed dynamically. Fo
 
 In this section, the simulation results are presented and discussed. The scenario consists of a target that moves in a circular trajectory, alternating between inside and outside the restricted airspace. A total of 12 agents are initially deployed on the mesh. The Voronoi update is the only component of the system that is not executed at every time step due to its computational cost; instead, it is performed every 100 time steps (once per second).
 
-During the simulation, the loss of three agents mid-flight, $t = 5$ sec, due to no control input (simulating loss of power) is also introduced to demonstrate the resilience of the system. As in the previous version, all agents operate in a fully decentralized manner and communicate through a spatial network. This allows them to collaboratively estimate the target's position, as well as exchange information about their own positions with neighboring agents in order to update the Voronoi diagram. In Figure~\ref{fig.6:simulation_results} it is possible to see the how the mesh and agents move through space and time.
+During the simulation, the loss of three agents mid-flight, $t = 5$ sec, due to no control input (simulating loss of power) is also introduced to demonstrate the resilience of the system. As in the previous version, all agents operate in a fully decentralized manner and communicate through a spatial network. This allows them to collaboratively estimate the target's position, as well as exchange information about their own positions with neighboring agents in order to update the Voronoi diagram. In Figure~\ref{fig.6:simulation_results_composed} it is possible to see the composed image of the first 30 seconds of simulation being in Figure~\ref{fig.6:simulation_results_close} it is possible to see the how the mesh and agents in a close up view.
 
 \begin{figure}[htbp]
-\centering
-\begin{minipage}{0.12\textwidth}
-t = 0.5:
-\end{minipage}%
-\begin{minipage}{0.85\textwidth}
-\includegraphics[width=6cm]{5-Figures/Chapter6/Simulation/decentralized_dijktra_t_0.5.pdf}\hfil   
-\includegraphics[width=6cm]{5-Figures/Chapter6/Simulation/decentralized_dijktra_t_0.5_close.pdf}
-\end{minipage}
+    \centering
+    \includegraphics[width=0.85\textwidth]{5-Figures/Chapter6/Simulation/decentralized_dijktra_composed.pdf}
+    \caption{Composed simulation of multiple time stamps}
+    \label{fig.6:simulation_results_composed}
+\end{figure}
 
-\vspace{0.3cm}
+\begin{figure}[htbp]
+    \centering
 
-\begin{minipage}{0.12\textwidth}
-t = 3:
-\end{minipage}%
-\begin{minipage}{0.85\textwidth}
-\includegraphics[width=6cm]{5-Figures/Chapter6/Simulation/decentralized_dijktra_t_3.pdf}\hfil   
-\includegraphics[width=6cm]{5-Figures/Chapter6/Simulation/decentralized_dijktra_t_3_close.pdf}
-\end{minipage}
+    % First row
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{5-Figures/Chapter6/Simulation/decentralized_dijktra_t_0.5_close.pdf}
+        \caption{$t = 0.5$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{5-Figures/Chapter6/Simulation/decentralized_dijktra_t_3_close.pdf}
+        \caption{$t = 3$}
+    \end{subfigure}
 
-\vspace{0.3cm}
+    \vspace{0.4cm}
 
-\begin{minipage}{0.12\textwidth}
-t = 6:
-\end{minipage}%
-\begin{minipage}{0.85\textwidth}
-\includegraphics[width=6cm]{5-Figures/Chapter6/Simulation/decentralized_dijktra_t_6.pdf}\hfil   
-\includegraphics[width=6cm]{5-Figures/Chapter6/Simulation/decentralized_dijktra_t_6_close.pdf}
-\end{minipage}
+    % Second row
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{5-Figures/Chapter6/Simulation/decentralized_dijktra_t_6_close.pdf}
+        \caption{$t = 6$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{5-Figures/Chapter6/Simulation/decentralized_dijktra_t_30_close.pdf}
+        \caption{$t = 30$}
+    \end{subfigure}
 
-\vspace{0.3cm}
-\begin{minipage}{0.12\textwidth}
-t = 30:
-\end{minipage}%
-\begin{minipage}{0.85\textwidth}
-\includegraphics[width=6cm]{5-Figures/Chapter6/Simulation/decentralized_dijktra_t_30.pdf}\hfil   
-\includegraphics[width=6cm]{5-Figures/Chapter6/Simulation/decentralized_dijktra_t_30_close.pdf}
-\end{minipage}
-\caption{Simulation results through time}
-\label{fig.6:simulation_results}
+    \caption{Simulation results through time}
+    \label{fig.6:simulation_results_close}
 \end{figure}

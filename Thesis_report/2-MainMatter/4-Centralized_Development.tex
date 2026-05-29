@@ -18,21 +18,6 @@ As discussed in Section~\ref{cha:State of the art}, most existing methods for ag
 
 This chapter is structured into two principal components. The first concerns methods for distributing points on the two-sphere (Section~\ref{sec.4:Comparison of Agent Distributions on the Two-Sphere}), addressing how the desired final positions of a given number of agents can be arranged over the sphere. The second component presents the chosen control architecture (Section~\ref{sec.4:Control loop architecture} responsible for tracking and encircling the target).
 
-Since spherical projections are used repeatedly throughout the analysis, the operator $\Pi_{\Gamma^2}^{R,P}(\cdot)$ is defined to denote the projection onto a sphere of radius $R$ located at $P$, being for example $\Pi_{\Gamma^2}^{1,0}$ the unit sphere at the origin. This operator is defined as $\Pi_{\Gamma^2}^{R,P} : \mathbb{R}^3 \to \Gamma^2(R,P)$ 
-\begin{equation}
-\Pi_{\Gamma^2}^{R,P}(p)
-\;=\;
-P + R \frac{p - P}{\|p - P\|},
-\qquad p \neq P,
-\label{eq:sphere_projections}
-\end{equation}
-where $\Gamma^2(R,P)$ denotes the two-sphere of radius $R > 0$ centered at $P \in \mathbb{R}^3$, as defined above. The points $\gls{q_i}, \gls{q_i_desired} \in \Gamma^2$ are defined as 
-\begin{equation}
-    \gls{q_i} = \Pi_{\Gamma^2}^{\gls{ith_sphere_radius},\gls{target_pos}}(\gls{chaser_i_pos}) \;,\quad \gls{q_i_desired} = \Pi_{\Gamma^2}^{\gls{ith_sphere_radius},\gls{target_pos}}(\gls{p_i_desired})
-    \label{eq:projections_q_and_p}
-\end{equation}
-are the projection of the drone $i$ to the current sphere of radius \gls{ith_sphere_radius} located around the target and the projection of desired final position points projected on the current radius \gls{ith_sphere_radius} also located around the target \gls{target_pos} respectively.
-
 \section{Comparison of Agent Distributions on the Two-Sphere} \label{sec.4:Comparison of Agent Distributions on the Two-Sphere}
 
 As outlined in Section~\ref{sec.3:Direct computation agent spacing on the two-sphere}, multiple approaches exist for distributing a prescribed number of agents on the two-sphere. Since the number of agents is predefined and the position of all agents is known by all agents, direct computation methods can and are used in this section, the outcomes of each method are presented and systematically compared. Based on this comparison, the most suitable centralized method is identified in light of the objectives and constraints of the present study.
@@ -98,7 +83,7 @@ As shown in Figures~\ref{fig.4:centalized_methods_points_on_sphere}, the three m
 \makecell{Parameters}
 & \makecell{$K=29$}
 & \makecell{--}
-& \makecell{$k = 30$,\\ $r=0.093$} \\
+& \makecell{$\gls{P_k} = 30$,\\ $r=0.093$} \\
 
 \makecell{Number of points}
 & \makecell{1070}
@@ -120,12 +105,12 @@ As shown in Figures~\ref{fig.4:centalized_methods_points_on_sphere}, the three m
 
 \section{Alternative Agent Positioning Strategies} \label{sec.4:Alternative Agent Positioning Strategies}
 
-This section discusses alternative methods that were considered to work to position agents on a spherical surface. Although the final configuration of each drone is based on the Fibonacci lattice, several other approaches were investigated, inspired by phase-separation methods commonly used for 2D formations \cite{Litimein2021}, \cite{Jin2018}, \cite{Kim2007}.  In particular, an attempt was made to develop a displacement-based 3D method in which each drone maintains a fixed angular separation from its predecessor.
+This section discusses alternative methods that were considered to work to position agents on a spherical surface. Although the final configuration of each drone is based on the Fibonacci lattice, several other approaches were investigated, inspired by phase-separation methods commonly used for 2D formations \cite{Litimein2021,Jin2018,Kim2007}.  In particular, an attempt was made to develop a displacement-based 3D method in which each drone maintains a fixed angular separation from its predecessor.
 
 The standard Fibonacci lattice formulation could not be directly applied in this context. While the longitude increments between agents are constant, allowing a simple angular separation rule, the latitude is computed through a nonlinear $\arcsin(\cdot)$ mapping, which is inherently non-uniform. This nonlinearity prevents the use of a single, constant spacing rule across all agents. Several attempts were made to linearize this relationship so that all agents could rely on identical local control laws, but none yielded satisfactory results. For completeness, the tested approaches are summarized below.
 
 \subsection{Mean Distance Between Points on the Sphere}
-In the first attempt, the geodesic distance between consecutive agents in the sequence was computed, and the mean of these distances was used as a reference spacing. This approach proved unsuccessful, as illustrated in Figure~\ref{fig.4:fibonacci_diff_methods} (row~2). The mean distance is heavily skewed by agents located near $\theta = \pi$, where inter-agent distances are significantly larger. For example, with 1001 points distributed on a sphere of radius $R = 5$, the mean distance was approximately 7.3270, corresponding to more than half the sphere's diameter. As a result, this metric does not provide a meaningful or usable spacing reference.
+In the first attempt, the geodesic distance between consecutive agents in the sequence was computed, and the mean of these distances was used as a reference spacing. This approach proved unsuccessful, as illustrated in Figure~\ref{fig.4:fibonacci_diff_methods} (row~2). The mean distance is heavily skewed by agents located near $\theta = \pi$, where inter-agent distances are significantly larger. For example, with 1001 points distributed on a sphere of radius $\gls{sphere_radius} = 5$, the mean distance was approximately 7.3270, corresponding to more than half the sphere's diameter. As a result, this metric does not provide a meaningful or usable spacing reference.
 
 \subsection{Mean Latitude Spacing}
 Since the primary source of nonlinearity lies in the latitude distribution, a second approach considered using the average latitude increment instead of the $\arcsin(\cdot)$ mapping. However, this method introduces a different issue: the geodesic distance between agents increases as the effective radius of the latitude circle grows, particularly near $\theta = \pi$. This results in a pronounced clustering of points near longitudes $\phi = 0$ and $\phi = 2\pi$, as shown in Figure~\ref{fig.4:fibonacci_diff_methods} (row~3). While the $\arcsin(\cdot)$ formulation avoids this clustering, the mean-latitude approach fails to preserve uniform surface spacing.
@@ -197,15 +182,8 @@ mean theta\\eq z:
 
 In summary, while this final approach partially alleviates the pole-clustering problem and simplifies the local control law by enforcing constant angular steps, it does so at the cost of losing the equal-area and near-uniform spacing properties of the standard Fibonacci lattice. As a result, it was ultimately deemed unsuitable for the final deployment strategy, but is included here for completeness and comparison with the other attempted methods. Either way this approach was flawed since opposite of the 2D approach where all drones are keeping a distance from the previous and next, in 3D the "top" and "bottom" drones aren't associated in any away.
 
-
 \section{Control loop architecture} \label{sec.4:Control loop architecture}
-This section describes the control strategy implemented for the drone, specifically a quadrotor, with the objective of not only reaching a desired position but also avoiding collisions with other agents. As mentioned in the introduction, the system is divided into multiple blocks, each responsible for a specific task.
-
-Desired waypoints on the sphere are generated using the Fibonacci lattice, defining $\gls{p_desired}$. The Mellinger controller follows the reference $\gls{q}$ created by the geometric controller who is responsible for driving the quadrotor reference $\gls{q}$ toward the final desired point on the two-sphere, $\gls{q_desired}$. The radius controller reduces the distance between the chasers and the target until the desired radius, $\gls{desired_sphere_radius}$, is achieved.
-
-Collision avoidance during motion is handled by an artificial potential field, which helps with safe separation between agents. Additionally, an exponential moving average combined with a consensus algorithm is used to estimate the position of the target.
-
-The complete control architecture is illustrated in Figure~\ref{fig.4:controller_architecture}.
+This section describes the control strategy implemented for the drone, specifically a quadrotor, with the objective of not only reaching a desired position but also avoiding collisions with other agents. As mentioned in the introduction, the system is divided into multiple blocks, each responsible for a specific task, being the complete control architecture illustrated in Figure~\ref{fig.4:controller_architecture}.
 
 \begin{figure}
   \centering
@@ -214,7 +192,26 @@ The complete control architecture is illustrated in Figure~\ref{fig.4:controller
   \label{fig.4:controller_architecture}
 \end{figure}
 
-Before exploring the complete controller system the a simplified version of the problem will be studied where there only exists the drone controller and the geometric controller. This is due to the fact that multiple methods where studied for this controller and need to be compared without the influence of any other system variables/controllers. The inner loop is always fixed to a Mellinger controller since it has been proven to be effective, as shown in Figure~\ref{sec.3:Vehicle model and noninear control}. Two types of methodology will be shown either a desired inter distance of agents is given to the controller being then the controller a displacement based or simply the final desired position \gls{q_desired} if given, (position based). In both methods the initial position of the point on the sphere \gls{q} is the projection of the initial/current position of the drone on the two-sphere. Then this controller moves that point until a desired minimal distance \gls{min_dist} is met or the final desired position \gls{q_desired} is obtained. In Figures~\ref{fig.4:mellinger_controller_architecture} the inner--loop using a Mellinger controller can be seen while in Figure~\ref{fig.4:generelized_controller_architecture} the final controller can be seen where the controller in question for the outer--loop will be discussed, is one of the belows defined controllers. The variables \gls{p_desired} and \gls{q} both indicated desired drone position, \gls{v_desired} desired drone velocity and \gls{a_desired} desired drone accelerations.
+Since spherical projections are used repeatedly throughout the analysis, the operator $\Pi_{\Gamma^2}^{R,P}(\cdot)$ is defined to denote the projection onto a sphere of radius $R > 0$ located at $P \in \mathbb{R}^3$, being for example $\Pi_{\Gamma^2}^{1,0}$ the unit sphere at the origin. This operator is defined as $\Pi_{\Gamma^2}^{R,P} : \mathbb{R}^3 \to \Gamma^2(R,P)$ 
+\begin{equation}
+\Pi_{\Gamma^2}^{R,P}(p)
+\;=\;
+P + R \frac{p - P}{\|p - P\|},
+\qquad p \neq P,
+\label{eq:sphere_projections}
+\end{equation}
+The points $\gls{q_i}, \gls{q_i_desired} \in \Gamma^2$ are defined as 
+\begin{equation}
+    \gls{q_i} = \Pi_{\Gamma^2}^{\gls{ith_sphere_radius},\gls{target_pos}}(\gls{chaser_i_pos}) \;,\quad \gls{q_i_desired} = \Pi_{\Gamma^2}^{\gls{ith_sphere_radius},\gls{target_pos}}(\gls{p_i_desired})
+    \label{eq:projections_q_and_p}
+\end{equation}
+and they are the projection of the drone $i$ to the current sphere of radius \gls{ith_sphere_radius} located around the target and the projection of desired final position points projected on the current radius \gls{ith_sphere_radius} also located around the target \gls{target_pos} respectively.
+
+Desired waypoints on the sphere are generated using the Fibonacci lattice, defining $\gls{p_desired}$. The Mellinger controller follows the reference $\gls{q}$ created by the geometric controller who is responsible for driving the quadrotor reference $\gls{q}$ toward the final desired point on the two-sphere, $\gls{q_desired}$. The radius controller reduces the distance between the chasers and the target until the desired radius, $\gls{desired_sphere_radius}$, is achieved.
+
+Collision avoidance during motion is handled by an artificial potential field, which helps with safe separation between agents. Additionally, an exponential moving average combined with a consensus algorithm is used to estimate the position of the target.
+
+Before exploring the complete controller system the a simplified version of the problem will be studied where there only exists the drone controller and the geometric controller. This is due to the fact that multiple methods where studied for this controller and need to be compared without the influence of any other system variables/controllers. The inner loop is always fixed to a Mellinger controller since it has been proven to be effective, as shown in Section~\ref{sec.3:Vehicle model and noninear control}. Two types of methodology will be shown either a desired inter distance of agents is given to the controller being then the controller a displacement based or simply the final desired position \gls{q_desired} if given, (position based). In both methods the initial position of the point on the sphere \gls{q} is the projection of the initial/current position of the drone on the two-sphere. Then this controller moves that point until a desired minimal distance \gls{min_dist} is met or the final desired position \gls{q_desired} is obtained. In Figures~\ref{fig.4:mellinger_controller_architecture} the inner--loop using a Mellinger controller can be seen while in Figure~\ref{fig.4:generelized_controller_architecture} the final controller can be seen where the controller in question for the outer--loop will be discussed, is one of the belows defined controllers. The variables \gls{p_desired} and \gls{q} both indicated desired drone position, \gls{v_desired} desired drone velocity and \gls{a_desired} desired drone accelerations.
 
 \begin{figure}[htbp]
   \centering
@@ -236,7 +233,7 @@ The use of numerical solvers was investigated as a means of enforcing a minimum 
 
 However, this approach suffers from a fundamental limitation: none of the verified solvers is capable of enforcing all nonlinear constraints at every timestep while also guaranteeing convergence to the desired objective. The nonlinear constraints are guaranteed to be satisfied only at the optimal solution, and not throughout the system's evolution.
 
-Figure~\ref{fig.4:solver_solution} illustrates this issue for a scenario involving three drones. It can be observed that the intermediate solver-generated trajectories do not directly converge toward the Fibonacci lattice points, highlighting the practical limitations of this approach for real-time or tightly constrained multi-agent motion planning.
+Figure~\ref{fig.4:solver_solution}, where initial position is given by a circle and final position as a cross, illustrates this issue for a scenario involving three drones. It can be observed that the intermediate solver-generated trajectories do not directly converge toward the Fibonacci lattice points, highlighting the practical limitations of this approach for real-time or tightly constrained multi-agent motion planning.
 
 \begin{figure}[htbp]
   \centering
@@ -255,7 +252,7 @@ spatial distribution on a spherical surface. Being the idea instead of guiding t
   d_{ij} =
   \begin{cases}
   r_s\arccos\!\left( \dfrac{\gls{q_i}^{\top}q_j}{\gls{desired_sphere_radius}^2} \right), & i \neq j, \\[6pt]
-  \infty, & i = j ,
+  0, & i = j ,
   \end{cases}
   \label{eq.4:geodesic_distance}
 \end{equation}
@@ -321,11 +318,249 @@ As a consequence, the drones do not converge exactly to the original Fibonacci l
 
 \subsection{Lyapunov control} \label{subsection.4:Lyapunov control}
 
-Lyapunov controllers have been mentioned previously in Section \ref{sec.3:Lyapunov Stability and Lyapunov-Based Control}, not only the general introduction but the explicit controller to be used obtained from \cite{lyapunov_outer_loop_control}.This section describes the geometric  control architecture implementation in $\mathbb{S}^2$. As in the \gls{APF} approach, the Fibonacci lattice is first computed as a set of reference points $\{ \gls{p_i_desired} \in \mathbb{S}^2 \}_{i=1}^{N_D}$ distributed on a sphere of radius \gls{desired_sphere_radius}.
+Lyapunov controllers have been formally presented previously in Section \ref{sec.3:Lyapunov Stability and Lyapunov-Based Control}.This section describes the implemneted controller based on the geometric controller from \cite{lyapunov_outer_loop_control} as well as the architecture implementation in $\Gamma^2$. As in the \gls{APF} approach, the Fibonacci lattice is first computed as a set of reference points $\{ \gls{p_i_desired} \in \Gamma^2 \}_{i=1}^{N_D}$ distributed on a sphere of radius \gls{desired_sphere_radius}.
 
-Using the Lyapunov-based control actuation defined in Section~\ref{sec.3:Lyapunov Stability and Lyapunov-Based Control} as the geometric controller and maintaining the internal Mellinger controller. In this geometric controller implementation the points \gls{q} are driven toward their corresponding target \gls{q_desired} with exponentially decreasing error.
+\subsection{Reduced Attitude Representation}
 
-The overall control architecture is shown in Figure~\ref{fig.4:Lyapunov_controller_architecture}, and the resulting system behavior is illustrated in Figure~\ref{fig.4:Layapunov_solution}. This formulation enables stable multi-agent motion constrained to a spherical surface while preserving geometric consistency and ensuring dynamic feasibility.
+The attitude configuration of the rigid body can described by the unit vector
+\begin{align}
+\gls{q} = Q e_3,
+\end{align}
+
+where $Q \in SO(3)$ is the rotation matrix mapping vectors from the body frame \gls{q_body_matrix}$\{e_1, e_2, e_3\}$ to the inertial frame \gls{q_inertial_matrix}$\{E_1, E_2, E_3\}$. This definition of the body and inertial frames differs from that in Section \ref{sec.3:Vehicle model and noninear control}, it is important to note that this “body” should not be confused with the drone itself. The dynamics and geometric controller considered here do not directly control the drone, which is already managed by the Mellinger controller. Instead, it governs the motion of a point \gls{q} on the two-sphere, which can follow any trajectory to any other point \gls{q_desired}. This means that the Mellinger controller's reference \gls{p_desired} is the point \gls{q} and this point via the geometric controller evolves into the point \gls{q_desired}. 
+
+Consequently, from the control law given in the goemetric controller and Mellinger controller, it can be seen that
+\begin{equation}
+\lim_{t \to \infty} \gls{q_i}(t) = \gls{q_i_desired},
+\quad
+\lim_{t \to \infty} \gls{chaser_i_pos}(t) = \gls{q_i}(t)
+\end{equation}
+Thus, it is possible to formulate a controller that is capable of achieving the desired points in $\Gamma^2$ from any position in $\mathbb{R}^3$ implying
+\begin{equation}
+\lim_{t \to \infty} \gls{chaser_i_pos}(t) =\gls{q_i_desired}
+\end{equation}
+
+In this case since the radius of the sphere \gls{sphere_radius} is always the final desired radius \gls{desired_sphere_radius} the position \gls{q_i_desired} is equivalent to the position \gls{p_i_desired} since they only differ in radius. The kinematics of the reduced attitude evolve on $\Gamma^2$ according to Equation~\eqref{eq.3:kinematics of the reduced attitude} and the rotational dynamics of the rigid body are defined by Equation~\eqref{eq.3:rotational dynamics}.
+
+\begin{align}
+    \dot{q} = S(\gls{q_omega}) q
+    \label{eq.3:kinematics of the reduced attitude}
+\end{align}
+
+\begin{align}
+    \gls{q_inertial_matrix} \dot{\gls{q_omega}} = u - c \gls{q_omega} - S(\gls{q_omega}) \gls{q_inertial_matrix} \gls{q_omega} + \tau,
+    \label{eq.3:rotational dynamics}
+\end{align}
+
+where $\gls{q_omega} \in \mathbb{R}^3$ is the angular velocity expressed in the inertial frame and $S(\cdot)$ denotes the skew-symmetric operator defined by equation \eqref{eq.3:skew_matrix}, \gls{q_inertial_matrix} is the inertia matrix, \( c > 0 \) is a viscous damping coefficient, \( \tau \) represents external disturbances and \( u \) is the control moment generated by the geometric controller. A desired final position can be defined and have the dynamic defined in Equations~\eqref{eq.3:ref_dynamic_outerloop}.
+
+\begin{equation}
+    S(r)
+=
+\begin{bmatrix}
+0 & -r_3 & r_2 \\
+r_3 & 0 & -r_1 \\
+-r_2 & r_1 & 0
+\end{bmatrix},
+\qquad
+S^{-1}\left(S(r)\right) = r, r \in \mathbb{R}^3
+\label{eq.3:skew_matrix}
+\end{equation}
+
+\begin{equation}
+    \dot{\gls{q_desired}} = S(\gls{q_omega_desired}) \gls{q_desired}, \qquad  \dot{\gls{q_omega_desired}} = Q_d \gls{q_omega_desired}
+    \label{eq.3:ref_dynamic_outerloop}
+\end{equation}
+
+where the subscript $({\cdot})^\star$, defined the desired vector/matrix. Normally the reduced attitude controllers use the classic error between the defined desired position the current position frequently employed as the error function defined by Equation~\eqref{eq.3:err_ref_dynamic}.
+
+\begin{align}
+    \psi_r(\gls{q}, \gls{q_desired}) = 1 - \gls{q}^\top \gls{q_desired},
+    \qquad
+    e_r = S(\gls{q_desired}) \gls{q},
+    \label{eq.3:err_ref_dynamic}
+\end{align}
+
+This type of error function exhibits a degraded in performance for large initial attitude errors, particularly when the relative angle exceeds $\pi/2$. In such cases, the magnitude of the error vector decreases as the misalignment increases, reducing the control authority and slowing convergence, visible in Figure~\ref{fig.3:Comparison between error calculations}. To address this limitation, an alternative error is adopted as Equation~\eqref{eq.3:new_err_ref_dynamic}.
+
+\begin{align}
+    \psi(\gls{q}, \gls{q_desired}) =
+    2 - \frac{2}{\sqrt{2}} \sqrt{1 + \gls{q}^\top \gls{q_desired}},
+    \quad
+    e_q(\gls{q}, \gls{q_desired}, Q) =
+    \frac{1}{\sqrt{2}\,\sqrt{1 + \gls{q}^\top \gls{q_desired}}}\,
+    Q^\top S(\gls{q_desired}) \gls{q}
+    \label{eq.3:new_err_ref_dynamic}
+\end{align}
+
+This function is smooth and positive definite about $\gls{q} = \gls{q_desired}$, and avoids maximizing the error near the antipodal configuration. As a result, large-angle attitude errors are handled more effectively, as shown in Figure~\ref{fig.3:Comparison between error calculations}
+
+% Sub-figures 
+\begin{figure}[htbp]
+\centering
+\begin{subfigure}{.45\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{5-Figures/Chapter2/lyapunov/old_error.png}
+  \caption{Standard method}
+\end{subfigure}%
+\begin{subfigure}{.45\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{5-Figures/Chapter2/lyapunov/new_error.png}
+  \caption{Proposed method in \cite{lyapunov_outer_loop_control}}
+\end{subfigure}
+\caption{Comparison between error calculations}
+\label{fig.3:Comparison between error calculations}
+\end{figure}
+
+This formulation ensures that the magnitude of the configuration error varies proportionally with the angular separation between \gls{q} and \gls{q_desired}, leading to uniform controller response across the sphere. Having the attitude error defined the velocity error is followed and defined in Equation~\eqref{eq.3:err_vel_dynamic}.
+
+\begin{align}
+    e_\omega = \gls{q_omega} - Q^\top Q_d \gls{q_omega_desired},
+    \label{eq.3:err_vel_dynamic}
+\end{align}
+
+where \gls{q_omega_desired} is the desired angular velocity associated with the reference pointing direction \gls{q_desired}.
+
+The attitude and angular errors dynamics can be given by the Equations~\eqref{eq.3:attitude_error_derivative} \eqref{eq.3:ang_error_derivative} respectively.
+
+\begin{equation}
+    \begin{aligned}
+        \dot{e}_q
+        &= \frac{1}{\sqrt{2}\sqrt{1 + \gls{q}^\top \gls{q_desired}}}
+        Q^\top \bigl( S(S(\gls{q_omega_desired}) \gls{q_desired}) \gls{q} + S(\gls{q_desired})(S(\omega) \gls{q}) \bigr) \\
+        &\quad - \frac{1}{2(1 + \gls{q}^\top \gls{q_desired})}
+        \bigl( (S(\gls{q_omega_desired}) \gls{q_desired})^\top \gls{q} + \gls{q_desired}^\top (S(\omega) \gls{q}) \bigr) e_q \\
+        &\quad - S(\omega) e_q
+    \end{aligned}
+    \label{eq.3:attitude_error_derivative}
+\end{equation}
+
+
+\begin{equation}
+    \begin{aligned}
+        \dot{e}_\omega
+        &= \dot{\omega}+S(\omega)Q^\top Q_d \gls{q_omega_desired}-Q^\top Q_d \dot{\gls{q_omega_desired}}\\
+        &= \gls{q_inertial_matrix}^{-1}(u+S(\gls{q_inertial_matrix}\gls{q_omega})(\gls{q_omega})-c\gls{q_omega}+\tau)+S(\gls{q_omega})Q^\top Q_d \gls{q_omega_desired}-Q^\top Q_d \dot{\gls{q_omega_desired}} 
+    \end{aligned}
+    \label{eq.3:ang_error_derivative}
+\end{equation}
+
+\subsection{Control Law}
+
+For a desired pointing direction curve $\gls{q_desired}(t) \in S^2$ and a desired angular velocity profile
+$\gls{q_omega_desired}(t)$ around the $\gls{q_desired}(t)$ axis, the control moment $\mathbf{u}$ is defined as
+
+\begin{equation}
+    \begin{aligned}
+        \mathbf{u} &= \eta^{-1}\gls{q_inertial_matrix}
+        \Big(
+        -\eta(\hat{\mathbf{f}} + \mathbf{d})
+        - (\Lambda + \Psi) \dot{\mathbf{e}}_q
+        - \dot{\Psi} \mathbf{e}_q
+        - \gamma \mathbf{s}
+        \Big)\\
+        \mathbf{d} &= S(\omega)\mathbf{Q}^\top \mathbf{Q}_d\gls{q_omega_desired}
+        - \mathbf{Q}^\top \mathbf{Q}_d \dot{\omega}_d,\\
+        \mathbf{f} &= \gls{q_inertial_matrix}^{-1}
+        \Big(
+        S(\gls{q_inertial_matrix}\omega) (\omega)
+        - c\omega
+        + \boldsymbol{\tau}
+        \Big),\\
+        \mathbf{s} &= (\Lambda + \Psi)\mathbf{e}_q + \eta \mathbf{e}_\omega.
+    \end{aligned}
+    \label{eq.3:actuation_lyapunov}
+\end{equation}
+
+where $\Lambda, \Psi, \eta > 0$ positive constants while $\hat{(.)}$ signifies estimated parameters due to parameter identification errors. It will be shown that the above control law stabilizes and maintains $e_q$, $e_\omega$ in a bounded set around the zero equilibrium. Furthermore for perfect knowledge of the system parameters the above law stabilizes $e_q$, $e_\omega$ to zero exponentially.
+
+Being the defined sliding surface given in \eqref{eq.3:actuation_lyapunov}. Its derivative is 
+
+\begin{equation}
+    \dot{s} = \dot{\Psi}^{\,b} e_q + (\Lambda + \Psi)^{b} \dot{e}_q + \eta^{b} \dot{e}_\omega
+\end{equation}
+
+The Lyapunov candidate is
+
+\begin{equation}
+    V(\Psi, e_q^{\,b}, e_\omega^{\,b}) = \frac{1}{2} s^{T} s = \frac{1}{2} \lVert s \rVert^{2}
+\end{equation}
+
+Additionally for perfect knowledge of the system parameters, then
+
+\begin{equation}
+    V(t) = -\gamma \| s \|^2 \leq -k_2 \| s \|^2 = -2 k_2 V, \quad k_2 > 0
+\end{equation}
+
+\begin{equation}
+    V(t) \leq V(0) e^{-2 k_2 t}
+\end{equation}
+
+Although \eqref{eq.3:actuation_lyapunov} represents the originally derived controller, in \cite{lyapunov_outer_loop_control} the final control moment was chosen as \eqref{eq.3:actual_lyapunov_controller} due to its similarity to another controller, which facilitates comparison for the original paper. In this thesis, however, \eqref{eq.3:actuation_lyapunov} is used because of its simplicity and the assumption of perfect knowledge of the system.
+
+\begin{align}
+u =
+Q^\top\left(
+- K_r Q e_q
+- K_\omega e_\omega
+\right)
++ S(\gls{q_omega}) \gls{q_inertial_matrix} \gls{q_omega}
++ c \gls{q_omega}
+- \tau,
+\label{eq.3:actual_lyapunov_controller}
+\end{align}
+where $K_r \in \mathbb{R}^{3\times3}$ and $K_\omega \in \mathbb{R}^{3\times3}$ are positive-definite gain matrices.
+
+The first term stabilizes the configuration and angular velocity errors on $\Gamma^2$, while the remaining terms cancel the rigid-body nonlinearity, viscous damping, and external disturbances. This results in closed-loop error dynamics that are independent of the inertia matrix.
+
+\subsection{Implementation and Simulation}
+
+The proposed controller was implemented and evaluated through numerical simulations. The rigid body is initialized with a non-zero angular velocity and a large pointing error. A step change in the desired pointing direction is introduced during the simulation to evaluate transient performance.
+
+The initial configuration/conditions are,
+\begin{equation}
+    \mathbf{q}(t=0) = \begin{bmatrix} 0 \\ 0 \\ 1 \end{bmatrix}, 
+    \quad \mathbf{Q}(t=0) = \mathbb{I}_3,
+    \quad \boldsymbol{\omega}(t=0) = \begin{bmatrix} 0 \\ 0.3 \\ 0 \end{bmatrix}
+\end{equation}
+
+Being $\mathbb{I}_3$ the identity matrix in a $3\times3$ configuration. The controllers must initially stabilize the $\mathbf{e}_3$ body-fixed axis of the body to the following equilibrium,
+\begin{equation}
+    \mathbf{q}_d = \begin{bmatrix} 0 \\ -0.0175 \\ -0.9998 \end{bmatrix},
+    \quad \boldsymbol{\omega} = \begin{bmatrix} 0 \\ 0 \\ 0 \end{bmatrix}
+\end{equation}
+
+
+where the vector $\mathbf{q}_d$ denotes a $179^\circ$ rotation around the $\mathbf{E}_1$ axis. Then the $\mathbf{e}_3$ body-fixed axis must rotate back $89^\circ$ around the $\mathbf{E}_1$ axis to,
+\begin{equation}
+    \mathbf{q}_d = \begin{bmatrix} 0 \\ -1 \\ 0 \end{bmatrix},
+    \quad \boldsymbol{\omega} = \begin{bmatrix} 0 \\ 0 \\ 0 \end{bmatrix}
+\end{equation}
+
+The results in Figure~\ref{fig.3:lyapunov_example_results} demonstrate smooth convergence of the pointing direction on $\Gamma^2$, monotonic decrease of the attitude error function, and asymptotic regulation of the angular velocity. These results confirm the theoretical stability analysis and highlight the advantages of the proposed geometric formulation. A more extensive explanations and formula deduction can be found in the original referenced paper \cite{lyapunov_outer_loop_control}.
+
+\begin{figure}[htbp]
+\centering
+
+\begin{minipage}{\textwidth}
+\centering
+\includegraphics[width=0.45\textwidth]{5-Figures/Chapter2/lyapunov/Attitude_error.png}\hfill
+\includegraphics[width=0.45\textwidth]{5-Figures/Chapter2/lyapunov/configuration error vector.png}
+\end{minipage}
+
+\vspace{0.5cm}
+
+\begin{minipage}{\textwidth}
+\centering
+\includegraphics[width=0.45\textwidth]{5-Figures/Chapter2/lyapunov/angular velocity error.png}\hfill
+\includegraphics[width=0.45\textwidth]{5-Figures/Chapter2/lyapunov/traking trajectory.png}
+\end{minipage}
+
+\caption{Lyapunov example results}
+\label{fig.3:lyapunov_example_results}
+\end{figure}
+
+Using the Lyapunov-based control actuation as the geometric controller and maintaining the internal Mellinger controller it is possible to drive \gls{n_D} in this case 3 to any desired position on the two-sphere. The overall control architecture is shown in Figure~\ref{fig.4:Lyapunov_controller_architecture}, and the resulting system behavior is illustrated in Figure~\ref{fig.4:Layapunov_solution}. This formulation enables stable multi-agent motion constrained to a spherical surface while preserving geometric consistency and ensuring dynamic feasibility.
 
 \begin{figure}[htbp]
   \centering
@@ -345,13 +580,13 @@ The overall control architecture is shown in Figure~\ref{fig.4:Lyapunov_controll
 
 After analyzing all three methods, it was determined that the use of Lyapunov-based control is the most suitable choice for the intended purpose. This is due to its superior speed and precision compared to the other two studied approaches. With this controller defined, it is now possible to examine the remaining components of the system, beginning with the radius controller.
 
-As illustrated in Figure~\ref{fig.4:Layapunov_solution}, there is no explicit control over the timing of the agents’ convergence to the target or the desired radius \gls{desired_sphere_radius}. Instead, the agents naturally converge to the waypoints \gls{q}, which are already located on the sphere defined by \gls{desired_sphere_radius}.
+As illustrated in Figure~\ref{fig.4:Layapunov_solution}, without defining a radius controller there is no explicit control over the timing of the agents' convergence to the target or the desired radius \gls{desired_sphere_radius}. Instead, the agents naturally converge to the waypoints \gls{q}, which are already located on the sphere defined by \gls{desired_sphere_radius}.
 
 As will be discussed in the following section, the drone position \gls{chaser_pos} is first projected onto a sphere with a time-varying radius \gls{sphere_radius}, before ultimately converging to the desired radius \gls{desired_sphere_radius}.
 
 \subsection{Radii control}
 
-The goal of this controller is to change the value of the sphere radius \gls{sphere_radius} until it is the same as  \gls{desired_sphere_radius}, but it is not desired for the radius to simply modify as fast as possible to the desired value as it might be on some other controllers in this case the radius will only adjust when the drone \gls{chaser_pos} is radially located "above" the point \gls{p_desired} as well as the velocity of the chaser and target is the same or near the same. The objective of this controller can formally be defined by
+The goal of this controller is to change the value of the sphere radius \gls{sphere_radius} until it is the same as  \gls{desired_sphere_radius}, but it is not desired for the radius to simply modify as fast as possible to the desired value as it might be on some other controllers in this case the radius will only adjust when the drone \gls{chaser_pos} is radially located above the point \gls{p_desired} as well as the velocity of the chaser and target is the same or near the same. The objective of this controller can formally be defined by
 \begin{equation*}
     \lim_{t \to \infty} \gls{ith_sphere_radius}(t) = \gls{desired_sphere_radius}, \forall i \in \mathbb{N}
 \end{equation*}
@@ -372,24 +607,17 @@ To avoid undesirable coupling between angular convergence and radial contraction
 The reason for the radial component being neglected comes as a way to prevent feedback between radius reduction and radial acceleration, which would otherwise induce oscillatory behavior. 
 It is then possible to define the adaptive law
 \begin{equation}
-\dot{r}_i = k_{\mathrm{rad}} e^{-( \|e_{q_i}\| + \|v_{i\perp}\| )^2}
+\dot{r}_i = \gls{k_radii} e^{-( \|e_{q_i}\| + \|v_{i\perp}\| )^2}
 \left( \gls{desired_sphere_radius} - \gls{ith_sphere_radius} \right)
 \label{eq:new_radial_control}
 \end{equation}
-where $\gls{ith_sphere_radius} = \|\gls{chaser_i_pos} - \gls{target_pos}\|$ is the current encirclement radius, $e_{q_i}$ is the reduced-attitude error defined in \eqref{eq.3:new_err_ref_dynamic} and $k_{\mathrm{rad}} > 0$ is a constant scaler gain.
+where $\gls{ith_sphere_radius} = \|\gls{chaser_i_pos} - \gls{target_pos}\|$ is the current encirclement radius, $e_{q_i}$ is the reduced-attitude error defined in \eqref{eq.3:new_err_ref_dynamic} and $\gls{k_radii} > 0$ is a constant scaler gain.
 
 The exponential modulation term plays a key stabilizing role. 
 When either the angular error $\|e_{q_i}\|$ or the tangential relative velocity $\|v_{i\perp}\|$ is large, the exponential term becomes small, effectively slowing radial contraction. 
 This ensures that the directional alignment on $\Gamma^2$ is prioritized before aggressive radial motion happens. 
 
-As $\|e_{q_i}\| \to 0$ and $\|v_{i\perp}\| \to 0$, the exponential term approaches unity, as can be seen in Figure~\ref{fig.4:radii_gain}, and the radius converges to $\gls{desired_sphere_radius}$.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.85\columnwidth]{5-Figures/Chapter4/Radii/radii_gain.pdf}
-\caption{Radial gain given displacement, ($v_{i\perp} = 0$)}
-\label{fig.4:radii_gain}
-\end{figure}
+As $\|e_{q_i}\| \to 0$ and $\|v_{i\perp}\| \to 0$, the exponential term approaches unity and the radius converges to $\gls{desired_sphere_radius}$.
 
 Consequently, from the control law given in the Lyapunov controller and Radii controller, it can be seen that
 \begin{equation}
@@ -402,13 +630,13 @@ Thus, it is possible to formulate a controller that is capable of achieving the 
 \lim_{t \to \infty} \gls{chaser_i_pos}(t) = \gls{target_pos} + \gls{desired_sphere_radius} \gls{q_i_desired} = \gls{p_i_desired}.
 \end{equation}
 
-In Figure~\ref{fig.4:Layapunov_and_radii} it is possible to see two circles the current radius \gls{sphere_radius} the drone is encircling the target with, in blue, and the final desired radii \gls{desired_sphere_radius} that all agents must get to, in red. In Figure~\ref{fig.4:radii_evolution_in_time} is is possible to see the intra distance of the agent and the target over the entire simulation period of time.
+In Figure~\ref{fig.4:Lyapunov_and_radii} it is possible to see two circles the current radius \gls{sphere_radius} the drone is encircling the target with, in blue, and the final desired radii $\gls{desired_sphere_radius} = 5$ that the agent must get to, in red. In Figure~\ref{fig.4:radii_evolution_in_time} is is possible to see the intra distance of the agent and the target over the entire simulation period of time.
 
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=0.8\textwidth]{5-Figures/Chapter4/Radii/lyapunov_radii.pdf}
   \caption{Trajectory obtained for 1 drone mid simulation.}
-  \label{fig.4:Layapunov_and_radii}
+  \label{fig.4:Lyapunov_and_radii}
 \end{figure}
 
 \begin{figure}[htbp]
@@ -418,7 +646,50 @@ In Figure~\ref{fig.4:Layapunov_and_radii} it is possible to see two circles the 
   \label{fig.4:radii_evolution_in_time}
 \end{figure}
 
-It was also implemented that instead of moving each agent toward a randomly selected Fibonacci point on the sphere, the drones are assigned to target points using the Munkres algorithm. Given a cost matrix defined as the geodesic distance between each drone and all target points projected onto the final-radius sphere \gls{desired_sphere_radius}, the algorithm computes an optimal solution to the \gls{GNN} assignment problem. This solution minimizes the total assignment cost. No custom implementation of the algorithm was developed, instead, the built-in \(\text{MATLAB}^\text{\textregistered}\) \cite{MATLAB:R2024a} function \textit{assignmunkres} \cite{MATLAB_assignmunkres} was used.
+
+\begin{theorem} 
+    Consider the radial dynamics 
+    \begin{equation} 
+        \dot r_i = \gls{k_radii} e^{-(\|e_{q_i}\|+\|v_{i\perp}\|)^2} (\gls{desired_sphere_radius}-\gls{ith_sphere_radius}) 
+        \label{eq.4:radial_dynamics_theorem} 
+    \end{equation} where $ \gls{k_radii}> 0 $, $\gls{desired_sphere_radius} > 0 $ is constant and $ e^{-(\|e_{q_i}\|+\|v_{i\perp}\|)^2} > 0 $. Then the equilibrium $ \gls{ith_sphere_radius} = \gls{desired_sphere_radius} $ is globally asymptotically stable. 
+    \label{Theorem.4:Radial_control_globally_asymptotically_stable}
+\end{theorem}
+
+\textbf{\textit{Proof of Theorem~\ref{Theorem.4:Radial_control_globally_asymptotically_stable}}}
+
+    Define the radial tracking error
+    \begin{equation}
+        e_{r_i} = \gls{ith_sphere_radius} - \gls{desired_sphere_radius}
+    \end{equation}
+
+    Since \gls{desired_sphere_radius} is constant the derivative of error can be given by $ \dot e_{r_i} = \dot r_i $.
+
+    Substituting \eqref{eq.4:radial_dynamics_theorem}
+    \begin{align}
+        \dot e_{r_i}
+        &=\gls{k_radii} e^{-(\|e_{q_i}\|+\|v_{i\perp}\|)^2} (\gls{ith_sphere_radius} - \gls{desired_sphere_radius}) \\
+        &= - \gls{k_radii} e^{-(\|e_{q_i}\|+\|v_{i\perp}\|)^2} e_{r_i}
+    \end{align}
+
+    Consider the Lyapunov candidate
+    \begin{equation}
+        V_i = \frac12 e_{r_i}^2
+    \end{equation}
+
+    clearly, $ V_i > 0 \quad \forall e_{r_i}\neq0, V_i=0 \iff e_{r_i}=0 $ being its derivative given by
+
+    \begin{align}
+        \dot V_i
+        &= e_{r_i}\dot e_{r_i} \\
+        &=
+        -\gls{k_radii}
+        e^{-(\|e_{q_i}\|+\|v_{i\perp}\|)^2}
+        e_{r_i}^2
+    \end{align}
+
+Since $ \gls{k_radii}>0, e^{-(\|e_{q_i}\|+\|v_{i\perp}\|)^2}>0 $ it follows that $ \dot V_i \le 0 $ with equality only when $e_{r_i}=0$.
+Therefore, $V_i$ is positive definite and $\dot V_i$ is negative definite, implying that the equilibrium $e_{r_i}=0$ is globally asymptotically stable. Consequently, $ \lim_{t\to\infty} \gls{ith_sphere_radius}(t) = r_d$
 
 \section{Safe Guard Artificial Potential Fields}
 
@@ -476,13 +747,47 @@ The \gls{APF} term acts as a bounded perturbation to the nominal reduced-attitud
 
 In practice, this mechanism improves safety during convergence by reducing the likelihood of collisions, while allowing the Lyapunov-based controller to recover the desired encirclement configuration once agents are sufficiently separated. However, unlike \gls{CBF}, this method does not provide formal collision avoidance guarantees.
 
+In Figure~\ref{fig.4:APF_test} ift is possible to see the difference that the APF creates avoiding that agents get to close together, this set up was made on purpose for agents to have to pass closely to each other and having a safety boundary that is half of the distance between agents final position in this case $pi/6$ might be more than necessary in a well tuned system, but it shows the correct behavior of agent collision avoidance.
+
+\begin{figure}[htbp]
+\centering
+\subfloat[Normal]{\includegraphics[width=5.5cm]{5-Figures/Chapter4/APF_test/APF_test_normal_inactive.pdf}}\hfil   
+\subfloat[Top]{\includegraphics[width=3.5cm]{5-Figures/Chapter4/APF_test/APF_test_top_inactive.pdf}}\hfil
+\subfloat[Side]{\includegraphics[width=3.5cm]{5-Figures/Chapter4/APF_test/APF_test_side_inactive.pdf}}
+
+\vspace{0.3cm}
+\subfloat[Normal]{\includegraphics[width=5.5cm]{5-Figures/Chapter4/APF_test/APF_test_normal_active.pdf}}\hfil   
+\subfloat[Top]{\includegraphics[width=3.5cm]{5-Figures/Chapter4/APF_test/APF_test_top_active.pdf}}\hfil
+\subfloat[Side]{\includegraphics[width=3.5cm]{5-Figures/Chapter4/APF_test/APF_test_side_active.pdf}}
+
+\caption{Simulation results of APF use (1st without, 2nd with it)}
+\label{fig.4:APF_test}
+\end{figure}
+
+\section{Spatial Network} \label{sec.4:Spatial Network explained}
+
+The concept of a spatial network was previously introduced in Section~\ref{sec.3:Network topologies}. In the present context, the network is recomputed at every time step, ensuring that connections between agents reflect their current spatial configuration. In particular, each agent connects to its current set of nearest neighbors, rather than maintaining links from a potentially outdated network topology resulting from agent motion.
+
+However, methods based on a fixed number of $k$-nearest neighbors or on a max distance-based communication thresholds present important limitations. These approaches rely on static parameters that may not be suitable for dynamic scenarios. For instance, in the case of $k$-nearest neighbors, imposing a fixed number of connections can be overly restrictive, failing to capture all relevant neighboring relationships. If a high value of $k$ is considered then some connections will exist and not be necessary becoming unnecessary calculations that are overhead for most agents.  
+
+Similarly, distance-based communication models, where agents connect if they lie within a fixed radius, are also problematic. As agents move, maintaining connectivity may require dynamically increasing the communication radius. Otherwise, agents may lose connectivity entirely when their mutual distances exceed the predefined threshold, potentially resulting in a disconnected network.
+
+To address these issues, the communication graph is instead defined using the Delaunay triangulation. This structure is already computed as part of Lloyd's algorithm and the associated Voronoi diagram, making it a natural and computationally efficient choice. The Delaunay triangulation provides an adaptive and topology-preserving representation of agent connectivity, ensuring that neighboring relationships are consistently maintained as agents move. Figure~\ref{fig.4:Delaunay Triangulation} illustrates the resulting triangulation and the corresponding communication links between agents.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.85\textwidth]{5-Figures/Chapter4/Networks/delaunay_triangulation.pdf}
+  \caption{Delaunay Triangulation in $\mathbb{R}^2$}
+  \label{fig.4:Delaunay Triangulation}
+\end{figure}
+
 \section{Consensus}
 
-Consensus has been thoroughly referenced and explained in Section~\ref{sec.3:Consensus-Based Coordination}, here and from now on unlike the previous chapter examples the target exact position is unknown and the same might also be in motion. Since in practice, each agent only has access to its own noisy measurements. A fully connected consensus algorithm is employed, allowing all agents to share information and estimate the target position collectively.
+Consensus has been thoroughly referenced and explained in Section~\ref{sec.3:Consensus-Based Coordination}. Since in practice, each agent only has access to its own noisy measurements. A fully connected consensus algorithm is employed, allowing all agents to share information and estimate the target position collectively.
 
 Due to the fully connected communication graph, the consensus process converges to the average of the individual measurements. To account for the dynamic nature of the moving target an exponential moving average, referenced in Section~\ref{sec.3:Exponential Moving Average} is used, enabling the estimate to adapt to new measurements while filtering out noise.
 
-In Figure~\ref{fig.4:Consensus between 3 agents of target position} its possible to see the target motion as well as the target estimation, it is also possible to see that the 3 targets reach the same or near same value for the position of the target as is expected. Note that non of the lines represent agents only the estimated position of the target given by each one of them.
+In Figure~\ref{fig.4:Consensus between 3 agents of target position} its possible to see the target motion as well as the target estimation, it is also possible to see that the 3 targets reach the same or near same value for the position of the target as is expected. Note that none of the lines represent agents only the estimated position of the target given by each one of them. This consensus assumes instantaneous communication between agents meaning that no delay exists between agents and no stability proofs or analysis associated with the delay of communication between agents is made.
 
 \begin{figure}[htbp]
   \centering
@@ -490,6 +795,10 @@ In Figure~\ref{fig.4:Consensus between 3 agents of target position} its possible
   \caption{Consensus between 3 agents of target position}
   \label{fig.4:Consensus between 3 agents of target position}
 \end{figure}
+
+\section{Desired position assignment}
+
+Instead of each agent moving toward a randomly selected Fibonacci point on the sphere, the drones are assigned to target points using the Munkres algorithm. A cost matrix is defined using the geodesic distance between each Fibonacci point \gls{p_i_desired} and all target points \gls{q_i}, projected onto the sphere with radius \gls{desired_sphere_radius}. The algorithm then computes an optimal solution to the \gls{GNN} assignment problem, minimizing the total assignment cost. No custom implementation was developed; instead, the built-in \(\text{MATLAB}^\text{\textregistered}\) \cite{MATLAB:R2024a} function \textit{assignmunkres} \cite{MATLAB_assignmunkres} was used.
 
 % ===================== Simulation Results =====================
 \section{Simulation Results} \label{sec.4:simulations}
