@@ -2,6 +2,7 @@ import time
 from dataclasses import dataclass, field
 from typing import List
 import math
+import threading
 
 import cflib.crtp
 from cflib.crazyflie.log import LogConfig
@@ -16,9 +17,10 @@ class DroneState:
     velocity: List[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
     acceleration: List[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
     attitude: List[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])  # roll,pitch,yaw
+    log_conf: LogConfig = field(init=False)
 
 # CONSTS
-DEFAULT_HEIGHT = 0.5    # Default takeoff altitude (m)
+DEFAULT_HEIGHT = 1.3    # Default takeoff altitude (m)
 DEFAULT_SPEED = 0.8    # Default speed (m/s)
 BASE_URI = "radio://0/10/2M/E7E7E7E70"
 CANDIDATE_URIS = [
@@ -28,6 +30,7 @@ CANDIDATE_URIS = [
 SPHERE_RADIUS = 0.5  # circle radius
 GOLDEN_ANGLE = math.pi * (3 - math.sqrt(5))
 DT = 0.5 # time step
+DEADLINE_TIME = 10 # max time an action can take (sec)
 
 def uri_is_alive(uri, timeout=0.5):
     """
@@ -57,6 +60,9 @@ def discover_active_uris():
 
     return active
 
+def stop_logs(scf, state: DroneState):
+    drone_states[scf.cf.link_uri].log_conf.stop()
+    
 def get_position_callback(uri, data):
     state = drone_states[uri]
 
@@ -74,6 +80,8 @@ def init_position_getting(scf: SyncCrazyflie):
                     data,
                     _logconf: get_position_callback(scf.cf.link_uri, data))
     log_conf.start()
+
+    drone_states[scf.cf.link_uri].log_conf = log_conf
     
 def light_check(scf: SyncCrazyflie):
     scf.cf.param.set_value('led.bitmask', 255)
@@ -86,7 +94,11 @@ def arm(scf):
 
 def take_off(scf, state: DroneState):
     cf = scf.cf
+    deadline = time.time() + DEADLINE_TIME
     while state.position[2] < DEFAULT_HEIGHT*0.9:
+        if time.time() > deadline:
+            land(scf, state)
+            raise RuntimeError("Takeoff timeout")
         cf.commander.send_position_setpoint(state.position[0], state.position[1], DEFAULT_HEIGHT, 0)
         time.sleep(DT)
 
@@ -94,7 +106,8 @@ def land(scf: SyncCrazyflie, state: DroneState):
     cf = scf.cf
     x, y = state.position[0], state.position[1]
 
-    while state.position[2] > 0.12:
+    deadline = time.time() + DEADLINE_TIME
+    while state.position[2] > 0.12 and time.time() < deadline:
         cf.commander.send_position_setpoint(x, y, 0.1, 0)
         time.sleep(DT)
 
@@ -116,11 +129,9 @@ def move_fibonacci_circle(scf: SyncCrazyflie):
     
     while time.time() < end_time:
         t = time.time() - start_time
-        cf.commander.send_position_setpoint(base_x + 
-                                            math.sin(DEFAULT_SPEED * t),
-                                            base_y + 
-                                            math.cos(DEFAULT_SPEED * t),
-                                            base_z + DEFAULT_HEIGHT,
+        cf.commander.send_position_setpoint(base_x + target.position[0],
+                                            base_y + target.position[1],
+                                            base_z + target.position[2],
                                             0)
         time.sleep(DT)
 
@@ -141,10 +152,10 @@ def get_fibonacci_points(P, R = 1.0, sphere_center = None, verbose = False):
     """
 
     if P < 3:
-        raise ValueError("Not enough elements (P must be >= 3).")
+        raise RuntimeError("Need at least 3 drones")
 
     if P % 2 == 0:
-        raise ValueError("Even number of elements is not allowed.")
+        raise RuntimeError("Need an odd number of drones")
 
     if sphere_center is None:
         sphere_center = np.array([0.0, 0.0, 0.0])
@@ -198,11 +209,25 @@ def get_fibonacci_points(P, R = 1.0, sphere_center = None, verbose = False):
 
     return fibonacci_points
 
+def update_virtual_target(target: DroneState, lock: threading.Lock):
+    start_time = time.time()
+
+    while True:
+        with lock:
+            t = time.time() - start_time
+
+            target.position[0] = math.sin(DEFAULT_SPEED * t)
+            target.position[1] = math.cos(DEFAULT_SPEED * t)
+            target.position[2] = DEFAULT_HEIGHT 
+        time.sleep(DT)
+
 if __name__ == '__main__':
     cflib.crtp.init_drivers()
     
     # get the drones on radio range (powered on)
     active_uris = discover_active_uris()
+    if not active_uris:
+        raise RuntimeError("No drones found")
 
     # initialize drone state
     drone_states = {
@@ -211,6 +236,16 @@ if __name__ == '__main__':
     }
 
     fib_pos = get_fibonacci_points(len(active_uris), SPHERE_RADIUS)
+
+    # initiate the target motion
+    lock = threading.Lock()
+    target = DroneState()
+    target_thread = threading.Thread(
+        target=update_virtual_target,
+        args=(target,lock),
+        daemon=True
+    )
+    target_thread.start()
     
     factory = CachedCfFactory(rw_cache='./cache')
     with Swarm(active_uris, factory=factory) as swarm:
@@ -230,4 +265,9 @@ if __name__ == '__main__':
         swarm.parallel_safe(move_fibonacci_circle)
         print("Sleepy time")
         swarm.parallel_safe(land, 
+                            args_dict={uri: (state,) for uri, state in drone_states.items()})
+        
+        # end of flight clean up
+        print("Landed: stopping coms")
+        swarm.parallel_safe(stop_logs, 
                             args_dict={uri: (state,) for uri, state in drone_states.items()})
