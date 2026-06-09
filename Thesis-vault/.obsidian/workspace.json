@@ -1,0 +1,236 @@
+{
+  "main": {
+    "id": "0defdd1cfa5c9be3",
+    "type": "split",
+    "children": [
+      {
+        "id": "363aefece0c169a6",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "19768abf342129af",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Work Done.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Work Done"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "7de5eee08acce3c5",
+    "type": "split",
+    "children": [
+      {
+        "id": "997824c2d0435892",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "bf3e6b7ca6a670d9",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "c1145d9f431c745b",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "32082b495190ff57",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "bdf094145ce7a2cc",
+    "type": "split",
+    "children": [
+      {
+        "id": "bafc981a0f3bc03e",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "92bf4ad050b5c8c0",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Consensus.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": true,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for Consensus"
+            }
+          },
+          {
+            "id": "b7ec7ec752599f8a",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Consensus.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from Consensus"
+            }
+          },
+          {
+            "id": "2903c411ce7965da",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "d68e8511805bda1f",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "fbaae66841a53cb3",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Consensus.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of Consensus"
+            }
+          },
+          {
+            "id": "e8950480471c267b",
+            "type": "leaf",
+            "state": {
+              "type": "ReferenceListView",
+              "state": {},
+              "icon": "lucide-ghost",
+              "title": "ReferenceListView"
+            }
+          }
+        ],
+        "currentTab": 5
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "19768abf342129af",
+  "lastOpenFiles": [
+    "HOCBF in SO(2).md",
+    "Work Done.md",
+    "Pasted image 20260512084758.png",
+    "Mellinger Controller.md",
+    "Spacing points on manifols/Fibonacci Lattice.md",
+    "Spacing points on manifols/Untitled.md",
+    "Voronoi.md",
+    "Untitled.base",
+    "Untitled",
+    "Consensus.md",
+    "Spacing points on manifols",
+    "Exponential Moving Average (EMA).md",
+    "CBF+CLF/Drone S2 CLF+HOCBF QP geodesic.md",
+    "CBF/HOCBF R(3).md",
+    "Transpose Rules.md",
+    "Transpose derivatives.md",
+    "CBF/HOCBF SO(2)/geodesic v2 inverted.md",
+    "CBF/HOCBF SO(2)/geodesic V2.md",
+    "CBF+CLF/geodesic 1.md",
+    "CBF+CLF/geodesic.md",
+    "CBF/Control Barrier Function (CBF).md",
+    "CBF/HOCBF SO(2)/geodesic V1.md",
+    "CBF+CLF",
+    "CBF/HOCBF SO(2)/cartisian.md",
+    "Lie Derivatives.md",
+    "CBF/HOCBF SO(2)/vector based (theta_safe).md",
+    "CBF/HOCBF in SO(2).md",
+    "Untitled 1.md",
+    "CBF/HOCBF R(3)",
+    "CBF/HOCBF SO(2)",
+    "CBF",
+    "Internal and external product.md",
+    "Higher Order Control Barrier Functions (HOCBF).md",
+    "1.md",
+    "Untitled 1.base",
+    "Untitled.canvas"
+  ]
+}

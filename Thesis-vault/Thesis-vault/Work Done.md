@@ -86,11 +86,16 @@ TIME GAP: Implement the Lee controller and grab the rejected ICUAS paper and rew
 
 2026-05-26:  Finished the revised version of the paper for APCA 2026 also add a line saying that I do not take into account communication delay based on time/distance for consensus also refactored the code for animation and what is being used in simulation (target path, fibonacci or dijstra,  what to plot).
 
-2026-05-27: yupiiii, guess what gota revise the Paper again, need more pictures and merge proposition 2 and 3 into one! yay
+2026-05-27: yupiiii, guess what gota revise the Paper again, need more pictures and merge proposition 2 and 3 into one! yay, also 
+
+2026-05-28: continue to write paper? almost nothing, I got the new distance between agents figs that prove the APF works, also started to work on V14 that refactors some parts of the code to use structs instead of arrays to store drone state its easier to now chaser{i}.pos then chaser{i}\[1:3\]. Also started having Params to choose between using the disjktra and fibonacci, Mellinger or Lee, target path and number of measurable variables of the target.
+
+2026-05-29: Submitted Paper and finished V14 and sent it to github as well as some other things I should have already sent but didn't.
+
+2026-01-01: Going to add the drone collision avoidance in $\mathbb{R}^3$ so that drones have a safety sphere around them.
 
 Work to do:
 - Fix the dijkstra separation that is not working for 3 elements
-- add the possibility of following the target having into account pos, vel and acc or any combination of the three
 - work on maximal communication delay calculation
 - Kalman Filter to estimate the target variables?
 - run experimental trials
