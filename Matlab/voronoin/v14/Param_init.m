@@ -5,9 +5,9 @@ function Param = Param_init()
     Param.Nsim = round(Param.Tend/Param.dTi)+1;
     Param.t = 0:Param.dTi:Param.Tend+ Param.dTi;
     Param.gravity = 9.81;     % earth gravity
-    Param.nD = 11; % number of drones
+    Param.nD = 3; % number of drones
     Param.sphere_radius = 2.0;
-    Param.nD_drop = 3;
+    Param.nD_drop = 0;
     Param.nD_drop_time = 500;
 
     % Quadrotor

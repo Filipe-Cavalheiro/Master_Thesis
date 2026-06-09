@@ -118,7 +118,6 @@ for k = 1:Param.Nsim
     
     % --- SMALL WORLD NETWORK ---
     [connections,connection_Laplacian,~] = Delaunay_triangulation_network(desired.pos(:, active_ids)');
-    
     inactive_ids = find(~active_mask);
     for iD = inactive_ids
         % inactive drones will just fall from the sky
@@ -152,7 +151,7 @@ for k = 1:Param.Nsim
         om = chaser{iD}.ang_vel(:,k);
         
         % Estimate target position
-        active_ids_idx = find(active_ids == iD);   
+        active_ids_idx = find(active_ids == iD);
         [estimated_target_variables(:,iD), ema_estimated] = estimate_target_variables(...
             target, iD, ema_estimated, ...
             active_ids_idx, connection_Laplacian, Param);
@@ -167,6 +166,8 @@ for k = 1:Param.Nsim
             perceived_target_hist, ...
             Param);
         p_d_hist{iD}(:,k) = desired.pos(:,iD); % Store
+
+        
 
         chaser{iD} = actuate_control(chaser{iD}, desired, Sim, Param);
     end

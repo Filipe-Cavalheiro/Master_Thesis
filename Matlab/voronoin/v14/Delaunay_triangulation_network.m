@@ -8,7 +8,7 @@ function [connections, Laplacian, degree_matrix] = Delaunay_triangulation_networ
     end
 
     % remove singleton dimensions
-    if ndims(positions) ~= 3
+    if size(positions,2) > 1
         tol = 1e-9;
         isConstant = max(abs(positions - positions(1,:)), [], 1) < tol;
         positions(:, isConstant) = [];
@@ -19,8 +19,21 @@ function [connections, Laplacian, degree_matrix] = Delaunay_triangulation_networ
     % Step 1: Create adjacency matrix (connections)
     % Start with no connections
     A = false(N_agents, N_agents); 
+
+    X = positions - mean(positions,1);
+    r = rank(X, 1e-5);
+    
+    % if the points in 3D are collinear to a 2D plane then the pca is
+    % calculated in order to project the points into a 2D plane
+    X = positions - mean(positions,1);
+    if r < size(positions,2)
+        [~,score] = pca(X);
+        positions_red = score(:,1:r);
+    else
+        positions_red = positions;
+    end
         
-    DT = delaunayTriangulation(positions);
+    DT = delaunayTriangulation(positions_red);
     
     if verbose
         figure;
@@ -53,4 +66,8 @@ function [connections, Laplacian, degree_matrix] = Delaunay_triangulation_networ
     
     % Return adjacency matrix as connections (for backward compatibility)
     connections = A;
+
+    if ~any(connections)
+        pause;
+    end
 end

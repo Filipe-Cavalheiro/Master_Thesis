@@ -7,8 +7,8 @@ function V = dijkstraMeshHeap(V, sites)
     heap = BinaryMinHeap();
 
     for source = sites
-        V(source).dist = 0;
-        V(source).origin_site = source;
+        V(source).dist = 0;                 % initial point dist is 0
+        V(source).origin_site = source;     % store the starting point
         heap.push(V(source).dist, source);
     end
     
@@ -22,17 +22,17 @@ function V = dijkstraMeshHeap(V, sites)
 
         
         % Relax neighbors
-        nb = V(current_index).neigh;
-        w  = V(current_index).neighW;
-        for j = 1:numel(nb)
-            v = nb(j);
+        neigh_b = V(current_index).neigh;
+        neigh_dist  = V(current_index).neighW;
+        for j = 1:numel(neigh_b)
+            v_neight = neigh_b(j);
            
-            alt = current_index_dist + w(j);
-            if alt < V(v).dist
-                V(v).dist = alt;
-                V(v).prev = current_index;
-                V(v).origin_site = V(current_index).origin_site;
-                heap.push(alt, v); % lazy decrease-key
+            alt = current_index_dist + neigh_dist(j);
+            if alt < V(v_neight).dist
+                V(v_neight).dist = alt;
+                V(v_neight).prev = current_index;
+                V(v_neight).origin_site = V(current_index).origin_site;
+                heap.push(alt, v_neight); % lazy decrease-key
             end
         end
     end

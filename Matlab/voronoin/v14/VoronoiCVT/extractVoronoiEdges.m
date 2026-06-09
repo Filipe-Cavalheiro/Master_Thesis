@@ -4,10 +4,10 @@ function edges = extractVoronoiEdges(V)
     N = numel(V);
 
     for i = 1:N
-        ni = V(i).neigh;
+        neigh_i = V(i).neigh;
 
-        for k = 1:numel(ni)
-            j = ni(k);
+        for k = 1:numel(neigh_i)
+            j = neigh_i(k);
 
             % avoid duplicate edges
             if j <= i
