@@ -19,7 +19,7 @@ from cflib.utils.power_switch import PowerSwitch
 
 # === Constants ===
 # URI of the Crazyflie radio link.
-URI = uri_helper.uri_from_env(default='radio://0/30/2M/E7E7E7E703')
+URI = uri_helper.uri_from_env(default='radio://0/10/2M/E7E7E7E702')
 
 # Default takeoff altitude in meters.
 DEFAULT_HEIGHT = 0.5
@@ -204,7 +204,6 @@ def return_home(scf):
     cf.commander.send_position_setpoint(0,0,DEFAULT_HEIGHT,0)
     time.sleep(5)
     
-
 if __name__ == '__main__':
     os.system('clear')
 

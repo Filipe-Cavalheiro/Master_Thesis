@@ -75,7 +75,7 @@ def simple_param_async(scf, groupstr, namestr):
 
 # URI to the Crazyflie to connect to
 uri = uri_helper.uri_from_env(
-    default='radio://0/10/2M/E7E7E7E701'
+    default='radio://0/10/2M/E7E7E7E702'
 )
 logging.basicConfig(level=logging.ERROR)
 
