@@ -167,8 +167,6 @@ for k = 1:Param.Nsim
             Param);
         p_d_hist{iD}(:,k) = desired.pos(:,iD); % Store
 
-        
-
         chaser{iD} = actuate_control(chaser{iD}, desired, Sim, Param);
     end
 

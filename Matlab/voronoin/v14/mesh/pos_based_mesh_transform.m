@@ -11,7 +11,6 @@ function [vertices, faces, mesh_pos] = pos_based_mesh_transform(p, mesh_pos, sur
     dist_surface = dot(p, surf_direction);
 
     % Compute u_target
-    % Compute u_target
     if dist_surface < -(Param.sphere_radius/2)
         u_target = 0;
     elseif dist_surface > -(Param.sphere_radius/2)

@@ -45,7 +45,7 @@ switch Param.distribuition
         if k == 1 || mod(k,100) == 0
             sites = voronoi.sites([iD, neighbours]);
 
-            voronoi.newSite(iD) = runCVT(voronoi, sites, gfx, iD);
+            voronoi.newSite(iD) = runCVT(voronoi, sites, gfx);
         end
 
         desired.pos(:,iD) = voronoi.vertices(voronoi.sites(iD), :)';

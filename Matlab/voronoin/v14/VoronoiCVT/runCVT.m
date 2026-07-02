@@ -1,4 +1,4 @@
-function newSite = runCVT(state, sites, gfx, iD)
+function newSite = runCVT(state, sites, gfx)
     % NEWSITES updates the position of sites on the mesh based on disktra
     % and the new centroid based on the area of the Voronoi section
     % Input:
