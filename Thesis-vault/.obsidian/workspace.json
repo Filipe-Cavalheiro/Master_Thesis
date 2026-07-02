@@ -4,21 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "363aefece0c169a6",
+        "id": "430ab5405a21886f",
         "type": "tabs",
         "children": [
           {
-            "id": "19768abf342129af",
+            "id": "46b630c764d07a72",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Work Done.md",
+                "file": "AMSwarm An Alternating Minimization Approach for Safe MotionPlanning of Quadrotor Swarms in Cluttered Environments.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Work Done"
+              "title": "AMSwarm An Alternating Minimization Approach for Safe MotionPlanning of Quadrotor Swarms in Cluttered Environments"
             }
           }
         ]
@@ -194,10 +194,11 @@
       "bases:Create new base": false
     }
   },
-  "active": "19768abf342129af",
+  "active": "46b630c764d07a72",
   "lastOpenFiles": [
-    "HOCBF in SO(2).md",
     "Work Done.md",
+    "AMSwarm An Alternating Minimization Approach for Safe MotionPlanning of Quadrotor Swarms in Cluttered Environments.md",
+    "HOCBF in SO(2).md",
     "Pasted image 20260512084758.png",
     "Mellinger Controller.md",
     "Spacing points on manifols/Fibonacci Lattice.md",
@@ -229,7 +230,6 @@
     "CBF",
     "Internal and external product.md",
     "Higher Order Control Barrier Functions (HOCBF).md",
-    "1.md",
     "Untitled 1.base",
     "Untitled.canvas"
   ]
