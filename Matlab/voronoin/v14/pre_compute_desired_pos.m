@@ -3,7 +3,7 @@ function [p_d, swarm_center, voronoi] = pre_compute_desired_pos(voronoi, Param)
 %   Detailed explanation goes here
 
 if strcmp(Param.distribuition, 'fibonacci')
-    p_d = get_fibonacci_points(Param.nD, 1, [0;0;0]);
+    p_d = get_fibonacci_points(Param.nD, Param.sphere_radius, [0;0;0]);
     swarm_center = Param.initial_target_pos;
 
 elseif strcmp(Param.distribuition, 'dijkstra')

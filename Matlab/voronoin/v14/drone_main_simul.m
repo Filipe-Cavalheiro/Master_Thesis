@@ -112,7 +112,11 @@ for k = 1:Param.Nsim
     
     % move actual target
     [p_d_target, v_d_target] = target_ref(Param.dTi*k, Param.ref_target_traj, Param);
+    old = target.pos;
     target = target_motion(target, p_d_target, v_d_target, Param);
+    if any(old ~= target.pos)
+        break;
+    end
     tmp = cell2mat(struct2cell(target)');
     target_true_hist(:,k) = tmp(:);
     
@@ -155,6 +159,9 @@ for k = 1:Param.Nsim
         [estimated_target_variables(:,iD), ema_estimated] = estimate_target_variables(...
             target, iD, ema_estimated, ...
             active_ids_idx, connection_Laplacian, Param);
+        % NEED TO REMOVE THIS LINE ---------------------------------------
+        estimated_target_variables(:,iD) = target_true_hist(1:3,k);
+        % ----------------------------------------------------------------
         perceived_target_hist{k,iD} = [estimated_target_variables(:,iD); target_true_hist(4:18,k)];
 
         % get desired chaser state
