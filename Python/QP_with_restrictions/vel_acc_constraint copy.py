@@ -3,7 +3,7 @@ import os
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-from bernstein_funcs import *
+from V14.bernstein_funcs import *
 from structs import *
 from helper_funcs import *
 
@@ -28,11 +28,8 @@ max_iter = 100                  # max iterations per update
 w_goal = 1000.0                 # gain to reduce dist between agent and goal
 w_smooth = 0.1                  # gain to reduce high accelerations
 
-v_max = 2                       # max velocity constraint 
-a_max = 1                       # max acceleration constraint 
-
-obstacle_center = np.array([3.5, 3.5, 1.0])
-obstacle_radius = np.diag([1.0, 1.0, 1.0])
+v_max = 0.5                       # max velocity constraint 
+a_max = 0.3                       # max acceleration constraint 
 
 drone_1 = DroneState(H)
 drone_1.pos = start
@@ -138,28 +135,6 @@ for axis in range(3):
     A_eq[axis+3, cols]   = W1[0]   # velocity
     A_eq[axis+6, cols]   = W2[0]   # acceleration
 
-# This equality constraint defines that the system must along the entire horizon
-# respect the enforcement on collision avoidance.
-# A_obs =
-# [ W0  0   0 ] x
-# [ 0   W0  0 ] y  position
-# [ 0   0   W0] z
-A_obs = np.zeros((3*H, dim))
-for axis in range(3):
-    cols = np.arange(axis, dim, 3)
-    A_obs[H*axis:H*(axis+1), cols] = W0   # position
-
-# Obstacle avoidance constraints
-traj = np.tile(drone_1.pos, (H,1))
-b_obs = np.zeros((3 * H, 1))
-for k in range(H):
-    delta = np.linalg.inv(obstacle_radius) @ (traj[k] - obstacle_center).T
-    d, alpha, beta = cart2pol_3D(delta)
-    d = max(d, 1.0)
-    b = obstacle_center + (d * omega(alpha, beta))@obstacle_radius
-    rows = np.arange(k, 3 * H, H)
-    b_obs[rows,0] = b
-
 # ============================================================
 # Inequality constraints
 #
@@ -207,7 +182,6 @@ s = np.zeros(G.shape[0]).reshape(-1,1)
 # ============================================================
 # Augmented Lagrangian
 # ============================================================
-lambda_obs = np.zeros([A_obs.shape[0],1])
 lambda_ineq = np.zeros([G.shape[0],1])
 x = np.zeros(dim)
 
@@ -225,7 +199,6 @@ for step in range(Nsim):
     # =====================================================
     b_eq = np.hstack([drone_1.pos, drone_1.velocity, drone_1.acceleration]).reshape(-1,1)
 
-    lambda_obs[:] = 0
     lambda_ineq[:] = 0
 
     # =====================================================
@@ -236,14 +209,11 @@ for step in range(Nsim):
         # Step 1 - solve trajectory
         A_bar = (
             Q
-            + rho_obs * A_obs.T @ A_obs
             + rho_ineq * G.T @ G
         )
 
         b_bar = (
             - q
-            - A_obs.T @ lambda_obs
-            + rho_obs * A_obs.T @ b_obs
             - G.T @ lambda_ineq
             + rho_ineq * G.T @ (h - s)
         )
@@ -263,35 +233,19 @@ for step in range(Nsim):
         n = A_bar.shape[0]
         x = solution[:n]
 
-        # Step 2 - Update alpha, beta and d
-        C = x.flatten().reshape(n_ctrl,3)
-        traj = W0 @ C
-        for k in range(H):
-            delta = np.linalg.inv(obstacle_radius) @ (traj[k] - obstacle_center).T
-            d = np.sqrt(delta[0]**2 + delta[1]**2 + delta[2]**2)
-            alpha = np.arctan2(delta[1], delta[0])
-            beta = np.arccos(delta[2]/d)
-            d = max(d, 1.0)
-            b = obstacle_center + (d * omega(alpha, beta))@obstacle_radius
-            rows = np.arange(k, 3 * H, H)
-            b_obs[rows,0] = b
-
-        # Step 3 - Update slack term
+        # Step 2 - Update slack term
         s = np.maximum(0,h - G @ x - lambda_ineq/rho_ineq)
 
         # calculate residuals
         residual_eq  = A_eq @ x - b_eq
         residual_ineq = G @ x - h + s
-        residual_obs = A_obs @ x - b_obs
 
-        # Step 4 - Update lambdas        
+        # Step 3 - Update lambdas        
         lambda_ineq += rho_ineq * residual_ineq
-        lambda_obs += rho_obs * residual_obs
 
         if (
             np.linalg.norm(residual_eq)
             + np.linalg.norm(residual_ineq)
-            + np.linalg.norm(residual_obs)
             < 1e-6
         ):
             break
@@ -386,18 +340,6 @@ ax.scatter(
 
 u, v = np.mgrid[0:2*np.pi:25j, 0:np.pi:15j]
 
-x = np.cos(u)*np.sin(v) + obstacle_center[0]
-y = np.sin(u)*np.sin(v) + obstacle_center[1]
-z = np.cos(v) + obstacle_center[2]
-
-ax.plot_surface(
-    x,
-    y,
-    z,
-    color='red',
-    alpha=0.3
-)
-
 ax.set_xlabel("x")
 ax.set_ylabel("y")
 ax.set_zlabel("z")
@@ -456,11 +398,6 @@ ax = fig.add_subplot(111, projection='3d')
 
 # Plot obstacle
 u, v = np.mgrid[0:2*np.pi:25j, 0:np.pi:15j]
-xs = np.cos(u) * np.sin(v) + obstacle_center[0]
-ys = np.sin(u) * np.sin(v) + obstacle_center[1]
-zs = np.cos(v) + obstacle_center[2]
-
-ax.plot_surface(xs, ys, zs, color='red', alpha=0.3)
 
 ax.set_xlabel("X")
 ax.set_ylabel("Y")
@@ -528,5 +465,5 @@ ani = FuncAnimation(
     blit=False
 )
 
-if save_mp4: ani.save("trajectory.mp4", writer="ffmpeg", fps=24)
+if save_mp4: ani.save("Acc_Vel_constraint.mp4", writer="ffmpeg", fps=24)
 plt.show()

@@ -115,23 +115,17 @@ def update_magnitudes(curve, d_curve, dd_curve, alpha_c, beta_c,
 
     return d_c, d_v, d_a, omega_c, omega_v, omega_a
 
-def build_b(d_c, d_v, d_a, omega_c, omega_v, omega_a, obstacle, gravity, horizon):
-    xi_x = obstacle[0] * np.ones((horizon, 1))
-    xi_y = obstacle[1] * np.ones((horizon, 1))
-    xi_z = obstacle[2] * np.ones((horizon, 1))
-    g_vec = gravity * np.ones((horizon, 1))
+def build_b_obs(H, obstacle_radius, obstacle_center, traj):
+    b_obs = np.zeros((3 * H, 1))
+    for k in range(H):
+        delta = np.linalg.inv(obstacle_radius) @ (traj[k] - obstacle_center).T
+        d, alpha, beta = cart2pol_3D(delta)
+        d = max(d, 1.0)
+        b = obstacle_center + (d * omega(alpha, beta))@obstacle_radius
+        rows = np.arange(k, 3 * H, H)
+        b_obs[rows,0] = b
 
-    bx = np.vstack([d_v * omega_v[:,0:1],
-                    d_a * omega_a[:,0:1],
-                    xi_x + d_c * omega_c[:,0:1]])
-    by = np.vstack([d_v * omega_v[:,1:2],
-                    d_a * omega_a[:,1:2],
-                    xi_y + d_c * omega_c[:,1:2]])
-    bz = np.vstack([d_v * omega_v[:,2:3],
-                    d_a * omega_a[:,2:3] - g_vec,
-                    xi_z + d_c * omega_c[:,2:3]])
-
-    return np.vstack([bx, by, bz])  # (9*horizon, 1) — matches A @ zeta_1
+    return b_obs
 
 def build_constraints(H, dim, W0, W1, W2,
                       traj, obstacle_center,
