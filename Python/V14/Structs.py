@@ -1,5 +1,6 @@
 import numpy as np
 from numpy.typing import NDArray
+from typing import Optional
 import math
 from dataclasses import dataclass, field
 
@@ -29,13 +30,15 @@ class MotionConstraints:
     def __init__(self, param):
         # params for obstacle avoidance/ vel and acc constraints 
         self.obstacle_center = np.array([0, 2.0, 1.0])
-        self.obstacle_radius = np.diag([0.5, 0.5, 0.5])
+        self.obstacle_radius = np.diag([1.5, 1.5, 1.5])
 
         self.q: np.ndarray = np.zeros([(param.n_degree+1)*3,1])
         self.b_obs: np.ndarray = np.zeros((3 * param.horizon, 1))
-        self.s = None
-        self.lambda_obs = None
-        self.lambda_ineq = None
+        self.A_obs: np.ndarray = np.zeros((3 * param.horizon, (param.n_degree+1)*3))
+        self.s: Optional[np.ndarray] = None
+        self.lambda_obs: Optional[np.ndarray] = None
+        self.lambda_ineq: Optional[np.ndarray] = None
+        self.C: Optional[np.ndarray] = None
 
 class DroneState:
     def __init__(self, param):
@@ -52,9 +55,9 @@ class DroneState:
         self.constraints: MotionConstraints = MotionConstraints(param)
     
 class SimulationConfig:
-    def __init__(self, number_of_drones):
+    def __init__(self):
         # Simulation
-        self.Tend = 120
+        self.Tend = 30
         self.dTi = 0.1
         self.Nsim = round(self.Tend / self.dTi) + 1
 
@@ -67,7 +70,7 @@ class SimulationConfig:
         self.gravity = 9.81
 
         # Drones
-        self.nD = number_of_drones
+        self.nD = 12
         self.sphere_radius = 2.0
 
         # Drop parameters
@@ -217,12 +220,13 @@ class TrajectoryConfig:
 
 class GraphicalDisplay:
     def __init__(self, dTi):
-        self.verbose = False
+        self.verbose = True
         self.composed = True
-        self.radial_hist = True
-        self.consensus = True
-        self.save_to_mp4 = False
+        self.radial_hist = False
+        self.consensus = False
+        self.save_to_mp4 = True
         self.animate = True
+        self.store_data = True
 
         self.save_location = "Results"
         self.trail_length = 100
@@ -267,18 +271,11 @@ class Param:
     def __init__(
         self
     ):
-        number_of_drones = 11
-        traj = 2
-
-        self.sim = SimulationConfig(
-            number_of_drones
-        )
+        self.sim = SimulationConfig()
 
         self.controller = ControllerConfig()
 
-        self.traj = TrajectoryConfig(
-            traj
-        )
+        self.traj = TrajectoryConfig()
 
         self.display = GraphicalDisplay(
             self.sim.dTi
@@ -302,15 +299,16 @@ class Param:
         self.noise_std = 0.05
 
         # constraints
-        self.n_degree = 10
-        self.horizon = 40       # horizon
-        self.rho_obs = 100      # Obstacle avoidance penalty
+        self.n_degree = 5
+        self.horizon = 20       # horizon
+        self.obs_horizon = 5       # horizon
+        self.rho_obs = 100.0      # Obstacle avoidance penalty
         self.rho_ineq = 20.0      # max/min vel and acc penalty
         self.max_iter = 100     # max iterations per update
         self.w_goal = 1000.0    # gain to reduce dist between agent and goal
         self.w_smooth = 0.1     # gain to reduce high accelerations
-        self.v_max = 2          # max velocity constraint 
-        self.a_max = 1          # max acceleration constraint 
+        self.v_max = 10          # max velocity constraint 
+        self.a_max = 50          # max acceleration constraint 
 
 class Voronoi:
     def __init__(self, param: Param):

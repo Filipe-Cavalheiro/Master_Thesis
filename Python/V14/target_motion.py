@@ -31,8 +31,8 @@ def target_motion(target: DroneState, param: Param):
     om = target.ang_vel
 
     # Desired quantities (trajectory tracking)
-    dpsi_d = (target.desired.psi - target.desired.old_psi_d)/param.sim.dTi
-    target.desired.old_psi_d = target.desired.psi
+    dpsi_d = (target.desired.psi - target.desired.old_psi)/param.sim.dTi
+    target.desired.old_psi = target.desired.psi
 
     # Controller
     thrust, torque = drone_mellinger_ctrl(

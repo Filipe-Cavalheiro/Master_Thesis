@@ -17,7 +17,6 @@ from actuate_control import actuate_control
 from drone_3dfull_dyn import drone_3dfull_dyn
 from Animation_display import create_figures
 from helper_funcs import *
-from init_obstacle_avoidance import init_obstacle_avoidance
 
 # =============================================================================
 # Simulation initialization
@@ -187,8 +186,6 @@ for k in range(param.sim.Nsim):
             neighbours,
             param,
         )
-
-        compute_horizon_to_desired_state
 
         chaser_list[iD] = actuate_control(chaser_list[iD], param)
 

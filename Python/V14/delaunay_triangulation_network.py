@@ -27,15 +27,11 @@ def delaunay_triangulation_network(positions, verbose=False):
 
     # remove singleton dimensions
     tol = 1e-9
-    mask = np.max(np.abs(positions - positions[0,:]), axis=0) >= tol
-    positions = positions[:, mask]
+    position_mask = (np.max(np.abs(positions - positions[0,:]), axis=0) >= tol)
+    masked_positions = positions[:, position_mask]
 
     # Center
-    X = positions - positions.mean(axis=0)
-
-    # Remove constant dimensions
-    mask = np.std(X, axis=0) > 1e-12
-    X = X[:, mask]
+    X = masked_positions - masked_positions.mean(axis=0)
 
     # Normalize each coordinate
     scale = np.std(X, axis=0)
