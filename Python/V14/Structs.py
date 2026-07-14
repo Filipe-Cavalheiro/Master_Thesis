@@ -58,7 +58,7 @@ class SimulationConfig:
     def __init__(self):
         # Simulation
         self.Tend = 30
-        self.dTi = 0.1
+        self.dTi = 0.01
         self.Nsim = round(self.Tend / self.dTi) + 1
 
         self.t = np.arange(
