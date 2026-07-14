@@ -3,187 +3,56 @@ import os
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-from V14.bernstein_funcs import *
-from structs import *
+from bernstein_funcs import *
+from Structs import *
 from helper_funcs import *
+from obstacle_avoidance_funcs import init_obstacle_avoidance
+
+# This program has objective have 1 drone restricted in vel and acc not collide
+# with a fixed obstacle, the obstacle location is hard coded
 
 os.system('cls' if os.name=='nt' else 'clear')
 
 # ============================================================
 # Problem
 # ============================================================
-t_max = 120
-dTi = 0.1
-Nsim = int(t_max/dTi)
+param = Param()
+param.sim.nD = 1
 
-traj_rad = 5
+Nsim = param.sim.Nsim
+dTi = param.sim.dTi
+
+traj_rad = 2.2
 start = np.array([traj_rad*np.cos(0), traj_rad*np.sin(0), 1.0])
 goal  = np.array([traj_rad*np.cos(0), traj_rad*np.sin(0), 1.0])
 
-H = 40                          # horizon
-rho_obs = 100                   # Obstacle avoidance penalty
-rho_ineq = 20.0                 # max/min vel and acc penalty
-max_iter = 100                  # max iterations per update
-
-w_goal = 1000.0                 # gain to reduce dist between agent and goal
-w_smooth = 0.1                  # gain to reduce high accelerations
-
-v_max = 0.5                       # max velocity constraint 
-a_max = 0.3                       # max acceleration constraint 
-
-drone_1 = DroneState(H)
-drone_1.pos = start
+drone_1 = DroneState(param)
+drone_1.position = start
 drone_1.velocity = np.array([0,0,0])
 drone_1.acceleration = np.array([0,0,0])
 
 verbose = False
 save_mp4 = False
 
-# ===========================================================
-# Variable layout
-#
-# x =
-#   [
-#       c0x,c0y,c0z,
-#       c1x,c1y,c1z,
-#       ...
-#       cnx,cny,cnz
-#   ]
-# the path is defined via bernstein polynomials instead of [x,y,z]
-# being the number of elements of the matrix R^[n_ctrl x 3]
-# ============================================================
-n_degree = 10               # bernstein polynomial degree
-n_ctrl = n_degree + 1
-dim = 3 * n_ctrl
+chaser_list = [drone_1]
+vars = init_obstacle_avoidance(chaser_list, param)
+Q = vars["Q"]
+A_eq = vars["A_eq"]
+A_obs = vars["A_obs"]
+G = vars["G"]
+h = vars["h"]
+W0 = vars["W0"]
+W1 = vars["W1"]
+W2 = vars["W2"]
+n_ctrl = vars["n_ctrl"]
+dim = vars["dim"]
 
-# bernstein basis matrix construction
-# obtained from the Paper:
-# On the Derivatives of Bernstein Polynomials: 
-# An Application for the Solution of High Even-Order Differential Equations
-t = np.linspace(0, 1, H)
-W0 = bernstein_basis_matrix(t, n_degree)
-
-B = bernstein_basis_matrix(t, n_degree-1)
-D1 = np.zeros((n_degree, n_degree+1))
-for i in range(n_degree-1):
-    D1[i,i]   = -1
-    D1[i,i+1] = 1
-W1 = n_degree * (B @ D1)
-
-B = bernstein_basis_matrix(t, n_degree-2)
-D2 = np.zeros((n_degree-1, n_degree+1))
-for i in range(n_degree-1):
-    D2[i,i]   = 1
-    D2[i,i+1] = -2
-    D2[i,i+2] = 1
-W2 = n_degree * (n_degree-1) * (B @ D2)
-
-# ============================================================
-# Smoothness Hessian
-#
-# sum ||\ddot p(k)||²
-# the smoothness hessian is defined as a cost function that reduces high value 
-# accelerations
-# ============================================================
-Q1 = w_smooth * W2.T @ W2
-
-Q = np.zeros((dim, dim))
-for axis in range(3):
-    idx = np.arange(axis, dim, 3)
-    Q[np.ix_(idx, idx)] = Q1
-
-# ============================================================
-# Goal cost
-#
-# w_goal ||p_N - goal||²
-# The goal cost is the cost associated with the distance between the agent 
-# and the goal position
-# ============================================================
-wN = W0[-1]
-
-Qg = w_goal * np.outer(wN, wN)
-q = np.zeros(dim)
-for axis in range(3):
-    idx = np.arange(axis, dim, 3)
-    Q[np.ix_(idx, idx)] += Qg
-    q[idx] += -w_goal * goal[axis] * wN
-q = q.reshape(-1,1)
-
-# ============================================================
-# Equality constraints
-# ============================================================
-
-# [p(0),v(0),acc(0)] = start
-# This equality constraint defines that the system must have at horizon 1
-# the current pos, vel and acc in account
-# A_eq =
-# [ W0(0)  0      0    ]
-# [ 0      W0(0)  0    ]  position
-# [ 0      0      W0(0)]
-# ----------------------
-# [ W1(0)  0      0    ]
-# [ 0      W1(0)  0    ]  velocity
-# [ 0      0      W1(0)]
-# ----------------------
-# [ W2(0)  0      0    ]
-# [ 0      W2(0)  0    ]  acceleration
-# [ 0      0      W2(0)]
-A_eq = np.zeros((9, dim))
-for axis in range(3):
-    cols = np.arange(axis, dim, 3)
-    A_eq[axis, cols]     = W0[0]   # position
-    A_eq[axis+3, cols]   = W1[0]   # velocity
-    A_eq[axis+6, cols]   = W2[0]   # acceleration
-
-# ============================================================
-# Inequality constraints
-#
-# G x <= h
-# The inequality is given as a restriction in velocity
-# the inequality can be introduced directly the slack term 's' in
-# Gx-h+s = 0. The constrain is given as a cube around the agent 
-# ============================================================
-
-# G_tilde =
-# [ W1  0   0 ]  x
-# [ 0   W1  0 ]  y
-# [ 0   0   W1]  z
-
-# Velocity constraints
-G_vel = np.zeros((3 * H, dim))
-for axis in range(3):
-    idx = np.arange(axis, dim, 3)
-    rows = np.arange(axis * H, (axis + 1) * H)
-    G_vel[np.ix_(rows, idx)] = W1
-
-# Acceleration constraints
-G_acc = np.zeros((3 * H, dim))
-for axis in range(3):
-    idx = np.arange(axis, dim, 3)
-    rows = np.arange(axis * H, (axis + 1) * H)
-    G_acc[np.ix_(rows, idx)] = W2
-
-# Assemble G
-G = np.vstack((
-    G_vel,
-    -G_vel,
-    G_acc,
-    -G_acc,
-))
-
-# Assemble h
-h = np.vstack((
-    np.ones((6 * H, 1)) * v_max,
-    np.ones((6 * H, 1)) * a_max,
-))
-
-s = np.zeros(G.shape[0]).reshape(-1,1)
-
-# ============================================================
-# Augmented Lagrangian
-# ============================================================
-lambda_ineq = np.zeros([G.shape[0],1])
+wN = W0[-1].reshape(-1,1)
 x = np.zeros(dim)
+
+drone_1.constraints.s = np.zeros(G.shape[0]).reshape(-1,1)
+drone_1.constraints.lambda_obs = np.zeros([A_obs.shape[0],1])
+drone_1.constraints.lambda_ineq = np.zeros([G.shape[0],1])
 
 goal_history = []
 executed_path = [start.copy()]
@@ -191,61 +60,78 @@ velocity_history = []
 acc_history = []
 
 for step in range(Nsim):
+    t = step*param.sim.dTi
     print(f"Current iter: {step}")
-    goal  = np.array([traj_rad*np.cos(0.05*step*dTi), traj_rad*np.sin(0.05*step*dTi), 1.0])
+    goal  = np.array([traj_rad*np.cos(t*0.1), traj_rad*np.sin(t*0.1), 1.0])
     goal_history.append(goal)
     # =====================================================
     # Equality constraint becomes current position
     # =====================================================
-    b_eq = np.hstack([drone_1.pos, drone_1.velocity, drone_1.acceleration]).reshape(-1,1)
-
-    lambda_ineq[:] = 0
+    b_eq = np.hstack([drone_1.position, drone_1.velocity, drone_1.acceleration]).reshape(-1,1)
+    
+    drone_1.constraints.lambda_obs[:] = 0
+    drone_1.constraints.lambda_ineq[:] = 0
 
     # =====================================================
     # Solve AL subproblem
     # =====================================================
-    for iteration in range(max_iter):
-
+    for iteration in range(param.max_iter):
         # Step 1 - solve trajectory
         A_bar = (
             Q
-            + rho_ineq * G.T @ G
+            + param.rho_obs * A_obs.T @ A_obs
+            + param.rho_ineq * G.T @ G
         )
 
         b_bar = (
-            - q
-            - G.T @ lambda_ineq
-            + rho_ineq * G.T @ (h - s)
+            - drone_1.constraints.q
+            - A_obs.T @ drone_1.constraints.lambda_obs
+            + param.rho_obs * A_obs.T @ drone_1.constraints.b_obs
+            - G.T @ drone_1.constraints.lambda_ineq
+            + param.rho_ineq * G.T @ (h - drone_1.constraints.s)
         )
 
-        solve_right = np.block([
+        KKT = np.block([
             [A_bar, A_eq.T],
             [A_eq, np.zeros((A_eq.shape[0], A_eq.shape[0]))]
         ])
 
-        solve_left = np.concatenate([
+        rhs = np.concatenate([
             b_bar,
             b_eq
         ])
 
-        solution = np.linalg.solve(solve_right, solve_left)
+        solution = np.linalg.solve(KKT, rhs)
 
         n = A_bar.shape[0]
         x = solution[:n]
 
-        # Step 2 - Update slack term
-        s = np.maximum(0,h - G @ x - lambda_ineq/rho_ineq)
+        # Step 2 - Update alpha, beta and d
+        C = x.flatten().reshape(n_ctrl,3)
+        traj = W0 @ C
+        drone_1.constraints.b_obs = build_fixed_b_obs(
+            param.horizon, 
+            drone_1.constraints.obstacle_radius, 
+            drone_1.constraints.obstacle_center, 
+            traj
+        )
+
+        # Step 3 - Update slack term
+        drone_1.constraints.s = np.maximum(0,h - G @ x - drone_1.constraints.lambda_ineq/param.rho_ineq)
 
         # calculate residuals
         residual_eq  = A_eq @ x - b_eq
-        residual_ineq = G @ x - h + s
+        residual_ineq = G @ x - h + drone_1.constraints.s
+        residual_obs = A_obs @ x - drone_1.constraints.b_obs
 
-        # Step 3 - Update lambdas        
-        lambda_ineq += rho_ineq * residual_ineq
+        # Step 4 - Update lambdas        
+        drone_1.constraints.lambda_ineq += param.rho_ineq * residual_ineq
+        drone_1.constraints.lambda_obs += param.rho_obs * residual_obs
 
         if (
             np.linalg.norm(residual_eq)
             + np.linalg.norm(residual_ineq)
+            + np.linalg.norm(residual_obs)
             < 1e-6
         ):
             break
@@ -284,17 +170,15 @@ for step in range(Nsim):
     # executing next step velocity
     drone_1.acceleration = acc[1]
     drone_1.velocity = vel[1]
-    drone_1.pos = traj[1]
+    drone_1.position = traj[1]
 
     acc_history.append(drone_1.acceleration)
     velocity_history.append(drone_1.velocity)
-    executed_path.append(drone_1.pos)
+    executed_path.append(drone_1.position)
 
-    q = np.zeros(dim)
     for axis in range(3):
         idx = np.arange(axis, dim, 3)
-        q[idx] += -w_goal * goal[axis] * wN
-    q = q.reshape(-1,1)
+        drone_1.constraints.q[idx] = -param.w_goal * goal[axis] * wN
 
 goal_history = np.array(goal_history)
 executed_path = np.array(executed_path)
@@ -340,6 +224,18 @@ ax.scatter(
 
 u, v = np.mgrid[0:2*np.pi:25j, 0:np.pi:15j]
 
+x = drone_1.constraints.obstacle_radius[0,0]*(np.cos(u) * np.sin(v)) + drone_1.constraints.obstacle_center[0]
+y = drone_1.constraints.obstacle_radius[1,1]*(np.sin(u) * np.sin(v)) + drone_1.constraints.obstacle_center[1]
+z = drone_1.constraints.obstacle_radius[2,2]*(np.cos(v)) + drone_1.constraints.obstacle_center[2]
+
+ax.plot_surface(
+    x,
+    y,
+    z,
+    color='red',
+    alpha=0.3
+)
+
 ax.set_xlabel("x")
 ax.set_ylabel("y")
 ax.set_zlabel("z")
@@ -358,8 +254,8 @@ plt.plot(time, velocity_history[:,0], 'r-o', label='vx')
 plt.plot(time, velocity_history[:,1], 'g-o', label='vy')
 plt.plot(time, velocity_history[:,2], 'b-o', label='vz')
 
-plt.axhline(v_max, color='k', linestyle='--', alpha=0.6, label='v_max')
-plt.axhline(-v_max, color='k', linestyle='--', alpha=0.6)
+plt.axhline(param.v_max, color='k', linestyle='--', alpha=0.6, label='v_max')
+plt.axhline(-param.v_max, color='k', linestyle='--', alpha=0.6)
 
 plt.xlabel("Normalized time")
 plt.ylabel("Velocity")
@@ -379,8 +275,8 @@ plt.plot(time, acc_history[:,0], 'r-o', label='ax')
 plt.plot(time, acc_history[:,1], 'g-o', label='ay')
 plt.plot(time, acc_history[:,2], 'b-o', label='az')
 
-plt.axhline(a_max, color='k', linestyle='--', alpha=0.6, label='a_max')
-plt.axhline(-a_max, color='k', linestyle='--', alpha=0.6)
+plt.axhline(param.a_max, color='k', linestyle='--', alpha=0.6, label='a_max')
+plt.axhline(-param.a_max, color='k', linestyle='--', alpha=0.6)
 
 plt.xlabel("Normalized time")
 plt.ylabel("Acceleration")
@@ -398,6 +294,11 @@ ax = fig.add_subplot(111, projection='3d')
 
 # Plot obstacle
 u, v = np.mgrid[0:2*np.pi:25j, 0:np.pi:15j]
+xs = drone_1.constraints.obstacle_radius[0,0]*(np.cos(u) * np.sin(v)) + drone_1.constraints.obstacle_center[0]
+ys = drone_1.constraints.obstacle_radius[1,1]*(np.sin(u) * np.sin(v)) + drone_1.constraints.obstacle_center[1]
+zs = drone_1.constraints.obstacle_radius[2,2]*(np.cos(v)) + drone_1.constraints.obstacle_center[2]
+
+ax.plot_surface(xs, ys, zs, color='red', alpha=0.3)
 
 ax.set_xlabel("X")
 ax.set_ylabel("Y")
@@ -465,5 +366,5 @@ ani = FuncAnimation(
     blit=False
 )
 
-if save_mp4: ani.save("Acc_Vel_constraint.mp4", writer="ffmpeg", fps=24)
+if save_mp4: ani.save("trajectory.mp4", writer="ffmpeg", fps=24)
 plt.show()

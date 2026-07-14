@@ -1,5 +1,5 @@
 import numpy as np
-from structs import *
+from Structs import *
 
 def cart2pol_3D(coords):
     """
@@ -7,26 +7,26 @@ def cart2pol_3D(coords):
 
     Parameters
     ----------
-    coords : (..., 3) array
+    coords : (3, ...) array
         [..., x, y, z]
 
     Returns
     -------
-    (..., 3) array
+    (3, ...) array
         [..., r, alpha, theta]
     """
     coords = np.asarray(coords)
 
-    x = coords[..., 0]
-    y = coords[..., 1]
-    z = coords[..., 2]
+    x = coords[0, ...]
+    y = coords[1, ...]
+    z = coords[2, ...]
 
     r = np.sqrt(x**2 + y**2 + z**2)
 
     alpha = np.arctan2(y, x)
     beta = np.arccos(z/r)
 
-    return np.stack((r, alpha, beta), axis=-1)
+    return r, alpha, beta
 
 
 def pol2cart_3D(coords):
@@ -60,7 +60,7 @@ def omega(a, b):
         np.cos(a) * np.sin(b),
         np.sin(a) * np.sin(b),
         np.cos(b)
-    ])
+    ]).reshape(3,1)
 
 def update_horizon(horizon, goal: np.ndarray, drone: DroneState):
     delta = goal - drone.pos
@@ -115,13 +115,25 @@ def update_magnitudes(curve, d_curve, dd_curve, alpha_c, beta_c,
 
     return d_c, d_v, d_a, omega_c, omega_v, omega_a
 
-def build_b_obs(H, obstacle_radius, obstacle_center, traj):
+def build_fixed_b_obs(H, obstacle_radius, obstacle_center, traj):
     b_obs = np.zeros((3 * H, 1))
     for k in range(H):
-        delta = np.linalg.inv(obstacle_radius) @ (traj[k] - obstacle_center).T
+        delta = np.linalg.inv(obstacle_radius) @ (traj[k] - obstacle_center).reshape(-1,1)
         d, alpha, beta = cart2pol_3D(delta)
         d = max(d, 1.0)
         b = obstacle_center + (d * omega(alpha, beta))@obstacle_radius
+        rows = np.arange(k, 3 * H, H)
+        b_obs[rows,0] = b
+
+    return b_obs
+
+def build_horizon_b_obs(H, obstacle_radius, obs_horizon, traj):
+    b_obs = np.zeros((3 * H, 1))
+    for k in range(H):
+        delta = np.linalg.inv(obstacle_radius) @ (traj[k, :] - obs_horizon[k,:]).reshape(-1,1)
+        d, alpha, beta = cart2pol_3D(delta)
+        d = max(d, 1.0)
+        b = obs_horizon[k,:] + (d * omega(alpha, beta))@obstacle_radius
         rows = np.arange(k, 3 * H, H)
         b_obs[rows,0] = b
 
