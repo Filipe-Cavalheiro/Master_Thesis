@@ -1,4 +1,6 @@
 import numpy as np
+from math import sin, cos
+
 from Structs import *
 
 def cart2pol_3D(coords):
@@ -55,12 +57,24 @@ def pol2cart_3D(coords):
 
     return np.stack((x, y, z), axis=-1)
 
+# def omega(a, b):
+#     return np.column_stack([
+#         np.cos(a) * np.sin(b),
+#         np.sin(a) * np.sin(b),
+#         np.cos(b)
+#     ]).reshape(3,1)
+
 def omega(a, b):
-    return np.column_stack([
-        np.cos(a) * np.sin(b),
-        np.sin(a) * np.sin(b),
-        np.cos(b)
-    ]).reshape(3,1)
+    sa = np.sin(a)
+    ca = np.cos(a)
+    sb = np.sin(b)
+    cb = np.cos(b)
+
+    return np.array([
+        ca * sb,
+        sa * sb,
+        cb
+    ])
 
 def update_horizon(horizon, goal: np.ndarray, drone: DroneState):
     delta = goal - drone.pos

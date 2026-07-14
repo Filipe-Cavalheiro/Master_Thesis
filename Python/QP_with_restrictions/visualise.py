@@ -301,7 +301,7 @@ def visualise(results, param:Param):
     )
 
     if param.display.save_to_mp4:
-        ani.save("2_drone_collision_avoidance.mp4", writer="ffmpeg", fps=24)
+        ani.save("4_drone_collision_avoidance.mp4", writer="ffmpeg", fps=24)
 
     plt.show()
 

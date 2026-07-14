@@ -137,10 +137,10 @@ def init_obstacle_avoidance(chaser_list: list[DroneState], param: Param):
     # [ W0  0   0 ] x
     # [ 0   W0  0 ] y  position
     # [ 0   0   W0] z
-    A_obs = np.zeros((3*H, dim))
+    A_obs_blk = np.zeros((3*param.horizon, dim))
     for axis in range(3):
         cols = np.arange(axis, dim, 3)
-        A_obs[H*axis:H*(axis+1), cols] = W0   # position
+        A_obs_blk[param.horizon*axis:param.horizon*(axis+1), cols] = W0   # position
         
     # ============================================================
     # Inequality constraints
@@ -188,13 +188,13 @@ def init_obstacle_avoidance(chaser_list: list[DroneState], param: Param):
     # ============================================================
     for iD in range(param.sim.nD):
         chaser_list[iD].constraints.s = np.zeros(G.shape[0]).reshape(-1,1)
-        chaser_list[iD].constraints.lambda_obs = np.zeros([A_obs.shape[0],1])
+        chaser_list[iD].constraints.lambda_obs = np.zeros([A_obs_blk.shape[0],1])
         chaser_list[iD].constraints.lambda_ineq = np.zeros([G.shape[0],1])
 
     return {
         "Q": Q,
         "A_eq": A_eq,
-        "A_obs": A_obs,
+        "A_obs_blk": A_obs_blk,
         "G": G,
         "h": h,
         "W0": W0,
@@ -204,7 +204,7 @@ def init_obstacle_avoidance(chaser_list: list[DroneState], param: Param):
         "dim": dim,
     }
 
-def solve_unconstraint_motion(obs_vars, agent: DroneState, param: Param):
+def solve_unconstrained_motion(obs_vars, agent: DroneState, param: Param):
     """
     Solve the unconstrained motion, useful for initialization of desired 
     trajectory

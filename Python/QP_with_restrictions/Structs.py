@@ -34,6 +34,7 @@ class MotionConstraints:
 
         self.q: np.ndarray = np.zeros([(param.n_degree+1)*3,1])
         self.b_obs: np.ndarray = np.zeros((3 * param.horizon, 1))
+        self.A_obs: np.ndarray = np.zeros((3 * param.horizon, (param.n_degree+1)*3))
         self.s: Optional[np.ndarray] = None
         self.lambda_obs: Optional[np.ndarray] = None
         self.lambda_ineq: Optional[np.ndarray] = None
@@ -69,7 +70,7 @@ class SimulationConfig:
         self.gravity = 9.81
 
         # Drones
-        self.nD = 2
+        self.nD = 4
         self.sphere_radius = 2.0
 
         # Drop parameters
@@ -221,9 +222,9 @@ class GraphicalDisplay:
     def __init__(self, dTi):
         self.verbose = True
         self.composed = True
-        self.radial_hist = True
-        self.consensus = True
-        self.save_to_mp4 = False
+        self.radial_hist = False
+        self.consensus = False
+        self.save_to_mp4 = True
         self.animate = True
         self.store_data = True
 
@@ -300,15 +301,16 @@ class Param:
         self.noise_std = 0.05
 
         # constraints
-        self.n_degree = 10
-        self.horizon = 40       # horizon
+        self.n_degree = 5
+        self.horizon = 20       # horizon
+        self.obs_horizon = 5       # horizon
         self.rho_obs = 100.0      # Obstacle avoidance penalty
         self.rho_ineq = 20.0      # max/min vel and acc penalty
         self.max_iter = 100     # max iterations per update
         self.w_goal = 1000.0    # gain to reduce dist between agent and goal
         self.w_smooth = 0.1     # gain to reduce high accelerations
-        self.v_max = 2          # max velocity constraint 
-        self.a_max = 1          # max acceleration constraint 
+        self.v_max = 10          # max velocity constraint 
+        self.a_max = 50          # max acceleration constraint 
 
 class Voronoi:
     def __init__(self, param: Param):
