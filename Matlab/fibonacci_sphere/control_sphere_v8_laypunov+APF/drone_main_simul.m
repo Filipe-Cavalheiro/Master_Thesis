@@ -55,7 +55,6 @@ geo_distances_hist = zeros(nPairs,Nsim);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Simulation initialization
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 for iD = 1:Param.nD
     % initial values
     Rad{iD} = organized_Rad(iD);
@@ -80,7 +79,6 @@ target_hist = zeros(18,Nsim);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Target drone initialization
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 % Initial target state
 target.x = zeros(18,1);
 target.x(1:3)   = Param.initial_target_pos;    % position
@@ -150,7 +148,7 @@ for k = 1:Nsim
         % ---------- Enforce S² constraint (local) ----------
         q{iD} = Rad{iD} * q_hat + c_sphere(:,k);
             
-        % --- Store
+        % --- Store ---
         Rad_hist{iD}(k) = Rad{iD};
         q_hist{iD}(:,k) = q{iD};
 
@@ -162,11 +160,11 @@ for k = 1:Nsim
         psi_d = 0;
         dpsi_d = 0;
     
-        % mellinger controller
+        % Mellinger controller
         [T{iD}(:,k),tau{iD}(:,k),e_p] = drone_mellinger_ctrl(pos{iD},...
             v{iD},R,om,Param,p_d,psi_d,xiep{iD}(:,k),v_d,dpsi_d,a_d,j_d);
         
-        % integrate position error
+        % Integrate position error
         xiep{iD}(:,k+1) = xiep{iD}(:,k) + Param.dTi*e_p;
         
         % nonlinear drone model (continuous time)
