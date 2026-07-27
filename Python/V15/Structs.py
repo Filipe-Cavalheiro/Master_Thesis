@@ -322,7 +322,7 @@ class Voronoi:
         self.vertices = np.empty((0, 3))
         self.faces = np.empty((0, 3), dtype=int)
         self.sites = np.array((1, param.sim.nD))
-        self.newSite = np.zeros((1, param.sim.nD))
+        self.newSites = np.zeros((1, param.sim.nD))
         self.ran_u2_eq_1 = False
 
 class MeshVertex:

@@ -98,7 +98,7 @@ def pre_compute_desired_pos(voronoi: Voronoi, param: Param):
         # get initial desired final positions (p_d)
         N = voronoi.vertices.shape[0]
         voronoi.sites = np.random.permutation(N)[:param.sim.nD]
-        voronoi.newSite = voronoi.sites.copy()
+        voronoi.newSites = voronoi.sites.copy()
         p_d = (voronoi.vertices[voronoi.sites, :]).T - param.traj.initial_target_pos
     else:
         raise ValueError('param.sim.distribution was not correctly defined.')
@@ -143,7 +143,7 @@ def pos_based_mesh_transform(
     # --- Compute u_target ---
     if dist_surface < -(sphere_r / 2):
         u_target = 0
-    elif dist_surface > -(sphere_r / 2) and dist_surface < (sphere_r / 2):
+    elif dist_surface >= -(sphere_r / 2) and dist_surface < (sphere_r / 2):
         u_target = 0.5 + (dist_surface / sphere_r)
     elif dist_surface >= (sphere_r / 2):
         u_target = dist_surface / (sphere_r / 2)

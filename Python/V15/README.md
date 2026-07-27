@@ -6,8 +6,6 @@ Developed by:
 - Filipe Cavalheiro
 - Bruno Guerreiro
 
----
-
 # Overview
 
 This project simulates a swarm of autonomous aerial vehicles (UAVs) that cooperatively track and surround a moving target. Each drone only has access to local information and communicates with neighboring agents through a dynamically generated communication network based on Delaunay triangulation.
@@ -19,25 +17,10 @@ The simulation combines:
 - Dynamic communication topology
 - Full nonlinear quadrotor dynamics
 - Agent failure (drone dropout)
+- Collision avoidance via Horizon
 - Visualization and post-processing tools
 
 The objective is to maintain a cooperative formation around the target while remaining robust to the loss of communication agents.
-
----
-
-# Features
-
-- Multi-agent UAV simulation
-- Dynamic target motion
-- Distributed target estimation
-- Voronoi formation control
-- Delaunay communication network
-- Full 3D quadrotor dynamics
-- Agent dropout simulation
-- Data logging
-- Result visualization and animation
-
----
 
 # Simulation Pipeline
 
@@ -49,12 +32,11 @@ At every simulation step:
 4. Remove failed drones (if scheduled).
 5. Estimate the target state using neighboring information.
 6. Compute desired formation positions.
-7. Compute control inputs.
-8. Propagate each UAV using the nonlinear dynamic model.
-9. Store simulation data.
-10. Display results after completion.
-
----
+7. Compute horizon to desired position (including vel,acc restrictions and collision avoidance)
+8. Compute control inputs.
+9. Propagate each UAV using the nonlinear dynamic model.
+10. Store simulation data.
+11. Display results after completion.
 
 # Communication Network
 
@@ -69,8 +51,6 @@ Advantages include:
 
 The resulting adjacency matrix and Laplacian are used by the distributed estimator.
 
----
-
 # Formation Control
 
 Desired UAV positions are generated using a Voronoi-based or Fibonacci-based strategy.
@@ -83,8 +63,6 @@ Each drone computes its desired state using:
 
 The objective is to surround the moving target while maintaining a balanced spatial distribution.
 
----
-
 # Distributed Target Estimation
 
 Each UAV independently estimates:
@@ -93,8 +71,6 @@ Each UAV independently estimates:
 - Target velocity
 
 Information is exchanged only with neighboring drones through the communication graph, allowing the swarm to operate without centralized coordination.
-
----
 
 # Drone Dynamics
 
@@ -107,8 +83,6 @@ Each UAV is modeled using a full nonlinear 3D quadrotor dynamic model including:
 
 The controller computes the required inputs, which are integrated through the dynamic model at every simulation step.
 
----
-
 # Drone Failure Simulation
 
 The simulator supports agent failures by removing drones during execution.
@@ -119,8 +93,6 @@ When a drone is dropped:
 - It no longer contributes to target estimation.
 - It follows passive dynamics until reaching the ground.
 - Remaining agents automatically reconfigure the communication graph and continue the mission.
-
----
 
 # Output Data
 
@@ -135,8 +107,6 @@ The simulation stores:
 
 These logs are used for visualization and performance evaluation.
 
----
-
 # Requirements
 
 Install dependencies with:
@@ -144,8 +114,6 @@ Install dependencies with:
 ```bash
 pip install -r requirements.txt
 ```
-
----
 
 # Running the Simulation
 
@@ -155,12 +123,10 @@ Run the main script:
 python main.py
 ```
 
----
-
 # Main Components
 
 | Module | Description |
-|---------|-------------|
+||-|
 | `Structs.py` | Simulation parameters and data structures |
 | `target_motion.py` | Target dynamic model |
 | `delaunay_triangulation_network.py` | Communication graph generation |
@@ -170,8 +136,6 @@ python main.py
 | `drone_3dfull_dyn.py` | Nonlinear quadrotor dynamics |
 | `Animation_display.py` | Visualization and animation |
 | `helper_funcs.py` | Mathematical helper functions |
-
----
 
 # Future Improvements
 

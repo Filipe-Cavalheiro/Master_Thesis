@@ -309,7 +309,7 @@ for k in range(param.sim.Nsim):
     if np.isnan(origin_p_d[:, active_ids]).any():
         raise RuntimeError("A position value is NaN!")
 
-    voronoi.sites = voronoi.newSite
+    voronoi.sites = voronoi.newSites
 
     #logs values
     for iD, agent in enumerate(chaser_list):

@@ -16,7 +16,7 @@ def compute_desired_goal(
     if param.sim.measurement_dimension == 2:
         target_vel = agent.estimated.target_velocity
     else:
-        target_vel = np.zeros(3)
+        target_vel = np.zeros([3,1])
 
     if param.sim.distribution == "fibonacci":
         agent.desired.goal = origin_p_d[:,iD:iD+1] + target_pos
@@ -28,7 +28,7 @@ def compute_desired_goal(
 
         if k % 100 == 0:
             sites = [voronoi.sites[i] for i in [iD,*neighbours.tolist()]]
-            voronoi.newSite[iD] = runCVT(voronoi, sites)
+            voronoi.newSites[iD] = runCVT(voronoi, sites)
 
         agent.desired.goal = voronoi.vertices[voronoi.sites[iD], :].reshape(-1,1)
 
