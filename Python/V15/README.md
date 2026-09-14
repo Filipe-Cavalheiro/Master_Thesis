@@ -141,8 +141,6 @@ python main.py
 
 Potential extensions include:
 
-- Obstacle avoidance
-- Collision avoidance
 - Sensor noise models
 - Communication delays
 - Packet loss simulation
