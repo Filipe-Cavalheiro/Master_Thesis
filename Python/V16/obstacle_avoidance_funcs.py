@@ -280,9 +280,7 @@ def solve_unconstrained_motion(obs_vars, agent: DroneState, param: Param):
 
 def solve_constraint_motion_horizon(chaser_list: list[DroneState], iD, obs_vars, param: Param):
     """
-    Solve the unconstrained motion, useful for initialization of desired 
-    trajectory
-
+    solve the constrained motion horizon with the obstacles of the existence of other agents in account
     Parameters
     ----------
     obs_vars: Dictionary of variables associated with the QP and constraints
@@ -380,9 +378,8 @@ def solve_constraint_motion_horizon(chaser_list: list[DroneState], iD, obs_vars,
 
 def solve_constraint_motion_fixed(chaser_list: list[DroneState], iD, obs_vars, param: Param):
     """
-    Solve the unconstrained motion, useful for initialization of desired 
-    trajectory
-
+    solve the constraint motion with an fixed in place obstacle
+    
     Parameters
     ----------
     obs_vars: Dictionary of variables associated with the QP and constraints

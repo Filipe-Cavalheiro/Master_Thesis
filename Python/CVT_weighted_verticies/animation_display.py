@@ -728,7 +728,7 @@ if __name__ == "__main__":
     param = Param()
 
     current_folder = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(current_folder, "simulation_results.pkl")
+    file_path = os.path.join(current_folder, "60s_21a_2_simulation_results.pkl")
     with open(file_path, "rb") as f:
         data = pickle.load(f)
 

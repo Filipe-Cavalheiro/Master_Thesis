@@ -3,8 +3,8 @@ function animate_simulation(x, q_hist, q_d_hist, Rad_hist, fib_ref_points, Param
 %   Detailed explanation goes here
 
 % === Video settings (TIME-ACCURATE) ===
-save_to_mp4 = 1;
-frameStep   = 1;                       % must match animation loop
+save_to_mp4 = 0;
+frameStep   = 5;                       % must match animation loop
 sim_dt      = Param.dTi * frameStep;    % simulated time per frame
 videoFPS    = 1 / sim_dt;               % makes video exactly 10 sec
 
@@ -42,7 +42,7 @@ for iD = 1:1
         50, colors(iD,:), 'x', 'LineWidth', 2, ...
         'HandleVisibility','off');
 
-        scatter3(fib_ref_points(1,iD),fib_ref_points(2,iD),...
+    scatter3(fib_ref_points(1,iD),fib_ref_points(2,iD),...
         fib_ref_points(3,iD), 50, colors(iD,:), 'd', 'LineWidth', 2, ...
         'HandleVisibility','off');
 end
@@ -64,7 +64,7 @@ hq_d = scatter3(NaN, NaN, NaN, ...
 
 lgd = legend([hInit, hProj, hdrone, hq, hq_d], ...
     {'Initial Positions', 'Final Objective', 'drone', ...
-     '$q$', '$q_d$'});
+     '$q$', '$q \star$'});
 
 lgd.Interpreter = 'latex';
 lgd.Position = [0.75 0.75 0.05 0.1];  % [x y width height]
@@ -75,7 +75,7 @@ lgd.AutoUpdate = 'off';
 timeText = text(0,6,6,'t = 0.00 s', ...
     'FontSize',12,'FontWeight','bold');
 
-for iD = 1:Param.nD
+for iD = 1:1
     % Initialize line and marker objects
     outer_loop_traj{iD} = plot3(NaN, NaN, NaN,'--', 'Color', colors(iD,:), 'LineWidth', 1);
     inner_loop_traj{iD} = plot3(NaN, NaN, NaN,'-', 'Color', colors(iD,:), 'LineWidth', 1);
@@ -84,11 +84,11 @@ for iD = 1:Param.nD
     href_ref{iD} = plot3(NaN, NaN, NaN, '+', 'Color', 'k', 'MarkerSize', 6, 'MarkerFaceColor', colors(iD,:));
 end
 
-xlabel('x'); ylabel('y'); zlabel('z');
-title('3D Trajectories of Agents – Evolution Over Time');
+xlabel('X'); ylabel('Y'); zlabel('Z');
+% title('3D Trajectories of Agents – Evolution Over Time');
 
 % Animation loop
-for k = 1:frameStep:Nsim
+for k = 200
     fprintf("Showing simulation interation: %04d\n", k);
 
     % Index range: last X steps (or fewer at the beginning)
@@ -136,13 +136,15 @@ for k = 1:frameStep:Nsim
     if save_to_mp4
         frame = getframe(animation);
         writeVideo(v,frame);
-    else
-        pause(0.01); % adjust speed of animation
+    %else
+        %pause(0.01); % adjust speed of animation
     end
 end
 
 if save_to_mp4
     close(v);
 end
+view(3)
+print2pdf("lyapunov_radii", true)
 end
 

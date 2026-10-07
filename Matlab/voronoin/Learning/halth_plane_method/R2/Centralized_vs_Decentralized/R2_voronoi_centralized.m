@@ -230,5 +230,5 @@ for k = 1:Nsim
 end
 
 fprintf('Done\n');
-
-print2pdf("voronoi_centralized_comparison.pdf",1);
+%%
+print2pdf("voronoi_centralized_comparison",1);

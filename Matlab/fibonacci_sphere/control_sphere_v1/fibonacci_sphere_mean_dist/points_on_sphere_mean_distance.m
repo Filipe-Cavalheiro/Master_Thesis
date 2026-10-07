@@ -16,7 +16,7 @@ N = floor((P-1)/2);         % Since P = 2N + 1 works best for odd P
 idx = -N:N;
 
 % Latitude and longitude
-theta_fibonacci  = acos(2*idx/P);          % latitude
+theta_fibonacci  = asin(2*idx/P);          % latitude
 phi_fibonacci = 2*pi*idx/phi_golden;       % longitude
 
 % Cartesian coordinates of Fibonacci points
@@ -145,19 +145,16 @@ surf(drone_r*XS, drone_r*YS, drone_r*ZS, ...
 %     'Color', [0.1 0.2 0.8], ...
 %     'LineWidth', 1);
 scatter3(x, y, z, 15, 'k', 'filled')
+
+scatter3(x, y, z, 15, 'k', 'filled')
 % Formatting for paper
 axis equal
 axis off
 set(gca, 'Visible', 'off')
 set(gcf, 'Color', 'w');          % white background
 set(gca, 'Position', [0 0 1 1]); % fill figure
-view(0,90);
-
-exportgraphics(gcf, 'fibonacci_sphere_mean_dist_top.png', 'ContentType', 'vector');
+view(3)
 hold off;
 
-% % Plot histogram
-% figure;
-% x = diff(desired_theta);
-% histogram(d2_fibonacci, 'Normalization', 'pdf')
-% title("Histogram of diference between thetas")
+
+print2pdf("fibonacci_sphere_mean_dist_normal", true)

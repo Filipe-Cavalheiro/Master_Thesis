@@ -73,6 +73,10 @@ numAgents_history = np.ones(param.sim.Nsim) * param.sim.nD
 # =============================================================================
 target = DroneState(param)
 target.position = param.traj.initial_target_pos.copy()
+
+# =============================================================================
+# Simulation variables initialization
+# =============================================================================
 ema_estimated = np.tile(
     np.concatenate([target.position.reshape(3, 1), target.velocity.reshape(3, 1)]),
     param.sim.nD)
@@ -97,7 +101,7 @@ for k in range(param.sim.Nsim):
     print(f"Computing simulation iteration: {k:04d}")
     current_time = param.sim.dTi*k
     # ---------------------------------------------------------
-    # Drop drones
+    # Drop drones (power loss simulation)
     # ---------------------------------------------------------
     if k == param.sim.nD_drop_time:
         remove_local = np.random.choice(
@@ -123,6 +127,7 @@ for k in range(param.sim.Nsim):
         for idx in remove_idx:
             agent:DroneState = chaser_list[idx]
             agent.desired.goal = np.nan
+
 
     # ---------------------------------------------------------
     # Move target
@@ -208,7 +213,11 @@ for k in range(param.sim.Nsim):
             param,
         )
 
-    active_agents = list(range(len(active_ids)))
+
+    # =====================================================
+    # MPC (only active agents)
+    # =====================================================
+    active_agents = list(active_ids)
     for _ in range(100):
         for iD in active_agents[:]:
             agent = chaser_list[iD]
@@ -287,7 +296,7 @@ for k in range(param.sim.Nsim):
             ):
                 active_agents.remove(iD)
                 
-    for iD, agent in enumerate(chaser_list):
+    for iD, agent in enumerate([chaser_list[i] for i in active_ids]):
         # reset residues 
         agent.constraints.lambda_obs = np.zeros([agent.constraints.A_obs.shape[0],1])
         agent.constraints.lambda_ineq = np.zeros([G.shape[0],1])
@@ -357,12 +366,12 @@ data = {
     "numAgents_history": numAgents_history
 }
 
-if param.display.store_data == True:
-    print("Saving simulation data (.pkl)")
-    current_folder = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(current_folder, "simulation_results.pkl")
-    with open(file_path, "wb") as f:
-        pickle.dump(data, f)
+# if param.display.store_data == True:
+#     print("Saving simulation data (.pkl)")
+#     current_folder = os.path.dirname(os.path.abspath(__file__))
+#     file_path = os.path.join(current_folder, "simulation_results.pkl")
+#     with open(file_path, "wb") as f:
+#         pickle.dump(data, f)
 
 if param.display.verbose:
     sim_data = SimulationData(**data)

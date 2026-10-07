@@ -9,7 +9,7 @@ GOLDEN_ANGLE = math.pi * (3 - math.sqrt(5))
 class SimulationConfig:
     def __init__(self):
         # Simulation
-        self.Tend = 10 # [seconds]
+        self.Tend = 30 # [seconds]
         self.dTi = 0.01 # [seconds]
         self.Nsim = round(self.Tend / self.dTi) + 1
 
@@ -22,12 +22,12 @@ class SimulationConfig:
         self.gravity = 9.81
 
         # Drones
-        self.nD = 3
+        self.nD = 12
         self.sphere_radius = 5.0
 
         # Drop parameters
-        self.nD_drop = 3
-        self.nD_drop_time = -1 # -1 to deactivate
+        self.nD_drop = 4
+        self.nD_drop_time = 1000 # -1 to deactivate
 
         # Quadrotor
         self.drone_mass = 5
@@ -58,17 +58,18 @@ class SimulationConfig:
         self.noise_std = 0.05
 
         # constraints
-        self.obstacle_avoidance = False
+        self.obstacle_avoidance = True 
         self.restricted_vel_acc = True
+        self.obstacle_avoidance_dim = 1.00
         self.n_degree = 5
-        self.horizon = 20           # horizon
+        self.horizon = 5           # horizon
         self.rho_obs = 100.0        # Obstacle avoidance penalty
         self.rho_ineq = 20.0        # max/min vel and acc penalty
-        self.max_iter = 1000         # max iterations per update
+        self.max_iter = 100         # max iterations per update
         self.w_goal = 1000.0        # gain to reduce dist between agent and goal
         self.w_smooth = 0.1         # gain to reduce high accelerations
         self.v_max = 3             # max velocity constraint 
-        self.a_max = 50             # max acceleration constraint 
+        self.a_max = 5             # max acceleration constraint 
 
         # --- CVT parameters ---
         # Number of simulation iterations between CVT site updates.
@@ -80,14 +81,14 @@ class SimulationConfig:
         
         # --- Measurement model ---
         # options: "estimated" or "ground_truth"
-        self.measurement_model = "ground_truth"
+        self.measurement_model = "estimated"
         # 1: position
         # 2: position + velocity
         self.measurement_dimension = 2
 
         # Formation/distribution
         # options: "fibonacci" or "dijkstra" 
-        self.distribution = "fibonacci"
+        self.distribution = "dijkstra"
 
 class ControllerConfig:
     def __init__(self):
@@ -215,19 +216,29 @@ class TrajectoryConfig:
 class GraphicalDisplay:
     def __init__(self):
         self.verbose = True
-        self.composed = False
 
-        self.radial_hist_plot = False
-        self.radial_hist_animation = True
+        self.composed = True
 
-        self.consensus_plot = False
-        self.consensus_animation = True
+        self.radial_hist_plot = True
+        self.radial_hist_animation = False
+
+        self.inter_agent_dist  = True
+
+        self.low_level_tracking_error = True
+
+        self.consensus_plot = True 
+        self.consensus_animation = False 
 
         self.velocity_plot = True
-        self.velocity_animate = True
+        self.velocity_animate = False
 
-        self.trajectory_plot = False
-        self.trajectory_animate = True
+        self.acceleration_plot = True
+        self.acceleration_animate = False
+
+        self.trajectory_plot = True 
+        self.trajectory_animate = False
+
+        self.three_view_plot = True
 
         self.store_data = True
         self.save_to_mp4 = False

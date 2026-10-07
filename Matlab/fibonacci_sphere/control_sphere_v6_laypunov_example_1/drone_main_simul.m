@@ -33,17 +33,17 @@ for i = 1:Param.nD
     end
 end
 
-costofnonassignment = 10*pi;  % forces full one-to-one assignment
-
-[assignments, unassignedrows, unassignedcolumns] = ...
-    assignmunkres(geo_distances_all, costofnonassignment);
-
-organized_initial_pos = zeros(3,Param.nD);
-organized_Rad = zeros(1,Param.nD);
-for i = 1:Param.nD
-    organized_initial_pos(:,i) = initial_pos(:,assignments(i,1));
-    organized_Rad(i) = Param.r0(assignments(i,1));
-end
+% costofnonassignment = 10*pi;  % forces full one-to-one assignment
+% 
+% [assignments, unassignedrows, unassignedcolumns] = ...
+%     assignmunkres(geo_distances_all, costofnonassignment);
+% 
+% organized_initial_pos = zeros(3,Param.nD);
+% organized_Rad = zeros(1,Param.nD);
+% for i = 1:Param.nD
+%     organized_initial_pos(:,i) = initial_pos(:,assignments(i,1));
+%     organized_Rad(i) = Param.r0(assignments(i,1));
+% end
 
 % for i = 1:Param.nD
 %     [M,I] = min(geo_distances_all(i,:));
@@ -54,9 +54,9 @@ end
 
 for iD = 1:Param.nD
     % initial values
-    Rad{iD} = organized_Rad(iD);
-    x{iD}(1:3,1) = organized_initial_pos(:,iD);
-    q{iD} = organized_initial_pos(:,iD);
+    Rad{iD} = Param.r0(iD);
+    x{iD}(1:3,1) = initial_pos(:,iD);
+    q{iD} = initial_pos(:,iD);
     omega{iD} = [0; 0; 0];
     
     % desired values
@@ -137,27 +137,29 @@ for k = 1:Nsim
     end
 end
 
-%%
-figure;
-hold on;
-grid on;
-
-t = (0:Nsim-1) * Param.dTi;
-
-plot(t, Rad_hist{1}, 'LineWidth', 3);
-plot(t, vecnorm([0;0;0]-x{1}(1:3,1:end-1), 2, 1), 'LineWidth', 3);
-plot(t, vecnorm([0;0;0], 2, 1) ...
-       - vecnorm(x{1}(4:6,2:end), 2, 1), 'LineWidth', 3);
-
-xlabel('Time [s]');
-lgd = legend( ...
-    'Radial history', ...
-    'Position difference (norm)', ...
-    'Velocity difference (norm)' ...
-);
-
-lgd.FontSize = 12; 
-lgd.Interpreter = 'latex';
-
-%%
-animate_simulation(x, q_hist, q_d_hist, Rad_hist, fib_ref_points, Param, Nsim)
+% %%
+% set(groot, 'defaultAxesFontSize', 22);
+% set(groot, 'defaultTextFontSize', 22);   % affects xlabel/ylabel/title text
+% set(groot, 'defaultLegendFontSize', 22);
+% 
+% figure;
+% hold on;
+% grid on;
+% 
+% t = (0:Nsim-1) * Param.dTi;
+% 
+% plot(t, Rad_hist{1}, 'LineWidth', 3);
+% plot(t, vecnorm([0;0;0]-x{1}(1:3,1:end-1), 2, 1), 'LineWidth', 3);
+% % plot(t, vecnorm([0;0;0], 2, 1) ...
+% %        - vecnorm(x{1}(4:6,2:end), 2, 1), 'LineWidth', 3);
+% 
+% xlabel('Time [s]');
+% ylabel('Distance [m]');
+% lgd = legend( ...
+%     'Radial reference', ...
+%     'Distance from target' ...
+% );
+% lgd.Interpreter = 'latex';
+% print2pdf("radiii_distance", true)
+% %%
+% animate_simulation(x, q_hist, q_d_hist, Rad_hist, fib_ref_points, Param, Nsim)

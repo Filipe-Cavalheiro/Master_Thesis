@@ -6,20 +6,21 @@
 clear all;
 
 % Model and simulation parameters
-Param.Tend = 10;
+Param.Tend = 30;
 Param.dTi = 0.01;  % inner-loop and simulation sampling period
 Nsim = round(Param.Tend/Param.dTi)+1;
 Param.g = 9.81;     % earth gravity
 Param.nD = 3; % number of drones
-Param.sphere_radius = 5;  % sphere radius
-Param.k_rad = 0.7; % radius reduction gain
+Param.sphere_radius = 2;  % sphere radius
+Param.k_rad = 0.3; % radius reduction gain
+Param.k_geo = 5;
 
-% Outer-loop parameters
-Param.c = 0.3;                             % Nm (s/rad)
-Param.J = diag([0.0294 0.0305 0.0495]);    % kg m^2
-Param.tau = zeros(3,1);
-Param.K_r = diag([70 70 70]);
-Param.K_w = diag([7.056 7.320 11.88]) * 1e-1;
+% % Outer-loop parameters
+% Param.c = 0.3;                             % Nm (s/rad)
+% Param.J = diag([0.0294 0.0305 0.0495]);    % kg m^2
+% Param.tau = zeros(3,1);
+% Param.K_r = diag([70 70 70]);
+% Param.K_w = diag([7.056 7.320 11.88]) * 1e-1;
 
 % reference parameters
 Param.p_ref_static = [1;1;3];
@@ -49,9 +50,9 @@ Param.kR = diag([8,8,8]);
 Param.kom= diag([0.5,0.5,0.5]);
 
 if Param.nD <= 9
-    theta0   = [0.175 0.698 1.222 1.745 2.269 2.793 3.491 4.189 4.712];
-    phi0     = [1.484 1.222 1.396 1.047 1.484 1.222 0.698 1.396 0.960];
-    Param.r0 = [11 6 8 20 15 30 25 20 15];
+    theta0   = [1.308 0.698 1.222 1.745 2.269 2.793 3.491 4.189 4.712];
+    phi0     = [2.0 1.222 1.396 1.047 1.484 1.222 0.698 1.396 0.960];
+    Param.r0 = [4 6 8 20 15 30 25 20 15];
 else
     theta0   = 2*pi*rand(1,Param.nD);
     phi0     = 2*pi*rand(1,Param.nD);

@@ -18,6 +18,15 @@ def create_figures(data: SimulationData, param: Param):
     if param.display.consensus_plot is True:
         consensus_plot(data, param)
 
+    if param.display.tracking_error_plot is True:
+        tracking_error_plot(data, param)
+ 
+    if param.display.interagent_geodesic_distance_plot is True:
+        interagent_geodesic_distance_plot(data, param)
+
+    if param.display.trajectory_plot is True:
+        trajectory_plot(data, param)
+
     if param.display.trajectory_animate is True:
         animate_simulation(data, param)
 
@@ -57,9 +66,9 @@ def composed_fig(data: SimulationData, param: Param):
     ax.grid(True)
     ax.set_box_aspect([1, 1, 1])
     ax.view_init(elev=None, azim=None)
-    ax.set_xlabel("X")
-    ax.set_ylabel("Y")
-    ax.set_zlabel("Z")
+    ax.set_xlabel("X [m]")
+    ax.set_ylabel("Y [m]")
+    ax.set_zlabel("Z [m]")
 
     target_hist = data.target_true_hist
     position_history = data.position_history
@@ -195,6 +204,9 @@ def radial_hist_plot(data: SimulationData, param: Param):
 
     fig, ax = plt.subplots(figsize=(8, 5))
 
+    ax.xaxis.label.set_fontsize(16)
+    ax.yaxis.label.set_fontsize(16)
+
     t = np.arange(param.sim.Nsim) * param.sim.dTi
 
     for iD in range(param.sim.nD):
@@ -217,10 +229,10 @@ def radial_hist_plot(data: SimulationData, param: Param):
 
     ax.set_xlabel("Time [s]")
     ax.set_ylabel("Distance to target [m]")
-    ax.set_title("Radial Distance History")
 
     ax.grid(True)
-    ax.legend()
+    if param.sim.nD <= 6:
+        ax.legend(fontsize=16)
 
     plt.tight_layout()
 
@@ -234,6 +246,7 @@ def radial_hist_plot(data: SimulationData, param: Param):
         ),
         bbox_inches="tight"
     )
+    print("Done.")
 
     plt.show(block=False)
 
@@ -278,7 +291,6 @@ def radial_hist_animation(data: SimulationData, param: Param):
 
     ax.set_xlabel("Time [s]")
     ax.set_ylabel("Distance to target [m]")
-    ax.set_title("Radial Distance History")
     ax.grid(True)
     ax.legend()
 
@@ -404,11 +416,6 @@ def consensus_plot(data: SimulationData, param: Param):
     ax.set_ylabel("Y")
     ax.set_zlabel("Z")
 
-    ax.set_title(
-        "Consensus Tracking of Moving Target "
-        "(EMA + Noisy Measurements)"
-    )
-
     ax.legend()
 
     if not os.path.isdir(param.display.save_location):
@@ -421,6 +428,208 @@ def consensus_plot(data: SimulationData, param: Param):
 
     plt.show(block=False)
 
+
+def tracking_error_plot(data: SimulationData, param: Param):
+    # ---------------------------------------------------------
+    # Plot position tracking error (actual vs desired) per agent
+    # ---------------------------------------------------------
+    time_vec = np.arange(param.sim.Nsim) * param.sim.dTi
+    # position_history, p_d_hist shape: [nD, 3, Nsim]
+    pos_error = data.position_history - data.p_d_hist          # component-wise diff, shape [nD, 3, Nsim]
+    pos_error_norm = np.linalg.norm(pos_error, axis=1)  # Euclidean norm per agent, per timestep -> [nD, Nsim]
+
+    fig, ax = plt.subplots(figsize=(9, 5))
+    for iD in range(param.sim.nD):
+        ax.plot(time_vec, pos_error_norm[iD, :],
+                 label=f"Drone {iD}", color=data.colors[iD], linewidth=1.2)
+
+    ax.set_xlabel("Time [s]")
+    ax.set_ylabel(r"Position tracking error $\|p - r_i q^\star\|$ [m]")
+    ax.set_title("Agent Position Tracking Error Over Time")
+    ax.xaxis.label.set_fontsize(16)
+    ax.yaxis.label.set_fontsize(16)
+    ax.grid(True, alpha=0.3)
+    if param.sim.nD <= 6:
+        ax.legend(loc="upper right", fontsize=16, ncol=2)
+    fig.tight_layout()
+
+    print("saving tracking_error plot")
+    plt.savefig(
+        os.path.join(
+            param.display.save_location,
+            f"tracking_error_{param.sim.nD}_agents.pdf"
+        ),
+        bbox_inches="tight"
+    )
+    print("Done.")
+
+    plt.show(block=False)
+
+def interagent_geodesic_distance_plot(data: SimulationData, param: Param):
+    # ---------------------------------------------------------
+    # Plot inter-agent pairwise distances over time
+    # ---------------------------------------------------------
+    agent_pairs = data.agent_pairs
+    inter_agent_dist_hist = data.inter_agent_dist_hist
+    time_vec = np.arange(param.sim.Nsim) * param.sim.dTi
+
+    fig, ax = plt.subplots(figsize=(9, 5))
+    for p_idx, (i, j) in enumerate(agent_pairs):
+        ax.plot(time_vec, inter_agent_dist_hist[p_idx, :],
+                label=f"Drone {i}-{j}", linewidth=1.2)
+
+    # Highlight the minimum inter-agent distance at every timestep
+    ax.plot(time_vec, np.ones([len(time_vec),1])*data.min_safe_dist, color="k", linewidth=2.0,
+            linestyle="--", label="Min distance")
+
+    ax.set_xlabel("Time [s]")
+    ax.set_ylabel("Inter-agent distance [m]")
+    ax.xaxis.label.set_fontsize(16)
+    ax.yaxis.label.set_fontsize(16)
+    
+    ax.grid(True, alpha=0.3)
+    if param.sim.nD <= 6:
+        ax.legend(loc="upper right", fontsize=16, ncol=2)
+    fig.tight_layout()
+
+    print("saving inter_agent_dist plot")
+    plt.savefig(
+        os.path.join(
+            param.display.save_location,
+            f"inter_agent_dist_{param.sim.nD}_agents.pdf"
+        ),
+        bbox_inches="tight"
+    )
+    print("Done.")
+
+    plt.show(block=False)
+
+def trajectory_plot(data, param):
+    """
+    Static 3D plot of the complete trajectories of all agents and the
+    target, using the full simulation history (no frame subsampling,
+    no animation).
+    """
+
+    # -----------------------------
+    # Compute axis limits (full history, not just sampled frames)
+    # -----------------------------
+    all_x = np.concatenate([
+        data.position_history[:, 0, :].ravel(),
+        data.target_true_hist[0]
+    ])
+    all_y = np.concatenate([
+        data.position_history[:, 1, :].ravel(),
+        data.target_true_hist[1]
+    ])
+    all_z = np.concatenate([
+        data.position_history[:, 2, :].ravel(),
+        data.target_true_hist[2]
+    ])
+
+    margin = 2
+
+    fig = plt.figure(figsize=(10, 8))
+    ax = fig.add_subplot(111, projection="3d")
+
+    # Disable mplot3d's unreliable automatic depth sort; we assign
+    # zorder ourselves below so crossing trajectories occlude correctly.
+    ax.computed_zorder = False
+
+    ax.set_xlim(all_x.min() - margin, all_x.max() + margin)
+    ax.set_ylim(all_y.min() - margin, all_y.max() + margin)
+    ax.set_zlim(all_z.min() - margin, all_z.max() + margin)
+    ax.set_xlabel("X [m]")
+    ax.set_ylabel("Y [m]")
+    ax.set_zlabel("Z [m]")
+    # Bigger, bolder tick labels and axis labels
+    ax.tick_params(axis='both', labelsize=11, width=1.5)
+    ax.xaxis.label.set_fontsize(16)
+    ax.yaxis.label.set_fontsize(16)
+    ax.zaxis.label.set_fontsize(16)
+
+    view_dir = np.array([
+        np.cos(np.deg2rad(ax.elev)) * np.cos(np.deg2rad(ax.azim)),
+        np.cos(np.deg2rad(ax.elev)) * np.sin(np.deg2rad(ax.azim)),
+        np.sin(np.deg2rad(ax.elev)),
+    ])
+
+    # Rank agents + target by average distance toward the camera so
+    # nearer trajectories are drawn on top of farther ones.
+    agent_centroids = [
+        data.position_history[iD, :, :].mean(axis=1) for iD in range(param.sim.nD)
+    ]
+    target_centroid = np.array([
+        data.target_true_hist[0].mean(),
+        data.target_true_hist[1].mean(),
+        data.target_true_hist[2].mean(),
+    ])
+    centroids = agent_centroids + [target_centroid]
+    depths = np.array([np.dot(c, view_dir) for c in centroids])
+    order = np.argsort(depths)  # farthest first
+    zorder_for = {item_idx: rank + 1 for rank, item_idx in enumerate(order)}
+    target_idx = param.sim.nD
+
+    # Target: full trajectory + start/end markers
+    ax.plot(
+        data.target_true_hist[0],
+        data.target_true_hist[1],
+        data.target_true_hist[2],
+        'k', lw=3, label='target',
+        zorder=zorder_for[target_idx],
+    )
+    ax.plot(
+        [data.target_true_hist[0, 0]],
+        [data.target_true_hist[1, 0]],
+        [data.target_true_hist[2, 0]],
+        'ko', markersize=8, zorder=zorder_for[target_idx],
+    )
+    ax.plot(
+        [data.target_true_hist[0, -1]],
+        [data.target_true_hist[1, -1]],
+        [data.target_true_hist[2, -1]],
+        'k*', markersize=12, zorder=zorder_for[target_idx],
+    )
+
+    for iD in range(param.sim.nD):
+        pos = data.position_history[iD]
+        z = zorder_for[iD]
+
+        # Full trajectory
+        ax.plot(
+            pos[0, :], pos[1, :], pos[2, :],
+            color=data.colors[iD], lw=2, label=f'agent {iD}',
+            zorder=z,
+        )
+
+        # Start marker
+        ax.plot(
+            [pos[0, 0]], [pos[1, 0]], [pos[2, 0]],
+            marker='x', linestyle='', color=data.colors[iD],
+            markersize=8, zorder=z,
+        )
+
+        # End marker
+        ax.plot(
+            [pos[0, -1]], [pos[1, -1]], [pos[2, -1]],
+            marker='o', linestyle='', color=data.colors[iD],
+            markersize=8, zorder=z,
+        )
+
+    if param.sim.nD <= 6: 
+        ax.legend(loc='upper right', fontsize=16)
+
+    print("saving trajectory plot")
+    plt.savefig(
+        os.path.join(
+            param.display.save_location,
+            f"trajectory_{param.sim.nD}_agents.pdf"
+        ),
+        bbox_inches="tight"
+    )
+    print("Done.")
+
+    plt.show()
 
 def animate_simulation(data, param):
     """
@@ -456,6 +665,13 @@ def animate_simulation(data, param):
 
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection="3d")
+
+    # --------------------------------------------------------------
+    # Disable matplotlib's built-in (unreliable) depth sorting.
+    # We'll assign zorder manually every frame based on true camera
+    # distance, so agents in front correctly occlude agents behind.
+    # --------------------------------------------------------------
+    ax.computed_zorder = False
 
     # Set limits
     ax.set_xlim(all_x.min()-margin, all_x.max()+margin)
@@ -505,10 +721,26 @@ def animate_simulation(data, param):
                     markersize=6)
         desired_pts.append(p)
 
+    def _camera_view_dir(ax):
+        """
+        Unit vector pointing from the scene toward the camera,
+        derived from the current azimuth/elevation. Projecting a
+        point's position onto this vector gives a usable proxy for
+        'distance toward the viewer' -> larger = closer to camera.
+        """
+        azim = np.deg2rad(ax.azim)
+        elev = np.deg2rad(ax.elev)
+        return np.array([
+            np.cos(elev) * np.cos(azim),
+            np.cos(elev) * np.sin(azim),
+            np.sin(elev),
+        ])
+
     def update(frame):
         idx = frame_indices[:frame + 1]
         start = max(0, idx[-1] - param.display.trail_length)
         idx = idx[(idx >= start)]
+
         # Target
         target_pt.set_data(
             [data.target_true_hist[0, idx[-1]]],
@@ -527,12 +759,40 @@ def animate_simulation(data, param):
             data.target_true_hist[2, idx]
         )
 
+        view_dir = _camera_view_dir(ax)
+
+        # Current position of every agent (for depth ranking) plus target
+        current_positions = [
+            data.position_history[iD, :, idx[-1]] for iD in range(param.sim.nD)
+        ]
+        current_positions.append(np.array([
+            data.target_true_hist[0, idx[-1]],
+            data.target_true_hist[1, idx[-1]],
+            data.target_true_hist[2, idx[-1]],
+        ]))
+
+        # Depth = projection onto the camera direction; larger -> nearer camera
+        depths = np.array([np.dot(p, view_dir) for p in current_positions])
+
+        # Rank from farthest (drawn first / lowest zorder) to nearest (drawn last / highest)
+        order = np.argsort(depths)
+        n_items = len(current_positions)
+        zorder_for = {}
+        for rank, item_idx in enumerate(order):
+            zorder_for[item_idx] = rank + 1  # 1..n_items, higher = nearer camera
+
+        target_idx = param.sim.nD  # target is the last entry appended above
+        target_pt.set_zorder(zorder_for[target_idx])
+        target_line.set_zorder(zorder_for[target_idx])
+
         for iD in range(param.sim.nD):
 
             pos = data.position_history[iD]
+            z = zorder_for[iD]
 
             # Initial position
             initial_pts[iD].set_visible(start == 0)
+            initial_pts[iD].set_zorder(z)
 
             # Trajectory
             traj_lines[iD].set_data(
@@ -542,6 +802,7 @@ def animate_simulation(data, param):
             traj_lines[iD].set_3d_properties(
                 pos[2, idx]
             )
+            traj_lines[iD].set_zorder(z)
 
             # Drone position
             drone_pts[iD].set_data(
@@ -551,6 +812,7 @@ def animate_simulation(data, param):
             drone_pts[iD].set_3d_properties(
                 [pos[2, idx[-1]]]
             )
+            drone_pts[iD].set_zorder(z)
 
             # Desired position
             desired_pts[iD].set_data(
@@ -560,6 +822,7 @@ def animate_simulation(data, param):
             desired_pts[iD].set_3d_properties(
                 [data.p_d_hist[iD][2, idx[-1]]]
             )
+            desired_pts[iD].set_zorder(z)
 
         artists = (
             initial_pts +

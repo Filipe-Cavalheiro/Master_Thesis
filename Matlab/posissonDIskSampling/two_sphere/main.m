@@ -3,8 +3,14 @@ clearvars all; clc; close all
 % Parameters
 k = 30;
 r = 0.093;
+verbose = false;
 
 points = poissonDiskSampling(r, k);
+sphere_uniformity(points)
+if verbose == false
+    return;
+end
+
 disp(length(points));
 
 figure;

@@ -1,7 +1,10 @@
 clear; clc; close all;
-times = zeros(1,100);
+loops = 1;
+times = zeros(1,loops);
+
+verbose = false;
 % % Generate points
-for j = 1:100
+for j = 1:loops
     clearvars -except times j
     tStart = tic;
     % Number of points
@@ -9,7 +12,7 @@ for j = 1:100
     N = floor((P-1)/2);         % Since P = 2N + 1 works best for odd P
     
     % Sphere radius
-    R = 5;
+    R = 1;
     
     % Golden ratio
     phi_golden = (1 + sqrt(5)) / 2;
@@ -53,8 +56,17 @@ for j = 1:100
     
     times(j) = toc(tStart)*1000;
 end
+sphere_uniformity(points');
 
+if verbose == false
+    return;
+end
+
+disp("sdt")
 std(times) % 6.6848e-04 sec
+
+disp("mean")
+mean(times)
 figure;
 histogram(times);
 % % --- Plot ---

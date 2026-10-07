@@ -7,6 +7,7 @@ clear; clc; close all;
 drone_init;
 clearvars iD;
 
+sim_timer_start = tic;             % --- start overall computation timer ---
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Fibonacci sphere values
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -54,11 +55,16 @@ end
 % Simulation initialization
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%target motion reference
+% %target motion reference
+% target_fun = @(t) [ ...
+%     (t<=1.5).*3*t + (t>1.5 & t<=3).*3*t + (t>3).*9 ; ...
+%     (t<=1.5).*0    + (t>1.5 & t<=3).*(-3*(t-1.5)) + (t>3).*(-4.5) ; ...
+%     zeros(size(t)) ];
+
 target_fun = @(t) [ ...
-    (t<=1.5).*3*t + (t>1.5 & t<=3).*3*t + (t>3).*9 ; ...
-    (t<=1.5).*0    + (t>1.5 & t<=3).*(-3*(t-1.5)) + (t>3).*(-4.5) ; ...
-    zeros(size(t)) ];
+    0 ; ...
+    0 ; ...
+    0];
 
 for iD = 1:Param.nD
     % initial values
@@ -82,6 +88,21 @@ end
 c_sphere = zeros(3,Nsim);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Performance metrics initialization
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+CONV_THRESHOLD = 0.1;              % [m] convergence tolerance per agent
+convergence_time = NaN;            % will hold the time (s) when all agents
+                                    % are simultaneously within threshold
+convergence_found = false;
+error_hist = zeros(Param.nD, Nsim); % ||pos - q_d|| per agent per step
+conv_error_hist = zeros(Param.nD, Nsim); % ||pos - p_final|| error vs each agent's FINAL lattice point
+
+final_ref = zeros(3, Param.nD);
+for iD = 1:Param.nD
+    final_ref(:, iD) = fib_ref_points(:,iD);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Main time loop for simulation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for k = 1:Nsim
@@ -103,10 +124,16 @@ for k = 1:Nsim
         % Reduce q_d radius
         [Rad{iD}, q_d{iD}] = update_radius(Rad{iD}, q{iD}, q_d{iD}, c_sphere(:,k), Param);
 
-        % --- Store
+        % --- Store ---
         Rad_hist{iD}(k) = Rad{iD};
         q_hist{iD}(:,k) = q{iD};
         q_d_hist{iD}(:,k) = q_d{iD};
+
+        % --- Track per-agent tracking error for convergence measurement
+        error_hist(iD,k) = norm(pos{iD} - q_d{iD});
+
+        % --- Convergence error against the FIXED final lattice point
+        conv_error_hist(iD,k) = norm(pos{iD} - final_ref(:,iD));
 
         % get reference
         p_d =  q{iD};
@@ -141,7 +168,49 @@ for k = 1:Nsim
             break;
         end
     end
+
+    % --- Check convergence: all agents within threshold OF THEIR FINAL TARGET
+    if ~convergence_found && all(conv_error_hist(:,k) < CONV_THRESHOLD)
+        convergence_time = (k-1)*Param.dTi;
+        convergence_found = true;
+    end
 end
+
+sim_computation_time = toc(sim_timer_start);  % --- stop overall computation timer ---
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Performance metrics reporting
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+final_error_per_agent = error_hist(:,Nsim-1);       % error at final sim step
+final_error_max  = max(final_error_per_agent);
+final_error_mean = mean(final_error_per_agent);
+conv_final_error_per_agent = conv_error_hist(:,Nsim-1);       % error at final sim step
+
+% --- Final average pairwise distance between agents (Euclidean, 3D)
+final_pos = zeros(3, Param.nD);
+for iD = 1:Param.nD
+    final_pos(:, iD) = x{iD}(1:3, Nsim-1);
+end
+pairwise_dists = pdist(final_pos');   % Euclidean distance between all unique pairs
+final_avg_agent_distance = mean(pairwise_dists);
+
+fprintf('\n--- Simulation Performance Metrics (Lyapunov)---\n');
+if convergence_found
+    fprintf('Convergence time (all agents < %.2f m): %.3f s\n', CONV_THRESHOLD, convergence_time);
+else
+    fprintf('Convergence time (all agents < %.2f m): NOT reached within %.3f s\n', CONV_THRESHOLD, Nsim*Param.dTi);
+    fprintf('Final error per agent (objective tracking)[m]:\n');
+    disp(conv_error_hist(:,end)');
+end
+fprintf('Final error per agent (tracking goal) [m]:\n');
+disp(conv_final_error_per_agent');
+fprintf('Final error per agent (controller reference tracking error)[m]:\n');
+disp(final_error_per_agent');
+fprintf('Final error (controller reference tracking error) (max)  : %.4f m\n', final_error_max);
+fprintf('Final error (controller reference tracking error) (mean) : %.4f m\n', final_error_mean);
+fprintf('Final average pairwise distance between agents: %.4f m\n', final_avg_agent_distance);
+fprintf('Total computation time for %.1f s simulation: %.3f s\n', Nsim*Param.dTi, sim_computation_time);
+fprintf('---------------------------------------\n');
 
 %%
 animate_simulation(x, q_hist, q_d_hist, c_sphere, fib_ref_points, Param, Nsim)

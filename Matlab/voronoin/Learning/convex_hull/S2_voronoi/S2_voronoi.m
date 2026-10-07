@@ -19,7 +19,6 @@ for i = 1:size(K,1)
     voronoi_vertices(i,:) = v_vert / norm(v_vert); 
 end
 
-
 % Visualization
 figure('Color', 'w');
 axis equal; 

@@ -1,102 +1,92 @@
-function [X, E, iter] = thomson11(varargin)
-% THOMSON11  Find ~minimum-energy arrangement of 11 points on the unit sphere
+function [X, E, iter, converged] = thomson11(varargin)
+% THOMSON11  Find ~minimum-energy arrangement of n points on the unit sphere
 %
-%  [X, E] = THOMSON11() runs the solver and plots the result. X is 11x3
-%  (row i = Cartesian coordinates of point i). E is the final Coulomb energy.
+%  [X, E, iter, converged] = THOMSON11(...) runs the solver.
+%  X is nx3 (row i = Cartesian coordinates of point i).
+%  E is the final Coulomb energy.
+%  iter is the number of iterations actually performed.
+%  converged is true/false depending on whether Tol was reached.
 %
 % Optional name-value pairs:
 %   'MaxIter'    - maximum iterations (default 20000)
 %   'Tol'        - convergence tolerance on max displacement (default 1e-6)
 %   'Seed'       - rng seed for reproducible starts (default 1)
 %   'PlotEvery'  - plot intermediate steps every N iterations (default 0: no intermediate)
-%
-% Example:
-%   [X,E] = thomson11('MaxIter',10000,'Seed',42);
-
-% Parse inputs
+%   'nPoints'    - number of points on the sphere (default 11)
+%   'Verbose'    - print convergence message (default 0)
+ 
 p = inputParser;
 addParameter(p,'MaxIter',20000,@(x)isnumeric(x)&&x>0);
 addParameter(p,'Tol',1e-6,@(x)isnumeric(x)&&x>0);
 addParameter(p,'Seed',1,@(x)isnumeric(x));
 addParameter(p,'PlotEvery',0,@(x)isnumeric(x)&&x>=0);
 addParameter(p,'nPoints',11,@(x)isnumeric(x)&&x>=0);
-addParameter(p, 'Verbose',0, @(x)isnumeric(x));
-
+addParameter(p,'Verbose',0,@(x)isnumeric(x));
 parse(p,varargin{:});
+ 
 MaxIter = p.Results.MaxIter;
-Tol = p.Results.Tol;
-n = p.Results.nPoints;
-rng(p.Results.Seed);
+Tol     = p.Results.Tol;
+n       = p.Results.nPoints;
 verbose = p.Results.Verbose;
-
-alpha0 = 0.1;          % initial step length (controls speed)
-alphaDecay = 1e-4;     % decay per iter (so alpha = alpha0/(1+alphaDecay*iter))
-jitterProb = 0.005;    % probability to add small random jitter to escape local minima
-jitterScale = 1e-3;    % jitter magnitude
-minAlpha = 1e-8;
-
+rng(p.Results.Seed);
+ 
+alpha0       = 0.1;     % initial step length (controls speed)
+alphaDecay   = 1e-4;    % decay per iter (alpha = alpha0/(1+alphaDecay*iter))
+jitterProb   = 0.005;   % probability to add small random jitter to escape local minima
+jitterScale  = 1e-3;    % jitter magnitude
+minAlpha     = 1e-8;
+ 
 % Initialize points: random on sphere (rows of X)
 X = randn(n,3);
-X = X ./ vecnorm(X,2,2);  % normalize each row
-
+X = X ./ vecnorm(X,2,2);
+ 
 % Precompute pairs for vectorized distance calculations
 [idx_i, idx_j] = ndgrid(1:n,1:n);
 mask = idx_i ~= idx_j;
-
-% Helper: compute energy
+ 
 energy = @(Y) sum(1./sqrt(sum((Y(idx_i(mask),:)-Y(idx_j(mask),:)).^2,2)))/2;
-% (divide by 2 because we double-count every pair in mask traversal)
-
-% Main relaxation loop
+ 
+converged = false;   % <-- must initialize before the loop
+ 
 for iter = 1:MaxIter
-    % compute pairwise vectors and distances
-    diff = permute(X,[1,3,2]) - permute(X,[3,1,2]); % n x n x 3, diff(i,j,:) = X(i,:)-X(j,:)
-    dist = sqrt(sum(diff.^2,3));                    % n x n
-    % Avoid divide-by-zero on diagonal by setting to Inf
+    diff = permute(X,[1,3,2]) - permute(X,[3,1,2]);   % n x n x 3
+    dist = sqrt(sum(diff.^2,3));                      % n x n
     dist(1:n+1:end) = Inf;
-    
-    % Coulomb force magnitude on i from j: f = (1/r^2)
-    % Force vector on i: sum_j (diff(i,j,:) ./ r^3)
-    invr3 = 1./(dist.^3);                             % n x n
+ 
+    invr3 = 1./(dist.^3);
     invr3(1:n+1:end) = 0;
-    % compute total force
+ 
     F = squeeze(sum(diff .* invr3(:,:,ones(1,3)),2));  % n x 3
-    
-    % Project forces to tangent plane at each point: F_t = F - (F . x) x
+ 
     xdotF = sum(X .* F,2);
     Ft = F - (xdotF(:,ones(1,3))).*X;
-    
-    % adaptive step size
+ 
     alpha = max(alpha0/(1 + alphaDecay*iter), minAlpha);
-    
-    % Move along tangent direction
     Xnew = X + alpha * Ft;
-    % Re-normalize to sphere
     Xnew = Xnew ./ vecnorm(Xnew,2,2);
-    
-    % occasionally add tiny jitter to escape shallow local minima
+ 
     if rand < jitterProb
         J = jitterScale * randn(n,3);
         Xnew = Xnew + J;
         Xnew = Xnew ./ vecnorm(Xnew,2,2);
     end
-    
+ 
     max_move = max(vecnorm(Xnew - X, 2, 2));
     X = Xnew;
-    
-    % optional intermediate plotting
+ 
     if p.Results.PlotEvery>0 && mod(iter,p.Results.PlotEvery)==0
         clf;
         plot_on_sphere(X,iter,energy(X));
         drawnow;
     end
-    
-    % convergence test
+ 
     if max_move < Tol
+        converged = true;
+        fprintf('Converged after %d iterations.\n', iter);
         break
     end
 end
-
+ 
 E = energy(X);
 
 if verbose == 0

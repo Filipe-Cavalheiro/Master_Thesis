@@ -125,19 +125,19 @@ function trajectory = control_sphere_v3(P, R, inital_pos)
         fprintf('Point %d: %.4f, %.4f\n\n', i-1, sorted_dists(1:K));
     end
     
-    % % --- Plot ---
-    % 3D trajectories
-    figure; hold on; grid on; axis equal
-    colors = lines(P);
-    for i=1:P
-        drone_traj = cell2mat(arrayfun(@(s) s.points(i,:), trajectory, 'UniformOutput', false)');
-        plot3(squeeze(drone_traj(:, 1)), squeeze(drone_traj(:, 2)), squeeze(drone_traj(:, 3)), ...
-            'Color', colors(i,:), 'LineWidth',0.5);
-        plot3(drone_traj(1, 1), drone_traj(1, 2), drone_traj(1, 3), 'o', 'Color', colors(i,:), 'MarkerSize',6); % start
-        plot3(optimized_points(:, 1), optimized_points(:, 2), optimized_points(:, 3), 'x', 'Color', colors(i,:), 'MarkerSize',6); % end
-    end
-    view(3);
-    xlabel('x'); ylabel('y'); zlabel('z');
-    title('3D Trajectories of 9 Agents (Case 1)');
-    hold off;
+    % % % --- Plot ---
+    % % 3D trajectories
+    % figure; hold on; grid on; axis equal
+    % colors = lines(P);
+    % for i=1:P
+    %     drone_traj = cell2mat(arrayfun(@(s) s.points(i,:), trajectory, 'UniformOutput', false)');
+    %     plot3(squeeze(drone_traj(:, 1)), squeeze(drone_traj(:, 2)), squeeze(drone_traj(:, 3)), ...
+    %         'Color', colors(i,:), 'LineWidth',0.5);
+    %     plot3(drone_traj(1, 1), drone_traj(1, 2), drone_traj(1, 3), 'o', 'Color', colors(i,:), 'MarkerSize',6); % start
+    %     plot3(optimized_points(:, 1), optimized_points(:, 2), optimized_points(:, 3), 'x', 'Color', colors(i,:), 'MarkerSize',6); % end
+    % end
+    % view(3);
+    % xlabel('x'); ylabel('y'); zlabel('z');
+    % title('3D Trajectories of 9 Agents (Case 1)');
+    % hold off;
 end

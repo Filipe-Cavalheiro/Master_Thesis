@@ -217,6 +217,6 @@ def spherical_gaussian(reference, vectors, sigma=1.5):
     theta = np.arccos(cos_theta)
 
     # Gaussian weight
-    values = 1/np.exp(-(theta**2) / (2*sigma**2))
+    values = np.exp((theta**2) / (2*sigma**2))
 
     return values

@@ -29,26 +29,26 @@ function [optimized_points, trajectory_out] = sphere_points_with_distance(N, R, 
     
         switch state
             case 'init'
-                % Setup the plot
-                hFig = figure;
-                hPlot = plot3(points(:,1), points(:,2), points(:,3), 'ro', 'MarkerSize', 10, 'LineWidth', 2);
-                hold on;
-    
-                % Draw unit sphere
-                [X, Y, Z] = sphere(50);
-                sphereSurf = surf(R*X, R*Y, R*Z, 'FaceAlpha', 0.1, 'EdgeColor', 'none');
-                axis equal;
-                xlabel('X'); ylabel('Y'); zlabel('Z');
-                title('Optimization Progress');
+                % % Setup the plot
+                % hFig = figure;
+                % hPlot = plot3(points(:,1), points(:,2), points(:,3), 'ro', 'MarkerSize', 10, 'LineWidth', 2);
+                % hold on;
+                % 
+                % % Draw unit sphere
+                % [X, Y, Z] = sphere(50);
+                % sphereSurf = surf(R*X, R*Y, R*Z, 'FaceAlpha', 0.1, 'EdgeColor', 'none');
+                % axis equal;
+                % xlabel('X'); ylabel('Y'); zlabel('Z');
+                % title('Optimization Progress');
                 
                 
             case 'iter'
                 % Update points in the plot
-                if isvalid(hPlot)
-                    set(hPlot, 'XData', points(:,1), 'YData', points(:,2), 'ZData', points(:,3));
-                    drawnow;
-                    pause(0.5); % slow down to visualize
-                end
+                % if isvalid(hPlot)
+                %     set(hPlot, 'XData', points(:,1), 'YData', points(:,2), 'ZData', points(:,3));
+                %     drawnow;
+                %     pause(0.5); % slow down to visualize
+                % end
                 
                 % Store this iteration’s data
                 trajectory(end+1).points = points;

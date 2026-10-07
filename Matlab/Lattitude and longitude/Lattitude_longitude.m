@@ -1,12 +1,13 @@
 clearvars; clc; close all;
 
+verbose = false;
 %times = zeros(1,100);
 % Generate points«
 %for for_loop_of_time = 1:100
     %start = clock;
     % --- Parameters ---
     R = 5;          % Sphere radius
-    k = 2;         % Number of intervals in latitude (adjust for resolution)
+    k = 29;         % Number of intervals in latitude (adjust for resolution)
     delta = pi/k;   % Angular spacing in radians (180°/k)
     
     % --- Latitude and longitude ---
@@ -37,6 +38,11 @@ clearvars; clc; close all;
 
 %    times(for_loop_of_time) = etime(clock, start);
 %end
+
+sphere_uniformity(points);
+if verbose == false
+    return;
+end
 
 % std(times) % 0.0055 sec
 % figure;

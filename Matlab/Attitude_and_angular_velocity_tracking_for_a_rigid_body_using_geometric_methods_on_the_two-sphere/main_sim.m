@@ -43,7 +43,6 @@ Psi_hist   = zeros(1, Nsim);
 
 % Main simulation loop
 for k = 1:Nsim
-
     if k == Tend/2/dt % new desired goal for t >= 5 sec
         % New desired equilibrium points
         q_d = [1; 0; 0];
@@ -59,7 +58,7 @@ for k = 1:Nsim
     e_q = (1 / (sqrt(2) * sqrt(1 + q' * q_d))) * Q' * S(q_d) * q;
 
     % ---------- Reduced attitude kinematics ----------
-    q_dot = 5*skew(q)*e_q;
+    q_dot = 5*S(q)*e_q;
     q = q + dt * q_dot;
 
     % --- Enforce S^2 constraint
@@ -74,7 +73,9 @@ for k = 1:Nsim
 end
 
 % === Plots ===
-
+set(groot, 'defaultAxesFontSize', 22);
+set(groot, 'defaultTextFontSize', 22);   % affects xlabel/ylabel/title text
+set(groot, 'defaultLegendFontSize', 22);
 % --- Attitude trajectory on S^2
 figure; hold on; grid on; axis equal;
 [xs,ys,zs] = sphere(50);
@@ -86,16 +87,19 @@ plot3(q_hist(1,1), q_hist(2,1), q_hist(3,1), 'go','MarkerFaceColor','g');
 plot3(q_hist(1,end), q_hist(2,end), q_hist(3,end), 'ro','MarkerFaceColor','r');
 
 xlabel('x'); ylabel('y'); zlabel('z');
-title('Pointing Direction Trajectory on S^2');
-legend('Unit Sphere','Trajectory','Start','End');
+lgd = legend('Unit Sphere','Trajectory','Start','End');
+lgd.FontWeight = 'bold';   % optional, makes it pop more
+lgd.Location = 'best';     % avoids overlapping the trajectory
 view(3);
+hold off;
+print2pdf("traking_trajectory", true)
 
 % --- Error function
 figure; grid on;
 plot(t, Psi_hist, 'k','LineWidth',1.5);
 xlabel('Time [s]');
 ylabel('\Psi(q,q_d)');
-title('Attitude Error Function');
+print2pdf("Configuration_error_vector", true)
 
 % --- Configuration error components
 figure;
@@ -103,86 +107,84 @@ subplot(3,1,1); plot(t, eq_hist(1,:)); grid on; ylabel('e_{q1}');
 subplot(3,1,2); plot(t, eq_hist(2,:)); grid on; ylabel('e_{q2}');
 subplot(3,1,3); plot(t, eq_hist(3,:)); grid on; ylabel('e_{q3}');
 xlabel('Time [s]');
-sgtitle('Configuration Error Vector');
+print2pdf("Attitude_error", true)
 
-% --- Angular velocity
-figure;
-subplot(3,1,1); plot(t, omega_hist(1,:)); grid on; ylabel('\omega_1');
-subplot(3,1,2); plot(t, omega_hist(2,:)); grid on; ylabel('\omega_2');
-subplot(3,1,3); plot(t, omega_hist(3,:)); grid on; ylabel('\omega_3');
-xlabel('Time [s]');
-sgtitle('Angular Velocity');
+% % --- Angular velocity
+% figure;
+% subplot(3,1,1); plot(t, omega_hist(1,:)); grid on; ylabel('\omega_1');
+% subplot(3,1,2); plot(t, omega_hist(2,:)); grid on; ylabel('\omega_2');
+% subplot(3,1,3); plot(t, omega_hist(3,:)); grid on; ylabel('\omega_3');
+% xlabel('Time [s]');
 
-% === Time-Accurate Animation of Pointing Direction on S^2 ===
+% % === Time-Accurate Animation of Pointing Direction on S^2 ===
+% 
+% animation = figure; hold on; grid on; axis equal;
+% [xs,ys,zs] = sphere(50);
+% surf(xs,ys,zs, ...
+%     'FaceAlpha',0.25,'EdgeColor','none','FaceColor',[0.85 0.85 0.85]);
+% 
+% xlabel('x'); ylabel('y'); zlabel('z');
+% view(45,30);
+% 
+% % --- Desired equilibrium points
+% q_d1 = [0; -0.0175; -0.9998]; q_d1 = q_d1/norm(q_d1);
+% q_d2 = [1; 0; 0];
+% 
+% plot3(q_d1(1), q_d1(2), q_d1(3), 'kp', ...
+%       'MarkerSize',12,'MarkerFaceColor','k');
+% text(q_d1(1), q_d1(2), q_d1(3), ' q_{d1}', 'FontSize',12);
+% 
+% plot3(q_d2(1), q_d2(2), q_d2(3), 'kp', ...
+%       'MarkerSize',12,'MarkerFaceColor','k');
+% text(q_d2(1), q_d2(2), q_d2(3), ' q_{d2}', 'FontSize',12);
+% 
+% % --- Trajectory & current point
+% traj = plot3(q_hist(1,1), q_hist(2,1), q_hist(3,1), ...
+%              'r','LineWidth',2);
+% current = plot3(q_hist(1,1), q_hist(2,1), q_hist(3,1), ...
+%                 'ro','MarkerFaceColor','r','MarkerSize',6);
+%
+% % --- Time annotation
+% timeText = text(-1.7,0,1.2,'t = 0.00 s', ...
+%     'FontSize',12,'FontWeight','bold');
+%
+% % === Video settings (TIME-ACCURATE) ===
+% save_to_mp4 = 1;
+% frameStep   = 10;                % must match animation loop
+% sim_dt      = dt * frameStep;    % simulated time per frame
+% videoFPS    = 1 / sim_dt;        % makes video exactly 10 sec
+% 
+% if save_to_mp4
+%     mp4File = 'lyapunov_stability_in_s2.mp4';
+%     v = VideoWriter(mp4File,'MPEG-4');
+%     v.FrameRate = videoFPS;
+%     open(v);
+% end
 
-animation = figure; hold on; grid on; axis equal;
-[xs,ys,zs] = sphere(50);
-surf(xs,ys,zs, ...
-    'FaceAlpha',0.25,'EdgeColor','none','FaceColor',[0.85 0.85 0.85]);
-
-xlabel('x'); ylabel('y'); zlabel('z');
-title('Pointing Direction Animation on S^2');
-view(45,30);
-
-% --- Desired equilibrium points
-q_d1 = [0; -0.0175; -0.9998]; q_d1 = q_d1/norm(q_d1);
-q_d2 = [1; 0; 0];
-
-plot3(q_d1(1), q_d1(2), q_d1(3), 'kp', ...
-      'MarkerSize',12,'MarkerFaceColor','k');
-text(q_d1(1), q_d1(2), q_d1(3), ' q_{d1}', 'FontSize',12);
-
-plot3(q_d2(1), q_d2(2), q_d2(3), 'kp', ...
-      'MarkerSize',12,'MarkerFaceColor','k');
-text(q_d2(1), q_d2(2), q_d2(3), ' q_{d2}', 'FontSize',12);
-
-% --- Trajectory & current point
-traj = plot3(q_hist(1,1), q_hist(2,1), q_hist(3,1), ...
-             'r','LineWidth',2);
-current = plot3(q_hist(1,1), q_hist(2,1), q_hist(3,1), ...
-                'ro','MarkerFaceColor','r','MarkerSize',6);
-
-% --- Time annotation
-timeText = text(-1.7,0,1.2,'t = 0.00 s', ...
-    'FontSize',12,'FontWeight','bold');
-
-% === Video settings (TIME-ACCURATE) ===
-save_to_mp4 = 1;
-frameStep   = 10;                % must match animation loop
-sim_dt      = dt * frameStep;    % simulated time per frame
-videoFPS    = 1 / sim_dt;        % makes video exactly 10 sec
-
-if save_to_mp4
-    mp4File = 'lyapunov_stability_in_s2.mp4';
-    v = VideoWriter(mp4File,'MPEG-4');
-    v.FrameRate = videoFPS;
-    open(v);
-end
-
-% === Animation loop ===
-for k = 1:frameStep:Nsim
-
-    % Update trajectory
-    set(traj, 'XData', q_hist(1,1:k), ...
-              'YData', q_hist(2,1:k), ...
-              'ZData', q_hist(3,1:k));
-
-    % Update current point
-    set(current, 'XData', q_hist(1,k), ...
-                 'YData', q_hist(2,k), ...
-                 'ZData', q_hist(3,k));
-
-    % Update time text
-    set(timeText,'String',sprintf('t = %.2f s',t(k)));
-
-    drawnow limitrate nocallbacks
-
-    if save_to_mp4
-        frame = getframe(animation);
-        writeVideo(v,frame);
-    end
-end
-
-if save_to_mp4
-    close(v);
-end
+% % === Animation loop ===
+% for k = 1:frameStep:Nsim
+% 
+%     % Update trajectory
+%     set(traj, 'XData', q_hist(1,1:k), ...
+%               'YData', q_hist(2,1:k), ...
+%               'ZData', q_hist(3,1:k));
+% 
+%     % Update current point
+%     set(current, 'XData', q_hist(1,k), ...
+%                  'YData', q_hist(2,k), ...
+%                  'ZData', q_hist(3,k));
+% 
+%     % Update time text
+%     set(timeText,'String',sprintf('t = %.2f s',t(k)));
+% 
+%     drawnow limitrate nocallbacks
+% 
+%     if save_to_mp4
+%         frame = getframe(animation);
+%         writeVideo(v,frame);
+%     end
+% end
+% 
+% if save_to_mp4
+%     close(v);
+% end

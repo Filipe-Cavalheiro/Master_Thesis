@@ -6,7 +6,7 @@
 clear; clc; close all;
 drone_init;
 clearvars iD;
-   
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Simulation initialization
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -63,8 +63,8 @@ for k = 1:Nsim
     fprintf("Computing simulation interation: %04d\n", k);
 
     % drop some agents mid simulation
-    if k == round(500)
-        removeIdx = randperm(size(q_d,2), round(3));
+    if k == round(Nsim/3)
+        removeIdx = randperm(size(q_d,2), round(Param.nD/3));
         q_d(removeIdx) = [];
         new_q_d(removeIdx) = [];
         ema_estimated(:,removeIdx) = [];
@@ -157,30 +157,10 @@ for k = 1:Nsim
     q_d = new_q_d;
 end
 
-%%
-figure;
-hold on;
-grid on;
+legend_size = 22;
+legend_size_dim = 16;
 
-t = (0:Nsim-1) * Param.dTi;
-
-plot(t, Rad_hist{1}, 'LineWidth', 3);
-plot(t, vecnorm(target_true_hist(1:3,:)-chaser{1}(1:3,1:end-1), 2, 1), 'LineWidth', 3);
-plot(t, vecnorm(target_true_hist(4:6,:), 2, 1) ...
-       - vecnorm(chaser{1}(4:6,2:end), 2, 1), 'LineWidth', 3);
-
-xlabel('Time [s]');
-lgd = legend( ...
-    'Radial history', ...
-    'Position difference (norm)', ...
-    'Velocity difference (norm)' ...
-);
-
-lgd.FontSize = 12; 
-lgd.Interpreter = 'latex';
-
-print2pdf("decentralized_results_drone_1.pdf", 1)
-%%
+%% Target Estimation
 figure;
 hold on;
 grid on;
@@ -235,14 +215,205 @@ legend_entries = [{'True target'}, ...
     arrayfun(@(i) sprintf('Drone %d est', i), 1:Is, 'UniformOutput', false)];
 legend(legend_entries{:});
 
-%%
-figure;
-grid on;
-hold on;
+%% Distance to target for all drones
+t = (0:Nsim-1) * Param.dTi;                  % [s]
 
+figure('Color','w','Position',[100 100 900 600]);
+hold on; grid on; box on;
+
+colors = lines(Param.nD);
+dist_target = zeros(Param.nD, Nsim);
 for iD = 1:Param.nD
-    plot(1:Nsim, avgAgentVal_history(iD,:))
+    dist_target(iD,:) = vecnorm(target_true_hist(1:3,:) - chaser{iD}(1:3,1:Nsim), 2, 1);
+    plot(t, dist_target(iD,:), 'Color', colors(iD,:), 'LineWidth', 2, ...
+         'DisplayName', sprintf('Drone %d', iD));
 end
 
+% Mean over all drones
+plot(t, mean(dist_target,1), 'k--', 'LineWidth', 3, 'DisplayName', 'Mean');
+
+% Sphere radius reference (constant)
+plot(t, Param.sphere_radius*ones(size(t)), 'r:', 'LineWidth', 3, ...
+     'DisplayName', '$r^\star$');
+
+set(gca, 'FontSize', 14, 'LineWidth', 1.5, 'TickLabelInterpreter', 'latex');
+xlabel('Time [s]', 'Interpreter', 'latex', 'FontSize', legend_size);
+ylabel('Distance to target [m]', 'Interpreter', 'latex', 'FontSize', legend_size);
+
+lgd = legend('Location', 'best');
+lgd.FontSize = legend_size_dim;
+lgd.Interpreter = 'latex';
+
+print2pdf("radial_hist_12_agents", 1)
+
+%% Complete trajectory over 30 s
+t_end = 30;                                  % [s]
+t_vec = (0:Nsim-1) * Param.dTi;
+idx   = find(t_vec <= t_end);                % samples within 0-30 s
+
+figure('Color','w','Position',[100 100 900 700]);
+hold on; grid on; box on; axis equal; view(3);
+
+% True target trajectory
+h_target = plot3(target_true_hist(1,idx), ...
+                 target_true_hist(2,idx), ...
+                 target_true_hist(3,idx), ...
+                 'k', 'LineWidth', 3);
+
+% Chaser trajectories
+colors = lines(Param.nD);
+for iD = 1:Param.nD
+    pos_hist = chaser{iD}(1:3, idx);         % chaser has Nsim+1 columns
+    h_ch = plot3(pos_hist(1,:), pos_hist(2,:), pos_hist(3,:), ...
+                 'Color', colors(iD,:), 'LineWidth', 1.5);
+    if iD == 1
+        h_chaser = h_ch;                     % keep only one legend entry
+    else
+        set(h_ch, 'HandleVisibility', 'off');
+    end
+
+    % chaser start (circle) and end (diamond)
+    scatter3(pos_hist(1,1),   pos_hist(2,1),   pos_hist(3,1),   60, ...
+             colors(iD,:), 'filled', 'HandleVisibility','off');
+    scatter3(pos_hist(1,end), pos_hist(2,end), pos_hist(3,end), 60, ...
+             colors(iD,:), 'd', 'filled', 'HandleVisibility','off');
+end
+scatter3(target_true_hist(1,end), target_true_hist(2,end), ...
+    target_true_hist(3,end), 60, 'k', 'd', 'filled', 'HandleVisibility','off');
+
+% Axes: visible and labelled
+set(gca, 'FontSize', 14, 'LineWidth', 1.5, 'TickLabelInterpreter', 'latex');
+xlabel('$x$ [m]', 'Interpreter', 'latex', 'FontSize', legend_size);
+ylabel('$y$ [m]', 'Interpreter', 'latex', 'FontSize', legend_size);
+zlabel('$z$ [m]', 'Interpreter', 'latex', 'FontSize', legend_size);
+
+% Legend: handles and labels must match in number
+lgd = legend([h_target h_chaser], ...
+    {'Target (true)', 'Chasers'}, ...
+    'Interpreter', 'latex', 'FontSize', legend_size_dim, 'Location', 'best');
+
+print2pdf("trajectory_12_agents", 1)
+%% Tracking error: drone position vs. Mellinger reference q{iD}
+t_vec = (0:Nsim-1) * Param.dTi;              % [s]
+
+err_norm = zeros(Param.nD, Nsim);
+for iD = 1:Param.nD
+    pos_hist = chaser{iD}(1:3, 1:Nsim);      % chaser has Nsim+1 columns
+    e_track  = pos_hist - q_hist{iD};        % 3 x Nsim, position - reference
+    err_norm(iD,:) = vecnorm(e_track, 2, 1);
+end
+
+figure('Color','w','Position',[100 100 900 600]);
+hold on; grid on; box on;
+
+colors = lines(Param.nD);
+for iD = 1:Param.nD
+    plot(t_vec, err_norm(iD,:), 'Color', colors(iD,:), 'LineWidth', 1.5, ...
+         'DisplayName', sprintf('Drone %d', iD));
+end
+plot(t_vec, mean(err_norm,1), 'k--', 'LineWidth', 3, ...
+     'DisplayName', 'Mean');
+
+set(gca, 'FontSize', 14, 'LineWidth', 0.5, 'TickLabelInterpreter', 'latex');
+xlabel('Time [s]', 'Interpreter', 'latex', 'FontSize', legend_size);
+ylabel('$\|\mathbf{p}_i - \mathbf{q}_i\|$ [m]', 'Interpreter', 'latex', 'FontSize', legend_size);
+legend('Interpreter', 'latex', 'FontSize', legend_size_dim, 'Location', 'best');
+
+print2pdf("tracking_error_12_agents", 1)
+
+%% Inter-agent Euclidean distance
+t_vec = (0:Nsim-1) * Param.dTi;              % [s]
+nD    = Param.nD;
+
+pairs = nchoosek(1:nD, 2);                   % all unique drone pairs
+nP    = size(pairs, 1);
+
+dist_pairs = zeros(nP, Nsim);
+for p = 1:nP
+    i = pairs(p,1);
+    j = pairs(p,2);
+    dist_pairs(p,:) = vecnorm(chaser{i}(1:3,1:Nsim) - chaser{j}(1:3,1:Nsim), 2, 1);
+end
+
+figure('Color','w','Position',[100 100 900 600]);
+hold on; grid on; box on;
+
+% Every pair (thin, light grey, single legend entry)
+h_all = plot(t_vec, dist_pairs(1,:), 'Color', [0.7 0.7 0.7], 'LineWidth', 1, ...
+             'DisplayName', 'Individual pairs');
+for p = 2:nP
+    plot(t_vec, dist_pairs(p,:), 'Color', [0.7 0.7 0.7], 'LineWidth', 1, ...
+         'HandleVisibility', 'off');
+end
+
+% Summary statistics across pairs
+plot(t_vec, max(dist_pairs,[],1),  'r-',  'LineWidth', 2.5, 'DisplayName', 'Maximum');
+plot(t_vec, mean(dist_pairs,1),    'k--', 'LineWidth', 3,   'DisplayName', 'Mean');
+plot(t_vec, min(dist_pairs,[],1),  'b-',  'LineWidth', 2.5, 'DisplayName', 'Minimum');
+
+set(gca, 'FontSize', 14, 'LineWidth', 1.5, 'TickLabelInterpreter', 'latex');
+xlabel('Time [s]', 'Interpreter', 'latex', 'FontSize', legend_size);
+ylabel('$\|\mathbf{p}_i - \mathbf{p}_j\|$ [m]', 'Interpreter', 'latex', 'FontSize', legend_size);
+legend('Interpreter', 'latex', 'FontSize', legend_size_dim, 'Location', 'best');
+
+print2pdf("inter_agent_dist_12_agents", 1)
+
+%% Separation / uniformity of desired positions q_d over time
+t_vec = (0:Nsim-1) * Param.dTi;              % [s]
+
+ratio_hist = zeros(1,Nsim);
+cv_hist    = zeros(1,Nsim);
+meanNN     = zeros(1,Nsim);
+minNN      = zeros(1,Nsim);
+maxNN      = zeros(1,Nsim);
+riesz_hist = zeros(1,Nsim);
+
+for k = 1:Nsim
+    % 3 x nD matrix of desired positions at step k
+    Qd_k = zeros(3, Param.nD);
+    for iD = 1:Param.nD
+        Qd_k(:,iD) = q_d_hist{iD}(:,k);
+    end
+
+    r = sphere_uniformity(Qd_k, ...
+            'Center', target_true_hist(1:3,k), ...
+            'Radius', Param.sphere_radius);
+
+    ratio_hist(k) = r.ratio_min_mean;
+    cv_hist(k)    = r.cv_nn;
+    meanNN(k)     = r.mean_nn;
+    minNN(k)      = r.min_nn;
+    maxNN(k)      = r.max_nn;
+    riesz_hist(k) = r.riesz_energy;
+end
+
+figure('Color','w','Position',[100 100 900 800]);
+
+% (1) nearest-neighbour separation in metres
+subplot(3,1,1); hold on; grid on; box on;
+fill([t_vec fliplr(t_vec)], [minNN fliplr(maxNN)], [0.85 0.85 0.85], ...
+     'EdgeColor','none','DisplayName','Min--Max');
+plot(t_vec, meanNN, 'k--', 'LineWidth', 3, 'DisplayName', 'Mean');
+plot(t_vec, minNN,  'b-',  'LineWidth', 2, 'DisplayName', 'Minimum');
+plot(t_vec, maxNN,  'r-',  'LineWidth', 2, 'DisplayName', 'Maximum');
+set(gca,'FontSize',14,'LineWidth',1.5,'TickLabelInterpreter','latex');
+ylabel('$d_{NN}$ [m]','Interpreter','latex','FontSize',legend_size);
+legend('Interpreter','latex','FontSize',legend_size_dim,'Location','best');
+
+% (2) uniformity ratio
+subplot(3,1,2); hold on; grid on; box on;
+plot(t_vec, ratio_hist, 'LineWidth', 2.5);
+set(gca,'FontSize',14,'LineWidth',1.5,'TickLabelInterpreter','latex');
+ylabel('$d_{NN,min}/d_{NN,mean}$','Interpreter','latex','FontSize',legend_size);
+ylim([0 1.05]);
+
+% (3) coefficient of variation
+subplot(3,1,3); hold on; grid on; box on;
+plot(t_vec, cv_hist, 'LineWidth', 2.5);
+set(gca,'FontSize',14,'LineWidth',1.5,'TickLabelInterpreter','latex');
+xlabel('Time [s]','Interpreter','latex','FontSize',legend_size);
+ylabel('CV$(d_{NN})$','Interpreter','latex','FontSize',legend_size);
+
+print2pdf("qd_separation_12_agents", 1)
 %%
-animate_simulation(chaser, q_hist, q_d_hist, c_sphere, cells_history, numAgents_history, Param);
+% animate_simulation(chaser, q_hist, q_d_hist, c_sphere, cells_history, numAgents_history, Param);

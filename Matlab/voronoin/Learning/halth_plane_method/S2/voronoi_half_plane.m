@@ -6,127 +6,113 @@ Nsim = round(Tend/dTi);
 
 numAgents = 30;
 R = 1.0;
-
-agents_unit = randn(numAgents,3);
-agents_unit = agents_unit ./ vecnorm(agents_unit,2,2);
-agents = agents_unit*R;
- 
-agents_history = cell(Nsim+1,numAgents);
-cells_history = cell(Nsim,numAgents);
-numAgents_history = zeros(Nsim,1);
+tol = 5e-3;  % tolerance for "same location"
 verbose = false;
-update_interval = 2;
 
-for k = 1:Nsim
-    %start = clock;
-    fprintf("Computing simulation interation: %04d\n", k);
-    numAgents_history(k) = numAgents;
+% ---------------------------------------------------------------
+% Precompute the sphere sampling grid and its triangle connectivity
+% ONCE. This never changes across agents/timesteps/runs, so there is
+% no reason to recompute it 300,000 times as the original code did.
+% ---------------------------------------------------------------
+[X, Y, Z] = sphere(50);
+P = [X(:), Y(:), Z(:)];
+[nr, nc] = size(X);
 
-    agents_history{k} = agents;
-    new_agents = zeros(numAgents,3);
+[I, J] = ndgrid(1:nr-1, 1:nc-1);
+idxA = sub2ind(size(X), I(:),   J(:));
+idxB = sub2ind(size(X), I(:)+1, J(:));
+idxC = sub2ind(size(X), I(:),   J(:)+1);
+idxD = sub2ind(size(X), I(:)+1, J(:)+1);
+
+A0 = P(idxA,:); B0 = P(idxB,:); C0 = P(idxC,:); D0 = P(idxD,:);
+
+nRuns = 100;
+half_plane_times = zeros(1, nRuns);
+convergence_iteration = zeros(1, nRuns);
+converged = 0;
+not_converged = 0;
+
+for run = 1:nRuns
+    converged_bool = false;
+    agents_unit = randn(numAgents,3);
+    agents_unit = agents_unit ./ vecnorm(agents_unit,2,2);
+    agents = agents_unit * R;
+
+    agents_history   = cell(Nsim+1, 1);
+    numAgents_history = zeros(Nsim,1);
+
+    tic;
+
+    for k = 1:Nsim
+        numAgents_history(k) = numAgents;
+        agents_history{k} = agents;
+        new_agents = zeros(numAgents,3);
     
-    % --- Half-plane Voronoi computation ---
-    for iD = 1:numAgents
-        voronoi_vertices = [];
-        tangent_vec = [];
-
-        current_agent = agents(iD,:);
-        other_agents = agents(1:end ~= iD, :);
-                
-        % Clip sphere points by each neighbor's half-plane
-        for j = 1:length(other_agents)
-            p1 = current_agent;        % current agent
-            p2 = other_agents(j,:);    % neighbor
-            
-            % Geodesic midpoint
-            theta = acos(dot(p1, p2));
-            m = (sin((1-0.5)*theta)*p1 + sin(0.5*theta)*p2) / sin(theta);
-
-            n = cross(p1,p2);
-            n = n./norm(n);
-
-            tangent = cross(n, m);   % perpendicular to both normal and midpoint
-            tangent = tangent / norm(tangent);
-
-            voronoi_vertices(j,:) = m;
-            tangent_vec(j,:) = tangent;
+        % --- Half-plane Voronoi computation ---
+        for iD = 1:numAgents
+            current_agent = agents(iD,:);
+            other_agents  = agents([1:iD-1, iD+1:numAgents], :);
+            Nother = size(other_agents,1);
+    
+            p1 = repmat(current_agent, Nother, 1);
+            p2 = other_agents;
+            cosTheta = sum(p1 .* p2, 2);
+            cosTheta = min(max(cosTheta, -1), 1);
+            theta = acos(cosTheta);
+            m = (sin(0.5*theta).*p1 + sin(0.5*theta).*p2) ./ sin(theta);
+            n = cross(p1, p2, 2);
+            n = n ./ vecnorm(n,2,2);
+            tangent = cross(n, m, 2);
+            tangent = tangent ./ vecnorm(tangent,2,2);
+    
+            offsets = sum(m .* tangent, 2);
+            Dmat = P * tangent';
+            mask = all(Dmat < offsets', 2);
+    
+            validCell = mask(idxA) & mask(idxB) & mask(idxC) & mask(idxD);
+            cross1 = cross(B0 - A0, C0 - A0, 2);
+            area1  = vecnorm(cross1,2,2) / 2;
+            centroid1 = (A0 + B0 + C0) / 3;
+            cross2 = cross(C0 - D0, B0 - D0, 2);
+            area2  = vecnorm(cross2,2,2) / 2;
+            centroid2 = (D0 + C0 + B0) / 3;
+            area1(~validCell) = 0;
+            area2(~validCell) = 0;
+            total_area = sum(area1) + sum(area2);
+            Cxyz = sum(area1.*centroid1 + area2.*centroid2, 1);
+            centroid = Cxyz / total_area;
+            new_agents(iD,:) = centroid ./ norm(centroid);
         end
-        
-        % Points on sphere (centered at origin)
-        [X,Y,Z] = sphere(50);
-        P = [X(:), Y(:), Z(:)];
-        
-        % Initialize logical mask (all true)
-        mask = true(size(P,1),1);
-        
-        % --- Apply all plane constraints ---
-        for j = 1:size(voronoi_vertices,1)
-            center = voronoi_vertices(j,:);
-            t = tangent_vec(j,:);
-            
-            % Update mask: keep only points satisfying ALL conditions
-            mask = mask & ((P - center) * t' < 0);
+    
+        % ============ CONVERGENCE CHECK (once per timestep, AFTER all agents updated) ============
+        if max(vecnorm(new_agents - agents, 2, 2)) < tol
+            agents = new_agents;
+            agents_history{k+1} = agents;
+            convergence_iteration(run) = k;
+            converged = converged + 1;
+            converged_bool = true;
+            fprintf('Converged after %d iterations.\n', k);
+            break;  
         end
-        
-        % Reshape mask to grid
-        mask = reshape(mask, size(X));
-        
-        % Apply mask
-        X(~mask) = NaN;
-        Y(~mask) = NaN;
-        Z(~mask) = NaN;
-        
-        %surf(X,Y,Z);
-        Cx = 0; Cy = 0; Cz = 0;
-        total_area = 0;
-        
-        [nr, nc] = size(X);
-        
-        for i = 1:nr-1
-            for j = 1:nc-1
-                
-                % Skip if any corner is NaN
-                pts = [
-                    X(i,j),   Y(i,j),   Z(i,j);
-                    X(i+1,j), Y(i+1,j), Z(i+1,j);
-                    X(i,j+1), Y(i,j+1), Z(i,j+1);
-                    X(i+1,j+1), Y(i+1,j+1), Z(i+1,j+1)
-                ];
-                
-                if any(isnan(pts(:)))
-                    continue;
-                end
-                
-                % Triangle 1
-                A = pts(1,:);
-                B = pts(2,:);
-                C = pts(3,:);
-                
-                area1 = norm(cross(B-A, C-A)) / 2;
-                centroid1 = (A + B + C) / 3;
-                
-                % Triangle 2
-                A = pts(4,:);
-                B = pts(3,:);
-                C = pts(2,:);
-                
-                area2 = norm(cross(B-A, C-A)) / 2;
-                centroid2 = (A + B + C) / 3;
-                
-                % Accumulate
-                Cx = Cx + area1*centroid1(1) + area2*centroid2(1);
-                Cy = Cy + area1*centroid1(2) + area2*centroid2(2);
-                Cz = Cz + area1*centroid1(3) + area2*centroid2(3);
-                
-                total_area = total_area + area1 + area2;
-            end
-        end
-        
-        centroid = [Cx, Cy, Cz] / total_area;
-        new_agents(iD,:) = centroid./norm(centroid);
+    
+        agents = new_agents;
     end
-    agents = new_agents;
-    %times(k) = etime(clock, start);
+
+    half_plane_times(run) = toc;
+    fprintf("Run %03d/%03d done in %.3f s\n", run, nRuns, half_plane_times(run));
+    if converged_bool == false
+        not_converged = not_converged + 1;
+    end
+    %sphere_uniformity(agents);
+end
+
+fprintf("Mean time per run: %.3f s\n", mean(half_plane_times));
+fprintf("Mean necessary iterations for convergence: %.3f \n", mean(convergence_iteration));
+fprintf("converged %d times \n", converged)
+fprintf("did not converged %d times \n", not_converged)
+
+if verbose == false
+    return;
 end
 
 %%

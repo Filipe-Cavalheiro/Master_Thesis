@@ -15,8 +15,6 @@ function q = linear_motion_ref( ...
                x(3)    0   -x(1);
               -x(2)  x(1)    0 ];
 
-    Q = eye(3);
-
     % ---------- Shift to sphere frame (back to origin)----------
     q_s  = q   - c_sphere;
 
@@ -32,24 +30,25 @@ function q = linear_motion_ref( ...
     qd_hat = q_d / norm(q_d);
     
     % ---------- Configuration error ----------
-    e_q = (1 / (sqrt(2) * sqrt(1 + q_hat' * qd_hat))) * ...
-          Q' * S(qd_hat) * q_hat;
+    e_q = (1 / (sqrt(2) * sqrt(1 + q_hat' * qd_hat))) * S(qd_hat) * q_hat;
 
-    % ---------- Angular velocity error ----------
-    e_w = omega - omega_d;
+    % % ---------- Angular velocity error ----------
+    % e_w = omega - omega_d;
+    % 
+    % % ---------- Control law ----------
+    % u = (-Param.K_r * Q * e_q - Param.K_w * e_w) ...
+    %     + S(omega) * Param.J * omega ...
+    %     + Param.c * omega ...
+    %     - Param.tau;
 
-    % ---------- Control law ----------
-    u = Q' * (-Param.K_r * Q * e_q - Param.K_w * e_w) ...
-        + S(omega) * Param.J * omega ...
-        + Param.c * omega ...
-        - Param.tau;
+    q_dot = - Param.k_geo*S(e_q)*q_hat;
 
-    % ---------- Angular dynamics ----------
-    omega_dot = Param.J \ (u - Param.c*omega - S(omega)*Param.J*omega + Param.tau);
-    omega = omega + Param.dTi * omega_dot;
-
-    % ---------- Reduced attitude kinematics ----------
-    q_dot = S(omega) * q_s;
+    % % ---------- Angular dynamics ----------
+    % omega_dot = Param.J \ (u - Param.c*omega - S(omega)*Param.J*omega + Param.tau);
+    % omega = omega + Param.dTi * omega_dot;
+    % 
+    % % ---------- Reduced attitude kinematics ----------
+    % q_dot = S(omega) * q_s;
     q_s = q_s + Param.dTi * q_dot;
 
     % ---------- Enforce S² constraint (local) ----------

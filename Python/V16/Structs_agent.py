@@ -35,7 +35,9 @@ class MotionConstraints:
     def __init__(self, param: Param):
         # params for obstacle avoidance/ vel and acc constraints 
         self.obstacle_center = np.array([0, 2.0, 1.0])
-        self.obstacle_radius = np.diag([0.02, 0.02, 0.02])
+        self.obstacle_radius = np.diag([param.sim.obstacle_avoidance_dim,
+                                        param.sim.obstacle_avoidance_dim,
+                                        param.sim.obstacle_avoidance_dim])
         self.q: np.ndarray = np.zeros([(param.sim.n_degree+1)*3,1])
         self.b_obs: np.ndarray = np.zeros((3 * param.sim.horizon, 1))
         self.A_obs: np.ndarray = np.zeros((3 * param.sim.horizon, (param.sim.n_degree+1)*3))

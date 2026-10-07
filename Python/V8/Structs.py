@@ -71,7 +71,7 @@ class SimulationConfig:
         self.gravity = 9.81
 
         # Drones
-        self.nD = 3
+        self.nD = 31 
         self.sphere_radius = 2.0
 
         # Drop parameters
@@ -92,7 +92,7 @@ class SimulationConfig:
         # Measurements
         # 1: position
         # 2: position + velocity
-        self.measurable_states = 2
+        self.measurable_states = 1
 
         # Formation/distribution
         # options: fibonacci, dijkstra 
@@ -131,7 +131,7 @@ class TrajectoryConfig:
     def __init__(
         self,
         traj=2,
-        radius=2.2,
+        radius=2.0,
         speed=0.5,
         height=1.3
     ):
@@ -140,6 +140,7 @@ class TrajectoryConfig:
         self.default_speed = speed
         self.default_height = height
 
+        traj = 1
         self.ref_target_traj = self.make_traj(traj)
 
         self.initial_target_pos = (
@@ -152,17 +153,17 @@ class TrajectoryConfig:
             # Hover
             return {
                 "pos": lambda t: np.array([
-                    0,
-                    0,
-                    5
+                    [0],
+                    [0],
+                    [5]
                 ]),
 
-                "vel": lambda t: np.zeros(3)
+                "vel": lambda t: np.zeros([3,1])
             }
 
 
         elif traj == 2:
-            # Half-circle, then stationary at the end of the path
+            # circle 
             vel_gain = 0.25
 
             return {
@@ -223,20 +224,23 @@ class GraphicalDisplay:
         self.verbose = True
         self.composed = False
 
-        self.radial_hist_plot = False
-        self.radial_hist_animation = True
+        self.radial_hist_plot = True
+        self.radial_hist_animation = False
 
         self.consensus_plot = False
         self.consensus_animation = False
 
-        self.trajectory_plot = False
-        self.trajectory_animate = True
+        self.tracking_error_plot = True 
+        self.interagent_geodesic_distance_plot = True 
 
-        self.store_data = False
-        self.save_to_mp4 = True
+        self.trajectory_plot = True
+        self.trajectory_animate = False
+
+        self.store_data = True
+        self.save_to_mp4 = False
         self.mp4_fps = 30
 
-        self.save_location = "Results"
+        self.save_location = "V8/Results"
         self.trail_length = 100
         self.step = 5
         
@@ -246,10 +250,12 @@ class SimulationData:
     target_true_hist: list
     removed_initial_pos: bool
     colors: np.ndarray
-
+    min_safe_dist: np.float64
     position_history: NDArray[np.float64]
     p_d_hist: NDArray[np.float64]
     radial_history: NDArray[np.float64]
+    inter_agent_dist_hist: NDArray[np.float64]
+    agent_pairs: list 
 
     def __post_init__(self):
         assert self.position_history.ndim == 3
@@ -287,7 +293,7 @@ class Param:
 
         self.k_rad = 0.3
         self.k_geometric = 5
-        self.k_apf = 1
+        self.k_apf = 5
 
         # Target estimation
         self.ema_alpha = 0.2

@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import linear_sum_assignment
+from itertools import combinations
 
 # Project Capture
 # Bruno Guerreiro
@@ -84,6 +85,9 @@ position_history = np.zeros([param.sim.nD, 3, param.sim.Nsim])
 perceived_target_hist = np.zeros([param.sim.nD, 6, param.sim.Nsim])
 p_d_hist = np.zeros((param.sim.nD, 3, param.sim.Nsim))
 radial_hist = np.zeros((param.sim.nD, param.sim.Nsim))
+# Inter-agent distances: initialize as all unique agent pairs (i, j), i < j
+agent_pairs = list(combinations(range(param.sim.nD), 2))
+inter_agent_dist_hist = np.zeros((len(agent_pairs), param.sim.Nsim))
 
 # =============================================================================
 # Main simulation loop
@@ -143,6 +147,13 @@ for k in range(param.sim.Nsim):
         position_history[iD,:, k:k+1] = agent.position
         p_d_hist[iD,:,k:k+1] = agent.desired.position
         radial_hist[iD, k] = agent.radii_to_target
+
+    # Inter-agent pairwise distances at this timestep
+    for p_idx, (i, j) in enumerate(agent_pairs):
+        inter_agent_dist_hist[p_idx, k] = np.linalg.norm(
+            chaser_list[i].position - chaser_list[j].position
+        )
+
     target_true_hist[:, k:k+1] = np.concatenate([
         target.position,
         target.velocity,
@@ -151,8 +162,29 @@ for k in range(param.sim.Nsim):
         target.ei,
         target.eI
     ])
-            
 
+    #logs values
+    for iD in range(param.sim.nD):
+        agent = chaser_list[iD]
+        position_history[iD,:, k:k+1] = agent.position
+        p_d_hist[iD,:,k:k+1] = agent.desired.position
+        radial_hist[iD, k] = agent.radii_to_target
+
+    # Inter-agent pairwise distances at this timestep
+    for p_idx, (i, j) in enumerate(agent_pairs):
+        inter_agent_dist_hist[p_idx, k] = np.linalg.norm(
+            chaser_list[i].position - chaser_list[j].position
+        )
+
+    target_true_hist[:, k:k+1] = np.concatenate([
+        target.position,
+        target.velocity,
+        target.attitude,
+        target.ang_vel,
+        target.ei,
+        target.eI
+    ])
+       
 # =============================================================================
 # Results
 # =============================================================================
@@ -161,10 +193,14 @@ if param.display.verbose:
         "position_history": position_history,
         "target_true_hist": target_true_hist,
         "radial_history": radial_hist,
+        "inter_agent_dist_hist": inter_agent_dist_hist,
+        "agent_pairs": agent_pairs,
         "removed_initial_pos": False,
         "p_d_hist": p_d_hist,
+        "min_safe_dist": min_safe_dist,
         "colors": plt.cm.tab10(np.linspace(0, 1, param.sim.nD))
     }
     sim_data = SimulationData(**data)
 
     create_figures(sim_data, param)
+

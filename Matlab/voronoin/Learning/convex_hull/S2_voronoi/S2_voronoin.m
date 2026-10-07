@@ -1,63 +1,91 @@
 clear; clc; close all;
-
 % PARAMETERS
-numAgents = 15;
+numAgents = 30;
 iterations = 1000;
-
-% Random points on the unit sphere
-agents = randn(numAgents,3);
-agents = agents ./ vecnorm(agents,2,2);
+tol = 5e-3;  % tolerance for "same location"
+verbose = false;
 
 % store positions for animation
 history = zeros(numAgents,3,iterations);
 
-% ================= COMPUTATION =================
-for k = 1:iterations
+nRuns = 100;
+convex_hull_times = zeros(1, nRuns);
+convergence_iteration = zeros(1, nRuns);
+converged = 0;
+not_converged = 0;
 
-    % Compute convex hull
-    K = convhull(agents(:,1),agents(:,2),agents(:,3));
+for run = 1:nRuns
+    % Random points on the unit sphere
+    agents = randn(numAgents,3);
+    agents = agents ./ vecnorm(agents,2,2);
+    converged_bool = false;
 
-    % Voronoi vertices (face normals)
-    numFaces = size(K,1);
-    V = zeros(numFaces,3);
-
-    for i = 1:numFaces
-        p1 = agents(K(i,1),:);
-        p2 = agents(K(i,2),:);
-        p3 = agents(K(i,3),:);
-
-        n = cross(p2-p1, p3-p1);
-        n = n / norm(n);
-
-        V(i,:) = n;
-    end
-
-    newAgents = zeros(size(agents));
-
-    % Compute centroids
-    for i = 1:numAgents
-
-        faces = any(K==i,2);
-        verts = V(faces,:);
-
-        if isempty(verts)
-            newAgents(i,:) = agents(i,:);
-            continue
+    start = clock;
+    % ================= COMPUTATION =================
+    for k = 1:iterations
+        prevAgents = agents;  % keep previous positions for comparison
+    
+        % Compute convex hull
+        K = convhull(agents(:,1),agents(:,2),agents(:,3));
+    
+        % Voronoi vertices (face normals)
+        numFaces = size(K,1);
+        V = zeros(numFaces,3);
+        for i = 1:numFaces
+            p1 = agents(K(i,1),:);
+            p2 = agents(K(i,2),:);
+            p3 = agents(K(i,3),:);
+            n = cross(p2-p1, p3-p1);
+            n = n / norm(n);
+            V(i,:) = n;
         end
-
-        c = mean(verts,1);
-        c = c / norm(c); % project to sphere
-
-        newAgents(i,:) = c;
-
+    
+        newAgents = zeros(size(agents));
+        % Compute centroids
+        for i = 1:numAgents
+            faces = any(K==i,2);
+            verts = V(faces,:);
+            if isempty(verts)
+                newAgents(i,:) = agents(i,:);
+                continue
+            end
+            c = mean(verts,1);
+            c = c / norm(c); % project to sphere
+            newAgents(i,:) = c;
+        end
+    
+        agents = newAgents;
+    
+        % store for animation
+        history(:,:,k) = agents;
+    
+        % ============ CONVERGENCE CHECK ============
+        if max(vecnorm(agents - prevAgents, 2, 2)) < tol
+            convergence_iteration(run) = k;
+            converged = converged + 1;
+            converged_bool = true;
+            fprintf('Converged after %d iterations.\n', k);
+            history = history(:,:,1:k);  % trim unused preallocated frames
+            break
+        end
+    end
+    convex_hull_times(run) = etime(clock, start);
+    if converged_bool == false
+        not_converged = not_converged + 1;
     end
 
-    agents = newAgents;
-
-    % store for animation
-    history(:,:,k) = agents;
-
+    %sphere_uniformity(agents);
 end
+
+fprintf("Mean time per run: %.3f s\n", mean(convex_hull_times));
+fprintf("Mean necessary iterations for convergence: %.3f \n", mean(convergence_iteration));
+fprintf("converged %d times \n", converged)
+fprintf("did not converged %d times \n", not_converged)
+
+if verbose == false
+    return;
+end
+
 
 %% ================= ANIMATION =================
 figure;

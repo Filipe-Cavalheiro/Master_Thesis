@@ -6,11 +6,12 @@
 clear all;
 
 % Model and simulation parameters
-Param.Tend = 60;
+Param.Tend = 30;
 Param.dTi = 0.01;  % inner-loop and simulation sampling period
 Nsim = round(Param.Tend/Param.dTi)+1;
 Param.g = 9.81;     % earth gravity
 Param.nD = 3; % number of drones
+Param.radius = 2;
 
 % reference parameters
 Param.p_ref_static = [1;1;3];
