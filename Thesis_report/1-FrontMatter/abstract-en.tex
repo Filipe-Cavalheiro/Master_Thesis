@@ -8,18 +8,51 @@
 
 \typeout{NT FILE abstract-en.tex}%
 
-Drones have become increasingly popular in recent years due to their versatility across a wide range of applications, including transportation, terrain mapping, aerial displays, and surveillance. Alongside this rapid growth, not only have innovative solutions to complex problems emerged, but malicious actors have also found ways to exploit these technologies, leading to violations of restricted or protected airspace.
-
-This thesis addresses this challenge by proposing a non-destructive method for forcing a non-cooperative drone out of restricted zones. The choice of a non-destructive approach is motivated by safety concerns, as physical destruction may result in falling debris that can cause damage to infrastructure such as airports, residential areas or even human life. In contrast, the proposed method relies on controlled guidance to safely redirect the intruding drone away from unauthorized airspace.
-
-To this end, the problem of multi-agent navigation and encirclement of a target is studied, with an emphasis on collision-free motion. A novel encirclement framework is developed, which, to the best of the author's knowledge, has not been previously explored in the literature. Reference tracking is achieved using a well-established nonlinear controller for agent manipulation, combined with a trajectory-defining controller based on Control Lyapunov Functions defined on the two-sphere manifold. This approach ensures stable and accurate trajectory tracking for each drone while enabling coordinated and collision-free behavior within the multi-agent system.
-
-Future work will focus on extending the proposed framework to manifolds other than the two-sphere, as well as on developing decentralized consensus strategies among agents to enable fully distributed coordination. Additionally, using \gls{IRL} experimental validation the practical capabilities of the proposed approach will be studied, providing not only a mathematical proof of feasibility but also physical verification through real-world implementation.
+The growing popularity of drones has been accompanied by a rising number of
+unintentional incursions into restricted airspace, with documented
+disruptions to airports and other critical infrastructure. This thesis
+proposes a non-destructive response: a swarm of drones that encircles an
+intruding, non-cooperative target and forms a visible barrier, signalling
+to its operator that the airspace is restricted and encouraging the target
+to leave. Here, non-cooperative means that the target shares no
+control objective with the pursuers; it is not modelled as an adversary.
+ 
+Most existing encirclement methods are planar or define encirclement as
+convex containment. This work addresses the fully three-dimensional case,
+where agents must be distributed evenly around the target so that no
+direction is left uncovered. Three architectures are developed in
+increasing generality. First, a centralized approach places agents on the
+two-sphere using a Fibonacci lattice and steers them with a Lyapunov-based
+geometric controller, with a Mellinger controller for low-level tracking.
+Second, a decentralized approach lets agents estimate the target position
+by consensus over a spatial network and redistribute themselves through
+Lloyd's algorithm on Voronoi cells, with convex-hull and half-plane
+implementations. Third, the formation is generalized to arbitrary surface
+meshes, including a velocity-weighted variant and a barrier configuration,
+and trajectory generation is replaced by a Bernstein-polynomial model
+predictive control (MPC) with velocity, acceleration and collision
+constraints.
+ 
+Simulations with up to 31-agents, static and moving targets, and the
+mid-flight loss of several agents show that the formations converge and
+reform around the target, and that inter-agent distances stay above a
+safety threshold for almost the whole simulation. Comparisons of
+point-distribution, path-planning and collision-avoidance methods are also
+reported. To the author's knowledge, this specific combination of
+surface-based formation generation, decentralized geometric redistribution
+and trajectory-level collision avoidance for a moving target has not been
+systematically studied in the reviewed literature.
 
 % Abstract keywords
 \keywords{
-  \gls{CLF} \and
-  \gls{UAV} \and
-  Path planning
+Multi-UAV encirclement \and
+Formation control \and
+Lyapunov-based controller \and
+Unmanned Aerial Vehicle\and
+Unmanned Ground Vehicle \and
+Model Predictive Control \and
+Collision avoidance \and
+Voronoi diagrams and Lloyd's algorithm \and
+Path planning
 }
 

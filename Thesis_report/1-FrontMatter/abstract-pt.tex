@@ -7,17 +7,24 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \typeout{NT FILE abstract-en.tex}%
 
-Os drones têm-se tornado cada vez mais populares nos últimos anos devido à sua versatilidade numa vasta gama de aplicações, incluindo transporte, mapeamento de terrenos, espectáculos aéreos e vigilância. A par deste rápido crescimento, não só surgiram soluções inovadoras para problemas complexos, como também agentes maliciosos encontraram formas de explorar estas tecnologias, conduzindo a violações de espaço aéreo restrito ou protegido.
+\glsresetall
 
-Esta dissertação aborda este desafio através da proposta de um método não destrutivo para forçar um drone não cooperante a sair de zonas restritas. A opção por uma abordagem não destrutiva é motivada por preocupações de segurança, uma vez que a destruição física pode resultar na queda de destroços suscetíveis de causar danos em infraestruturas, como aeroportos ou áreas residenciais, e de colocar em risco a vida humana. Em contraste, o método proposto baseia-se numa orientação controlada para redireccionar de forma segura o drone intruso para fora do espaço aéreo não autorizado.
+A crescente popularidade dos drones tem sido acompanhada por um aumento do número de incursões não intencionais em espaço aéreo restrito, tendo sido documentadas perturbações em aeroportos e outras infraestruturas críticas. Esta tese propõe uma resposta não destrutiva: um enxame de drones que circunda um alvo intruso não cooperativo e forma uma barreira visível, sinalizando ao seu operador que o espaço aéreo é restrito e incentivando o alvo a abandonar a área. Aqui, não cooperativo significa que o alvo não partilha qualquer objetivo de controlo com os perseguidores; não é modelado como um adversário.
 
-Para este fim, é estudado o problema da navegação multi-agente e do cerco de um alvo, com ênfase no movimento livre de colisões. É desenvolvido um novo enquadramento de cerco que, tanto quanto é do conhecimento do autor, não foi previamente explorado na literatura. O seguimento de referências é realizado recorrendo a um controlador não linear bem estabelecido para a manipulação de agentes, combinado com um controlador de definição de trajectórias baseado em Funções de Lyapunov de Controlo definidas na variedade da esfera bidimensional. Esta abordagem assegura um seguimento de trajectórias estável e preciso para cada drone, permitindo simultaneamente um comportamento coordenado e livre de colisões no sistema multi-agente.
+A maioria dos métodos de circundamento existentes é planar ou define o circundamento como uma contenção convexa. Este trabalho aborda o caso totalmente tridimensional, no qual os agentes devem ser distribuídos uniformemente em torno do alvo, de modo a que nenhuma direção fique sem cobertura. São desenvolvidas três arquiteturas, com um grau crescente de generalidade. Em primeiro lugar, uma abordagem centralizada posiciona os agentes sobre a esfera unitária utilizando uma malha de Fibonacci e controla os seus movimentos através de um controlador geométrico baseado em Lyapunov, com um controlador de Mellinger para o seguimento de baixo nível. Em segundo lugar, uma abordagem descentralizada permite que os agentes estimem a posição do alvo através de consenso numa rede espacial e se redistribuam utilizando o algoritmo de Lloyd sobre células de Voronoi, com implementações baseadas no invólucro convexo e em semiplanos. Em terceiro lugar, a formação é generalizada para malhas de superfície arbitrárias, incluindo uma variante ponderada pela velocidade e uma configuração de barreira, sendo a geração de trajetórias substituída por um controlo preditivo baseado num modelo (MPC) com polinómios de Bernstein, incorporando restrições de velocidade, aceleração e colisão.
 
-Trabalhos futuros irão centrar-se na extensão do enquadramento proposto a variedades topologicas diferentes esfera bidimensional, bem como no desenvolvimento de estratégias de consenso descentralizadas entre os agentes, de modo a permitir uma coordenação totalmente distribuída. Adicionalmente, através de validação experimental no mundo real irá ser estudada fornecendo não só uma prova matemática de viabilidade, mas também a sua verificação física através de implementação em contexto real.
+As simulações, realizadas com até 31-agentes, alvos estáticos e móveis e a perda, durante o voo, de vários agentes, demonstram que as formações convergem e se reconstituem em torno do alvo, mantendo-se as distâncias entre agentes acima de um limiar de segurança durante quase toda a simulação. São também apresentadas comparações entre métodos de distribuição de pontos, planeamento de trajetórias e prevenção de colisões. Tanto quanto é do conhecimento do autor, esta combinação específica de geração de formações baseada em superfícies, redistribuição geométrica descentralizada e prevenção de colisões ao nível da trajetória para um alvo móvel não foi estudada de forma sistemática na literatura analisada.
 
-% Abstract keywords
+% Palavras-chave do resumo
 \keywords{
-  \gls{CLF} \and
-  \gls{UAV} \and
-  Planeamento de trajectórias
+Circundamento multi-UAV \and
+Controlo de formações \and
+Controlador baseado em Lyapunov \and
+Veículo aéreo não tripulado \and
+Veículo terrestre não tripulado \and
+Controlo preditivo baseado num modelo \and
+Prevenção de colisões \and
+Diagramas de Voronoi e algoritmo de Lloyd \and
+Planeamento de trajetórias
 }
+

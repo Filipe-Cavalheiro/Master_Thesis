@@ -15,18 +15,6 @@
 %%============================================================
 %%  FOR DEMO PURPOSES ONLY --- YOU SHOULD REMOVE THESE PACKAGES
 %%============================================================
-\usepackage{float}        % FOR DEMO PURPOSES ONLY --- PLEASE REMOVE
-\usepackage{wrapfig}      % FOR DEMO PURPOSES ONLY --- PLEASE REMOVE
-\restylefloat{figure}     % FOR DEMO PURPOSES ONLY --- PLEASE REMOVE
-\usepackage{metalogo}     % FOR DEMO PURPOSES ONLY --- PLEASE REMOVE
-\usepackage{lipsum}       % FOR DEMO PURPOSES ONLY --- PLEASE REMOVE
-\IfFileExists{byo-twemojiss.sty}{
-  \usepackage{byo-twemojis}     % to typeset emojis
-  \newcommand{\emojiSmile}{\raisebox{-3pt}{\scalebox{1.3}{\byoTwemoji{head; eyes normal opened; mouth laughing}}}}
-}{
-  \newcommand{\emojiSmile}{\texttt{:D}}
-  \newlength{\twemojiDefaultHeight}
-}
 
 \newcommand{\MikTeX}{Mik\TeX}
 \newcommand{\TeXLive}{\TeX Live}
@@ -56,7 +44,26 @@
 \usepackage{comment} % be able to comment large sections \begin{comment}\end{comment}
 
 \usepackage[english]{babel}
-\newtheorem{theorem}{Theorem} % Be able to create Theorems
+
+\usepackage{amsmath}
+\newtheorem{theorem}{Theorem}% Be able to create Theorems
+
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+\usepackage{siunitx}
+
+\makeatletter
+\providecommand{\proofname}{Proof}
+\newenvironment{proof}[1][\proofname]{%
+  \par
+  \normalfont \topsep6\p@\@plus6\p@\relax
+  \trivlist
+  \item[\hskip\labelsep\itshape #1.\ ]\ignorespaces
+}{%
+  \unskip\hspace{\stretch{1}}$\blacksquare$\par\endtrivlist
+}
+\makeatother
 
 % \usepackage{indentfirst}       % Indent first list after a (sub)section title
 

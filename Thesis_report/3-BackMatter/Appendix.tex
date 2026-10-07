@@ -11,6 +11,188 @@
 \chapter{Appendix}
 \label{cha:Appendix}
 
+
+\section{Other Direct computation agent spacing on the two-sphere} \label{annex:Other Direct computation agent spacing on the two-sphere}
+
+Two other methods here discussed about point distribution of the direct computation method. Latitude/Longitude and Poisson Disk sampling, followed by three methods inspired in cyclical pursuit~\ref{subsec.2:Cyclic Pursuit} that do not work and finally the comparison between methods.
+
+\subsection{Latitude and Longitude} \label{sec.2:Latitude and longitude}
+
+The latitude--longitude lattice method considered here, heavily inspired by and influenced by \cite{Latitude_Longitude_vs_fibonacci}, consists of points located at the intersections of a grid of meridians and parallels, separated by equal angular increments in latitude. The longitude spacing, however, is allowed to vary between parallels to account for the convergence of the meridians toward the poles. This arrangement may be referred to as the \emph{latitude--longitude grid} or the \emph{equal-angle grid}. Due to the convergence of meridians toward the poles, the resulting distribution exhibits significant anisotropy.
+
+The sphere is divided into \(N\) equal angular intervals in latitude, such that
+
+$$
+\delta = \frac{180^\circ}{N},
+\qquad N \in \mathbb{N}.
+$$
+Consequently, there are \(N-1\) interior parallels in addition to the two poles. At a given colatitude \(\theta_i\), the number of longitude points is selected according to
+$$
+n_i = \operatorname{round}\left(2N\sin\theta_i\right),
+\qquad
+\theta_i = \frac{i\pi}{N},
+\quad i=1,\ldots,N-1.
+$$
+Thus, the total number of points is
+$$
+P =
+2+
+\sum_{i=1}^{N-1}
+\operatorname{round}
+\left(
+2N\sin\frac{i\pi}{N}
+\right).
+$$
+
+Unlike a conventional latitude--longitude grid with a fixed number of longitude points on every parallel, this approach reduces the number of points towards the poles, reflecting the decreasing circumference of the parallels. Nevertheless, the resulting distribution remains anisotropic because the points are generated according to the latitude--longitude parameterization.
+
+For example, for \(N=29\), the procedure produces \(P=1070\) points. As can be observed in Figure~\ref{fig.3:latlon_results_demonstration}, the resulting distribution is highly symmetric and structured. However, the convergence of the meridians produces non-uniform spacing between neighboring points, especially towards the poles.
+
+\begin{figure}[htbp]
+\centering
+\subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Chapter4/latlon_sphere/latlon_sphere_normal.png}}\hfil
+\subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Chapter4/latlon_sphere/latlon_sphere_top.png}}\hfil
+\subfloat[Side]{\includegraphics[width=3cm]{5-Figures/Chapter4/latlon_sphere/latlon_sphere_side.png}}
+\caption{Latitude--longitude grid demonstration for \(N=29\), resulting in 1070 points.}
+\label{fig.3:latlon_results_demonstration}
+\end{figure}
+
+\subsection{Poisson Disk sampling} \label{sec.3:Poisson sampling disk}
+
+Poisson disk sampling is a stochastic sampling technique that enforces a minimum distance between samples, producing distributions that are both random and well-spaced. Formally, a Poisson disk distribution is defined such that no two samples are closer than a user-defined distance \gls{min_dist}. This property avoids clustering while preserving randomness, resulting in so-called \emph{blue noise} characteristics, which are highly desirable for a very isotropic distribution of agents.
+
+Poisson disk samples are generated using the \textit{fast algorithm}~\cite{poisson_sampling_disk}. The method improves efficiency by restricting candidate samples to a neighborhood around existing points. A background grid is used to accelerate distance queries, with the cell size chosen as $\gls{min_dist} / \sqrt{n}$ in an $n$-dimensional domain, ensuring that each cell contains at most one sample.
+
+The algorithm starts by placing an initial random sample in the domain and adding it to an active list. While this list is not empty, a sample is selected and up to \gls{P_k} candidate points are generated uniformly in the spherical annulus between radii \( r \) and \( 2r \). If a candidate is at least distance \gls{min_dist} from all existing samples, it is accepted and added to the active list. If no valid candidate is found after \gls{P_k} attempts, the sample is removed from the active list.
+
+Because each iteration either adds or removes a sample and the number of candidate attempts is bounded by a constant, the overall computational complexity of the algorithm is \( O(N) \), being \( N \) the total number of samples. A key advantage of this approach is that it generalizes naturally to arbitrary dimensions, making it well suited for multi-dimensional sampling problems.
+
+It may seem counterintuitive to classify a stochastic sampling technique alongside direct computation methods. However, despite its internal iterative procedure, Poisson disk sampling produces a final, fixed distribution once the algorithm completes. This contrasts with truly iterative methods, where point positions are continuously updated over time to gradually approach an evenly spaced configuration. Since Poisson disk sampling does not involve such progressive adjustment after generation, it is considered, in this work, a direct computation method.
+
+For a desired fixed number of agents \gls{n_D}, a challenge arises because standard Poisson disk sampling does not guarantee an exact number of generated points. Owing to its low computational cost, such an approach could be practical for real-time or large-scale deployments. However, it should be noted that this remains a conceptual approach and has neither been proven feasible nor experimentally validated during the development of this thesis.
+
+In Figure~\ref{fig.3:poisson_disk_sphere}, the results obtained with this method are presented. Poisson disk sampling produces highly isotropic, blue-noise distributions and generalizes naturally to arbitrary manifolds. In this case, however, the distribution exhibits some clustering near the poles of the sphere. This behavior is not an inherent limitation of the Poisson disk sampling algorithm, but rather a consequence of the surface representation and parameterization used in its implementation.
+
+More specifically, the sphere is represented using a parameterization with singularities at the poles. Near these points, the correspondence between the parameter space and the actual spherical surface becomes degenerate: multiple directions in the parameterization converge toward the same location on the sphere. If neighborhood queries, distances, or point movements are computed directly in this parameter space, rather than using an appropriate intrinsic or geometrically consistent representation of the sphere, points near the poles may not be treated as close to one another in the same way as points elsewhere on the surface. This can lead to an accumulation of samples in these regions when the surface is wrapped around the sphere.
+
+A representation that avoids such singularities, or an implementation that evaluates distances and neighborhoods directly on the manifold, would prevent this parameterization-induced artifact. Thus, the observed non-uniformity should be understood as an implementation-related limitation rather than a fundamental fault of the Poisson disk sampling method itself.
+
+\begin{figure}[htbp]
+\centering
+\subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Chapter3/poisson_disk/poisson_disk_normal.pdf}}\hfil
+\subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Chapter3/poisson_disk/poisson_disk_top.pdf}}\hfil
+\subfloat[Side]{\includegraphics[width=3cm]{5-Figures/Chapter3/poisson_disk/poisson_disk_side.pdf}}
+\caption{Poisson disk sampling distribution. (1012 points)}
+\label{fig.3:poisson_disk_sphere}
+\end{figure}
+
+\subsection{Comparison of Agent Distributions on the Two-Sphere} 
+
+As outlined in Section~\ref{annex:Other Direct computation agent spacing on the two-sphere} multiple approaches exist for distributing a prescribed number of agents on the two-sphere. Since the number of agents is predefined and the position of all agents is known by all agents, direct computation methods can and are used in this section, the outcomes of each method are presented and systematically compared. Based on this comparison, the most suitable centralized method is identified in light of the objectives and constraints of the present study.
+
+\begin{figure}[htbp]
+\centering
+
+\begin{minipage}{0.12\textwidth} % width for the row label
+Latitude \&\\Longitude:
+\end{minipage}%
+\begin{minipage}{0.85\textwidth} % width for the row of sub figures
+\subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Chapter4/latlon_sphere/latlon_sphere_normal.png}}\hfil
+\subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Chapter4/latlon_sphere/latlon_sphere_top.png}}\hfil 
+\subfloat[Side]{\includegraphics[width=3cm]{5-Figures/Chapter4/latlon_sphere/latlon_sphere_side.png}}
+\end{minipage}
+
+\vspace{0.3cm}
+
+\begin{minipage}{0.12\textwidth}
+Fibonacci\\Lattice:
+\end{minipage}%
+\begin{minipage}{0.85\textwidth}
+\subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Chapter4/fibonacci_sphere/fibonacci_sphere_normal.png}}\hfil   
+\subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Chapter4/fibonacci_sphere/fibonacci_sphere_top.png}}\hfil
+\subfloat[Side]{\includegraphics[width=3cm]{5-Figures/Chapter4/fibonacci_sphere/fibonacci_sphere_side.png}}
+\end{minipage}
+
+\vspace{0.3cm}
+
+\begin{minipage}{0.12\textwidth}
+Poisson Disk\\Sampling:
+\end{minipage}%
+\begin{minipage}{0.85\textwidth}
+\subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Chapter3/poisson_disk/poisson_disk_normal.pdf}}\hfil   
+\subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Chapter3/poisson_disk/poisson_disk_top.pdf}}\hfil
+\subfloat[Side]{\includegraphics[width=3cm]{5-Figures/Chapter3/poisson_disk/poisson_disk_side.pdf}}
+\end{minipage}
+
+\caption{Agent positions resulting from each distribution methods.}
+\label{fig.4:centalized_methods_points_on_sphere}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.85\textwidth]{5-Figures/Chapter4/centralized_comparing_methods_box_shape.pdf}
+  \caption[Run time comparison of different methods.]{Overall runtime comparison of the different methods (100 trials). Computer specification can be found at: \ref{appendix:Computer Specifications}}
+  \label{fig.4:centalized_comparing_methods_box_shape}
+\end{figure}
+
+\begin{table}[htbp]
+\caption{Runtime comparison of point sampling methods.}
+\label{annex:Runtime comparison of point sampling methods}
+\centering
+\begin{tabular}{l c c c c}
+\hline
+\rule{0pt}{3.2ex}\large\textbf{Property}
+\textbf{Property}
+& \makecell{\textbf{Lon--Lat}}
+& \makecell{\textbf{Fibonacci}}
+& \makecell{\textbf{Poisson Disk}} \\
+\hline
+\makecell{Parameters}
+& \makecell{$K=29$}
+& \makecell{--}
+& \makecell{$\gls{P_k} = 30$,\\ $r=0.093$} \\
+
+\makecell{Number of points}
+& \makecell{1070}
+& \makecell{1001}
+& \makecell{1012} \\
+
+\makecell{Mean runtime\\ (s)}
+& \makecell{$1.6\times 10^{-3}$}
+& \makecell{$1.075\times10^{-4}$}
+& \makecell{$7.51 \times10^{-2}$} \\
+
+\makecell{Std. deviation\\ $\sigma$ (s)}
+& \makecell{$7.6877\times10^{-4}$}
+& \makecell{$3.66\times10^{-5}$}
+& \makecell{$1.4 \times 10^{-3}$} \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Spacing metrics for point distributions on the unit sphere}
+\label{tab:sphere_spacing}
+\begin{tabular}{lcccc}
+\toprule
+Method & $N$ points & $d_{NN,\min}/d_{NN,\text{avg}}$ & CV($d_{NN}$) & Riesz Energy ($s=1$) \\
+\midrule
+LatLon       & 1070 & 0.9712 & 0.0068 & 553166.4 \\
+Fibonacci    & 1001 & 0.9171 & 0.0105 & 483586.9 \\
+Poisson Disk & 1012 & 0.0640 & 0.2533 & 515388.4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+As shown in Figure~\ref{fig.4:centalized_methods_points_on_sphere}, the three methods produce noticeably different agent distributions, a difference that the metrics in Tables~\ref{annex:Runtime comparison of point sampling methods} and~\ref{tab:sphere_spacing} make quantitative. The longitude \& latitude method can be discarded due to the limitation on the number of agent formations possible despite it producing the most regular spacing of the three methods ($d_{NN,\min}/d_{NN,\text{avg}} = 0.9712$, CV $= 0.0068$).
+
+This leaves two viable options: the Fibonacci lattice and Poisson disk sampling. In terms of runtime, the Fibonacci lattice is by far the fastest of the two, completing in a mean of $1.075\times10^{-4}\,\text{s}$ against $7.51\times10^{-2}\,\text{s}$ for Poisson disk sampling (Table~\ref{annex:Runtime comparison of point sampling methods}) -- a factor of roughly $698\times$, consistent with Figure~\ref{fig.4:centalized_comparing_methods_box_shape}. The Fibonacci lattice is also markedly more consistent, with a standard deviation $21\times$ smaller than the lon--lat method's ($3.66\times10^{-5}\,\text{s}$ vs.\ $7.69\times10^{-4}\,\text{s}$) and over an order of magnitude smaller than Poisson disk sampling's ($1.4\times10^{-3}\,\text{s}$).
+
+The spacing metrics in Table~\ref{tab:sphere_spacing} reinforce this choice. The Fibonacci lattice achieves a near-uniform nearest-neighbor spacing ($d_{NN,\min}/d_{NN,\text{avg}} = 0.9171$, CV $= 0.0105$), only marginally less regular than the lon--lat grid, and it attains the lowest Riesz energy of the three methods ($483586.9$ vs.\ $553166.4$ for lon--lat and $515388.4$ for Poisson disk), indicating the most electrostatically balanced point configuration. Poisson disk sampling, by contrast, shows a much lower minimum-to-average spacing ratio ($0.0640$) and a substantially higher coefficient of variation (CV $= 0.2533$), reflecting the greater irregularity inherent to its randomized placement, though it remains more versatile, since it can be applied to arbitrary geometries rather than being restricted to a spherical surface.
+
+Taken together, the Fibonacci lattice offers the best combination of speed, runtime consistency, and spacing uniformity of the three methods, and was therefore chosen as the preferred distribution method for centralized systems.
+
 \section{System Information} \label{appendix:Computer Specifications}
 
 All simulations and computations presented in this thesis were performed on a laptop with the following hardware and software specifications.
@@ -22,10 +204,11 @@ All simulations and computations presented in this thesis were performed on a la
     \item \textbf{System Type:} 64-bit operating system, x64-based processor
 \end{itemize}
 
+\begin{comment}
 Graphics Processing Unit (GPU)
 \begin{table}[H]
     \centering
-    \caption{GPU Specifications}
+    \caption{GPU Specifications.}
     \label{tab:gpu_specs}
     \begin{tabular}{|l|l|}
         \hline
@@ -46,3 +229,400 @@ Graphics Processing Unit (GPU)
         Local Memory Size (bytes)        & 49152 \\ \hline
     \end{tabular}
 \end{table}
+\end{comment}
+
+\section{Alternative Agent Positioning Strategies} \label{annex:Alternative Agent Positioning Strategies}
+
+This section discusses alternative methods that were considered to work to position agents on a spherical surface. Although the final configuration of each drone is based on the Fibonacci lattice, several other approaches were investigated, inspired by phase-separation methods commonly used for 2D formations \cite{Litimein2021,Jin2018,Kim2007}.  In particular, an attempt was made to develop a displacement-based 3D method in which each drone maintains a fixed angular separation from its predecessor. It was ultimately deemed unsuitable for the final deployment strategy, but is included here for completeness and comparison with the other attempted methods. Either way this approach was flawed since opposite of the 2D approach where all drones are keeping a distance from the previous and next, in 3D the "top" and "bottom" drones aren't associated in any way.
+
+The standard Fibonacci lattice formulation could not be directly applied in this context. While the longitude increments between agents are constant, allowing a simple angular separation rule, the latitude is computed through a nonlinear $\arcsin(\cdot)$ mapping, which is inherently non-uniform. This nonlinearity prevents the use of a single, constant spacing rule across all agents. Several attempts were made to linearize this relationship so that all agents could rely on identical local control laws, but none yielded satisfactory results. For completeness, the tested approaches are summarized below.
+
+\subsection{Mean Distance Between Points on the Sphere}
+In the first attempt, the reference spacing was taken as the mean of the Euclidean distances between consecutive-index points of the Fibonacci lattice (i.e., cyclical pursuit). This approach fails because consecutive indices are only spatially adjacent away from the poles: in the equal-area parameterization used to build the lattice, $\theta_i = \arcsin(2i/P)$, so
+\[
+\frac{d\theta}{di} = \frac{2/P}{\sqrt{1-\left(2i/P\right)^2}},
+\]
+which is small near the equator ($i \approx 0$) but diverges as $i \to \pm P/2$, i.e., as $\theta_i \to \pm\pi/2$. Physically, this means a single step in index $i$ spans an increasingly large latitudinal arc near the poles in order to preserve equal area per point, so "consecutive" indices there are no longer near neighbors in space, they jump across a disproportionately large patch of the sphere, producing a handful of pairwise distances far larger than the typical near-neighbor spacing elsewhere on the lattice. As illustrated in Figure~\ref{fig.4:fibonacci_diff_methods} (row~2), this skews the mean: with 1001 points on a sphere of radius $\gls{sphere_radius} = 5$, the mean consecutive-index distance was approximately 7.3270, more than half the sphere's diameter, so it does not provide a meaningful or usable spacing reference.
+
+\subsection{Mean Latitude Spacing}
+Since the primary source of nonlinearity lies in the latitude distribution, a second approach considered using the average latitude increment instead of the $\arcsin(\cdot)$ mapping. However, this method introduces a different issue: the geodesic distance between agents increases as the effective radius of the latitude circle grows, particularly near $\theta = \pi$. This results in a pronounced clustering of points near longitudes $\phi = 0$ and $\phi = 2\pi$, as shown in Figure~\ref{fig.4:fibonacci_diff_methods} (row~3). While the $\arcsin(\cdot)$ formulation avoids this clustering, the mean-latitude approach fails to preserve uniform surface spacing.
+
+\subsection{Linearized Vertical Distribution with Uniform Angular Progression}
+A final attempt aimed to mitigate the clustering near the poles by enforcing a uniform angular progression while simultaneously linearizing the vertical distribution. Instead of relying on the nonlinear Fibonacci latitude mapping, a constant latitude increment $\theta_{\text{mean}} = \pi / P$ was imposed. In parallel, a constant longitude increment $\phi_{\text{mean}}$ was computed from the average difference of the Fibonacci-based longitudes.
+
+The Cartesian coordinates of each agent were defined as
+\begin{equation}
+x_i = R \sin(i\theta_{\text{mean}})\cos(i\phi_{\text{mean}}), \quad
+y_i = R \sin(i\theta_{\text{mean}})\sin(i\phi_{\text{mean}}),
+\end{equation}
+with the vertical coordinate distributed linearly according to
+\begin{equation}
+z_i = -R + \frac{R}{P} + \frac{2R(i-1)}{P},
+\end{equation}
+thereby enforcing equal spacing along the $z$-axis.
+
+The motivation for this approach was twofold. First, by fixing $\theta_{\text{mean}}$, each agent would only need to maintain a constant angular separation from its predecessor. Second, by distributing agents uniformly along the vertical axis, the excessive clustering near the poles observed in previous methods could be reduced. As shown in Figure~\ref{fig.4:fibonacci_diff_methods} (row~4), this method successfully eliminates severe polar clustering and yields a visually more homogeneous vertical distribution.
+
+However, despite these improvements, this approach still fails to guarantee uniform geodesic distances between neighboring agents. The imposed linearity in both $\theta$ and $z$ conflicts with the intrinsic geometry of the sphere, resulting in distorted inter-agent spacing.
+
+\begin{figure}[htbp]
+\centering
+
+\begin{minipage}{0.12\textwidth}
+Fibonacci\\Lattice:
+\end{minipage}%
+\begin{minipage}{0.85\textwidth}
+\subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Chapter4/fibonacci_sphere/fibonacci_sphere_normal.png}}\hfil   
+\subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Chapter4/fibonacci_sphere/fibonacci_sphere_top.png}}\hfil
+\subfloat[Side]{\includegraphics[width=3cm]{5-Figures/Chapter4/fibonacci_sphere/fibonacci_sphere_side.png}}
+\end{minipage}
+
+\vspace{0.3cm}
+
+\begin{minipage}{0.12\textwidth}
+Mean Distance Between Points on the Sphere:
+\end{minipage}%
+\begin{minipage}{0.85\textwidth}
+\subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Appendix/mean_dist_between_points/fibonacci_sphere_mean_dist_normal.pdf}}\hfil   
+\subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Appendix/mean_dist_between_points/fibonacci_sphere_mean_dist_top.pdf}}\hfil
+\subfloat[Side]{\includegraphics[width=3cm]{5-Figures/Appendix/mean_dist_between_points/fibonacci_sphere_mean_dist_side.pdf}}
+\end{minipage}
+
+\vspace{0.3cm}
+
+\begin{minipage}{0.12\textwidth}
+Mean Latitude Spacing:
+\end{minipage}%
+\begin{minipage}{0.85\textwidth}
+\subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Chapter4/fibonacci_sphere_mean_theta/fibonacci_sphere_mean_theta_normal.png}}\hfil   
+\subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Chapter4/fibonacci_sphere_mean_theta/fibonacci_sphere_mean_theta_top.png}}\hfil
+\subfloat[Side]{\includegraphics[width=3cm]{5-Figures/Chapter4/fibonacci_sphere_mean_theta/fibonacci_sphere_mean_theta_side.png}}
+\end{minipage}
+
+\vspace{0.3cm}
+\begin{minipage}{0.12\textwidth}
+Linearized Vertical Distribution with Uniform Angular Progression:
+\end{minipage}%
+\begin{minipage}{0.85\textwidth}
+\subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Chapter4/fibonacci_sphere_mean_theta_eq_z/fibonacci_sphere_mean_theta_eq_z_normal.png}}\hfil   
+\subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Chapter4/fibonacci_sphere_mean_theta_eq_z/fibonacci_sphere_mean_theta_eq_z_top.png}}\hfil
+\subfloat[Side]{\includegraphics[width=3cm]{5-Figures/Chapter4/fibonacci_sphere_mean_theta_eq_z/fibonacci_sphere_mean_theta_eq_z_side.png}}
+\end{minipage}
+\caption{Different linearization of fibonacci lattice.}
+\label{fig.4:fibonacci_diff_methods}
+\end{figure}
+
+In summary, while this final approach partially alleviates the pole-clustering problem and simplifies the local control law by enforcing constant angular steps, it does so at the cost of losing the equal-area and near-uniform spacing properties of the standard Fibonacci lattice.
+
+\section{Other path planning controllers} \label{annex:Other path planning controllers}
+
+This section is dedicated to other controllers that were implemented but deemed worse than the chosen one.
+
+\subsection{Solvers (fmincon)}
+
+The use of numerical solvers was tried as an alternative way of placing the \gls{n_D} drones on the target sphere so that a minimum inter-agent distance is respected, instead of driving them individually to the Fibonacci lattice points \gls{q_desired}. The problem was formulated as a single, static nonlinear program, solved once with \texttt{fmincon}~\cite{MATLAB_fmincon} (\gls{SQP} algorithm), rather than as a receding-horizon controller re-solved at every timestep. The formulation is as follows:
+
+\begin{itemize}
+    \item \textbf{Decision variables:} the Cartesian coordinates of the \gls{n_D} points \gls{chaser_pos} to be placed on the sphere, stacked into a single vector
+    \begin{equation}
+      x = \begin{bmatrix} 
+        \gls{chaser_pos}_1 & \gls{chaser_pos}_2 & \cdots & \gls{chaser_pos}_{\gls{n_D}} 
+      \end{bmatrix}^\top 
+      \in 
+      \mathbb{R}^{3 \gls{n_D}}, 
+      \qquad 
+      \gls{chaser_i_pos} \in \mathbb{R}^3.
+    \end{equation}
+    \item \textbf{Cost function:} the objective is identically zero, $J(x) = 0$. No distance-to-target or effort term is minimized; the solver is used purely to find \emph{any} point that satisfies the constraints below, starting from the drones' current positions \gls{chaser_i_pos} as the initial guess.
+    \item \textbf{Constraints:}
+    \begin{align}
+        & \|\mathbf{p}_i\| - R = 0, \qquad i = 1,\dots,P\\
+        \intertext{(each point lies on the sphere of radius $R$)} \notag\\
+        & \gls{d_min} - d_{i,k} \leq 0, \quad i = 1,\dots,P, \quad k = 1,\dots,K\\
+        \intertext{(minimum geodesic distance to the $K=3$ nearest neighbours)}\notag
+    \end{align}
+    where $d_{i,k}$ is the geodesic distance from point $i$ to its $k$-th nearest neighbor on the sphere, and \gls{d_min} is the average nearest-neighbor geodesic distance of the target Fibonacci lattice.
+    \item \textbf{Horizon and solve frequency:} there is no time horizon in this formulation. The optimization does not model drone dynamics or motion over time, it is a single static feasibility problem, solved once (offline) for a given number of drones \gls{n_D} and radius \gls{sphere_radius}, not re-solved online at each control step.
+\end{itemize}
+
+This approach suffers from a fundamental limitation. Because the nonlinear constraints above are only guaranteed to hold at the converged solution \gls{p_desired}, the intermediate iterates produced by the \gls{SQP} algorithm along the way are, in general, infeasible: they neither lie exactly on the sphere nor respect the minimum-distance constraint. Figure~\ref{fig.4:solver_solution} plots exactly these intermediate \gls{SQP} iterates, captured through \texttt{fmincon}'s \texttt{OutputFcn} at each optimizer iteration, connected in sequence. The solver does not take the physical trajectory of the drones moving through time and space only a visualization of the solver's internal search history. Consequently, the paths shown do not represent motion that respects collision avoidance, and no claim of continuous constraint satisfaction during a trajectory can be made from this figure, only the final configuration (marked with a cross) is guaranteed to satisfy both constraints. Since the problem is solved once, as a static placement, and not repeatedly along a receding horizon, this method cannot be used directly as an online, constraint-respecting motion planner, it can only guarantee a feasible final configuration.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.4\textwidth]{5-Figures/Chapter4/solutions/solver.pdf}
+  \caption[SQP iterations using solver (fmincon).]{Sequence of SQP iterates produced by \texttt{fmincon} while solving the static placement problem for three drones (circle: initial guess, cross: converged solution). Intermediate points do not satisfy the sphere and minimum-distance constraints; only the final, converged configuration does.}
+  \label{fig.4:solver_solution}
+\end{figure}
+
+\subsection{Artificial Potential Field (APF)}
+
+The concept of \gls{APF} was previously introduced in
+Section~\ref{sec.3:Artificial Potential Fields}. In this section, it is
+applied to enforce inter-agent separation while maintaining a desired
+spatial distribution on a spherical surface. The idea is not to drive \gls{q} to its references, but to compute the average distance between the Fibonacci points \gls{p_desired} and let \gls{q} spread until that spacing is reached. Let \gls{n_D} denote the number of drones, and consider the set $\{ \gls{p_i_desired} \in \Gamma^2 \}_{i=1}^{\gls{n_D}}$ representing Fibonacci lattice points distributed on a sphere of radius \gls{r_desired}. From this points the pairwise geodesic distance matrix $\gls{d_ij_geo}$ is computed according to
+\begin{equation}
+  \gls{d_ij_geo} =
+  \begin{cases}
+    \gls{r_desired} \arccos \! 
+    \left( 
+      \dfrac{\gls{p_i_desired}^{\top}\mathbf{p^\star_j}}{\gls{r_desired}^2} 
+    \right), 
+    & i \neq j, \\[6pt]
+    0, & i = j ,
+  \end{cases}
+  \label{eq.4:geodesic_distance}
+\end{equation}
+from which the average inter-agent distance, defined as the minimum distance for repulsion to occur, is defined as
+\begin{equation}
+  \gls{d_min} = \frac{1}{\gls{n_D}} \sum_{i=1}^{\gls{n_D}} 
+  \left( 
+    \frac{1}{\gls{n_D}-1} \sum_{\substack{j=1 \\ j \neq i}}^{\gls{n_D}} \gls{d_ij_geo} 
+  \right).
+  \label{eq.4:d_avg between drones}
+\end{equation}
+This quantity is used as a minimum safety distance. 
+
+At each simulation step \gls{time_step}, the Cartesian position $\gls{chaser_i_pos} \in \mathbb{R}^3$ of each drone is projected onto the spherical manifold as
+\begin{equation}
+  \gls{q_i} = \Pi^{1,\gls{target_pos}}(\gls{chaser_i_pos})
+  \label{eq.4:project_to_sphere}
+\end{equation}
+ensuring that all agents evolve on the surface of the sphere. For each drone $i$, a neighborhood set is defined as
+\begin{equation}
+  \gls{node_neighbour_set}(k) = \left\{ j \neq i \mid \gls{d_ij_geo}(k) < \gls{d_min} \right\},
+\end{equation}
+which includes only those agents that violate the minimum separation
+constraint. 
+
+The repulsive artificial potential applied to drone $i$ is given by
+\begin{equation}
+  u_i(k) =
+  \sum_{j \in \gls{node_neighbour_set}}
+  \left(
+  \frac{\gls{q_i}(k) - \mathbf{q_j}(k)}{\|\gls{q_i}(k) - \mathbf{q_j}(k)\|}
+  \left( \gls{d_min} - \gls{d_ij_geo}(k) \right)
+  \right).
+\end{equation}
+The term
+\begin{equation*}
+  \frac{\gls{q_i}(k) - \mathbf{q_j}(k)}{\|\gls{q_i}(k) - \mathbf{q_j}(k)\|}
+\end{equation*}
+defines the unit vector pointing from drone $j$ to drone $i$, while the magnitude $(\gls{d_min} - \gls{d_ij_geo}(k))$ increases linearly as the distance between the drones decreases below the safety threshold. This results in a symmetric repulsive interaction that pushes neighboring agents apart. To avoid excessively large corrections, the resulting vector is saturated as
+\begin{equation}
+  u_i(k) \leftarrow
+  \min\!\left( \|u_i(k)\|,\, \gls{d_min} \right)
+  \frac{u_i(k)}{\|u_i(k)\|}
+  \label{eq.4:saturation_apf}
+\end{equation}
+which ensures that the displacement applied at each step does not exceed \gls{d_min}. The corrected reference position is then projected back onto the sphere, guaranteeing consistency with the manifold constraint.
+
+The overall control architecture is illustrated in Figure~\ref{fig.4:APF_controller_architecture}, and an example trajectory for three drones is shown in Figure~\ref{fig.4:APF_solution}.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{5-Figures/Appendix/controller_architecture/APF_controller_architecture.pdf}
+  \caption{APF outer/inner loop controller.}
+  \label{fig.4:APF_controller_architecture}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.8\textwidth]{5-Figures/Chapter4/solutions/APF.pdf}
+  \caption{Trajectory obtained using the APF for three drones.}
+  \label{fig.4:APF_solution}
+\end{figure}
+
+Figure~\eqref{fig.4:APF_solution} shows that the agents quickly reach the sphere, since no radial controller is used, drones move directly to the sphere of desired radius $\gls{r_desired}$ while moving to the desired spaced positions on the sphere surface.
+
+\subsection{Methods comparison}
+\label{sec.4:Methods comparison}
+
+Three candidate control strategies were implemented and evaluated under identical simulation conditions: a nonlinear programming solver (\texttt{fmincon}), an \gls{APF}-based controller, and a Lyapunov-based controller. Table~\ref{tab:methods_comparison} summarizes the performance metrics obtained for each approach over a simulation horizon of \SI{30.0}{\second}, and the results are discussed in detail below.
+
+\paragraph{Simulation parameters.} All three controllers were evaluated under a common set of simulation settings, with method-specific parameters as detailed below. The simulation horizon was \SI{30.0}{\second} with an inner-loop and simulation sampling period of \SI{0.01}{\second} (\num{3000} steps), under Earth gravity ($g = \SI{9.81}{\meter\per\second\squared}$), for a formation of \gls{n_D} = 3 drones and a target sphere of radius \SI{2}{\meter}. All used the same Mellinger parameters, available at~\ref{tab.4:all_params}
+
+\begin{table}[htbp]
+    \centering
+    \caption{Simulation and controller-specific parameters for each evaluated strategy.}
+    \label{tab:sim_parameters}
+    \begin{tabular}{@{}ll@{}}
+        \toprule
+        \textbf{Parameter} & \textbf{Value} \\
+        \midrule
+        \multicolumn{2}{@{}l}{\textit{Common simulation parameters}} \\
+        Simulation horizon, \gls{t_end} & \SI{30.0}{\second} \\
+        Sampling period, \gls{time_step} & \SI{0.01}{\second} \\
+        Number of simulation steps & 3000 \\
+        Gravitational acceleration, \gls{gravity} & \SI{9.81}{\meter\per\second\squared} \\
+        Number of agents, \gls{n_D} & 3 \\
+        Target sphere radius \gls{r_desired} & \SI{2}{\meter} \\
+        \midrule
+        \multicolumn{2}{@{}l}{\textit{fmincon solver}} \\
+        Algorithm & \gls{SQP} \\
+        Maximum function evaluations & \num{1e5} \\
+        \midrule
+        \multicolumn{2}{@{}l}{\textit{Artificial Potential Field (APF)}} \\
+        APF gain, \gls{apf_rep_gain} & 1.0 \\
+        \midrule
+        \multicolumn{2}{@{}l}{\textit{Lyapunov-based controller}} \\
+        Radial reduction gain, \gls{k_radii} & 0.3 \\
+        Geometric convergence gain, \gls{k_geo} & 30 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+The \textit{convergence time to goal} is defined as the time required for all agents to reach an error to the objective \gls{p_desired} of less than \SI{0.1}{\meter}. In the case of the \texttt{fmincon} and \gls{APF} controllers, since no fixed objective point exists, this is instead evaluated as the error between the relative distance \gls{d_pT} and the desired radius \gls{r_desired}. The \textit{final goal tracking error} corresponds to the distance \gls{d_pT}, or, in the Lyapunov case, the distance to the objective. The \textit{reference tracking error} is defined as the error between the objective given to the low-level controller (Mellinger) and the actual position of the agent \gls{chaser_pos}. The \textit{average inter-agent distance} is the average geodesic distance maintained between agents after \SI{30}{\second}. Finally, the \textit{total computation time} refers to the time required to compute the \SI{30}{\second} simulation for each case.
+
+\begin{table}[htbp]
+    \centering
+    \caption[Comparison of three control strategies]{Comparison of performance metrics across the three evaluated control strategies.}
+    \label{tab:methods_comparison}
+    \begin{tabular}{@{}lccc@{}}
+        \toprule
+        \textbf{Metric} & \textbf{fmincon} & \textbf{APF} & \textbf{Lyapunov} \\
+        \midrule
+        Convergence time to goal (all agents $< \SI{0.10}{\meter}$) & >30 & \SI{4.460}{\second} & \SI{17.610}{\second} \\
+        Final goal-tracking error (max) [m] & 1.0459 & \num{9.082e-14} & 0.0024 \\
+        Final goal-tracking error (mean) [m] & 0.7772 & \num{4.958e-14} & 0.0019 \\
+        Final reference-tracking error (max) [m] & 1.1673 & \num{1.536e-11} & \num{7.368e-5} \\
+        Final reference-tracking error (mean) [m] & 0.8465 & \num{9.220e-12} & \num{5.729e-5} \\
+        Average pairwise inter-agent distance [m] & 4.7923 & 3.3397 & 3.4645 \\
+        Total computation time [s] & 14.761 & 9.249 & 7.826 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\paragraph{fmincon solver.} Unlike the other two approaches, the \texttt{fmincon}-based solver does not pursue a single terminal convergence condition; rather, it seeks to maintain a prescribed inter-agent spacing while driving each agent toward the desired sphere of radius \gls{r_desired}. As can be seen by the tracking-goal error the the time to goal of less then \SI{0.1}{\meter} does not happen in 30 seconds. In addition, the Mellinger controller was unable to accurately track the reference trajectory generated by this solver, exhibiting a reference-tracking error as high as \SI{1.1673}{\meter}. It should be noted that the reported tracking-goal error is not equivalent to the reference-tracking error, although the two are closely related, since the former measures distance to the final objective while the latter measures deviation from the commanded trajectory.
+
+\paragraph{Artificial Potential Field (APF).} The \gls{APF} controller reached the target sphere radius in \SI{4.460}{\second}, with agents maintaining a geodesic spacing of \SI{3.3397}{\meter} from one another. Its total computation time of \SI{9.249}{\second} was nearly three times shorter than the simulated time horizon. The Mellinger controller tracked the \gls{APF}-generated reference with extremely high precision, achieving reference-tracking errors on the order of $10^{-11}$~\si{\meter}. Note, however, that the reported average and maximum tracking errors may be misleading: since the system spends roughly 5/6\textsuperscript{th} of the simulation time near the final desired location, an early period of high tracking error can be masked by a mean that is dominated by near-zero error.
+
+\paragraph{Lyapunov-based controller.} The Lyapunov-based controller likewise achieved a Mellinger reference-tracking error of effectively zero (on the order of $10^{-4}$~\si{\meter}), although it required a longer convergence time of \SI{17.610}{\second}. This behavior is consistent with the underlying control law, which first aligns the agents' angular position \gls{q} on the two-sphere with the desired orientation before reducing the radial distance to the target value, in contrast to the \gls{APF}, which does not enforce this two-stage behavior. A further advantage of this controller is that it allows the desired position to be directly specified on the two-sphere. Despite its longer convergence time, it required less computation time than the \gls{APF} approach, at \SI{7.826}{\second}.
+
+\paragraph{Discussion.} In light of the above results, the Lyapunov-based controller was selected as the most well-rounded choice for the objectives of this thesis. It achieves near-zero reference-tracking error while requiring less computation time than the \gls{APF} controller. Although its convergence time is comparatively higher, this is a direct consequence of the controller's strategy of first aligning the axis \gls{q} with the desired orientation before reducing the radial distance. This behavior is also considered elegant from a geometric standpoint, as the target is first encircled and subsequently enclosed within a sphere of the desired radius \gls{r_desired}.
+
+\section{Other iterative computation agent spacing on the two-sphere} \label{annex:Other iterative computation agent spacing on the two-sphere}
+
+As has been previously stated the distinction between direct and iterative methods matters because iterative methods allow or the use of decentralized implementation of agent spacing that might even not require for every agent to know how many agents exist in the formation as well as not have to agree on the position each agent will take.
+
+This section introduces other methods that were implemented but considered inferior to the one used in \ref{sec.5:Iterative computation agent spacing on the two-sphere} followed by the comparison and understanding of the choice of distribution.
+
+\subsection{Thomson minimum energy sphere} \label{annex:Thomson minimum energy sphere}
+
+In 1904, J. J. Thomson proposed a model for the atom in which electrons were thought to be evenly distributed within a positively charged sphere. In this model, each electron experiences repulsive forces from the others and is constrained to remain on the surface of the sphere. This concept led to what is now known as the Thomson problem, which seeks the arrangement of $N$ electrons on the surface of a unit sphere that minimizes their total electrostatic potential energy, given that they repel each other according to Coulomb's law. Thomson introduced this problem while developing his atomic model, later called the plum pudding model, reflecting the understanding that negatively charged electrons exist within a neutrally charged atom.\cite{thomson_min_energy_sphere}
+
+The Thomson problem can be formulated mathematically as the minimization of the total Coulomb energy of $N$ point charges constrained to the surface of the unit sphere. Let $\mathbf{x}_i \in \mathbb{R}^3$ denote the Cartesian coordinates of the $i$-th point on the sphere, such that $\|\mathbf{x}_i\| = 1$ for all $i = 1, \dots, N$. The total electrostatic potential energy is given by
+
+\begin{equation}
+E(\mathbf{X}) = \sum_{i=1}^{N} \sum_{j=i+1}^{N} \frac{1}{\|\mathbf{x}_i - \mathbf{x}_j\|_2},
+\end{equation}
+where $\mathbf{X} = [\mathbf{x}_1, \mathbf{x}_2, \dots, \mathbf{x}_N] \in \mathbb{R}^{3 \times N}$ is the matrix of all point coordinates, and $\|\mathbf{x}_i - \mathbf{x}_j\|_2$ is the Euclidean distance between points $i$ and $j$. The goal of the Thomson problem is to find
+
+\begin{equation}
+\mathbf{X}^* = \text{arg} \min_{\mathbf{X}} E(\mathbf{X}).
+\end{equation}
+The only found benefit of using this method, for the desired formation purposes, is that due to there not being any imposed  restrictions, the number of agents on the two-sphere can be any \gls{n_D}. The results of this method can be visible in Figure~\ref{fig.3:thomson_demonstration}.
+
+\begin{figure}[htbp]
+    \centering
+    \subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Chapter4/thomson_sphere/thomson_normal.png}}\hfil   
+    \subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Chapter4/thomson_sphere/thomson_top.png}}\hfil
+    \subfloat[Side]{\includegraphics[width=3cm]{5-Figures/Chapter4/thomson_sphere/thomson_side.png}}
+    \caption{Thomson demonstration. (31 points)}
+    \label{fig.3:thomson_demonstration}
+\end{figure}
+
+\subsection{Comparison of Agent Distributions on the Two-Sphere} \label{annex:Comparison of Agent Distributions on the Two-Sphere}
+
+As outlined in Section~\ref{sec.5:Iterative computation agent spacing on the two-sphere}, multiple approaches exist for distributing points on the two-sphere, allowing the total number of agents to be unknown, to vary in time, and to work under a non-fully-connected implementation. This section presents and compares the outcomes of each method, and identifies the most suitable one in light of the objectives and constraints.
+
+All three methods are compared under the same conditions: 1000 iterations per run, 100 runs, with 30 points used in every method and run. A run is considered to have converged, and ends early, if the position of all points between two iterations changes by no more than $5\times10^{-3}$ m (tol). At the start of each run, points are placed randomly on the unit sphere.
+
+\begin{figure}[htbp]
+\centering
+\begin{minipage}{0.12\textwidth}
+Thomson\\Minimal Energy:
+\end{minipage}%
+\begin{minipage}{0.85\textwidth}
+\subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Chapter4/thomson_sphere/thomson_normal.png}}\hfil
+\subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Chapter4/thomson_sphere/thomson_top.png}}\hfil
+\subfloat[Side]{\includegraphics[width=3cm]{5-Figures/Chapter4/thomson_sphere/thomson_side.png}}
+\end{minipage}
+
+\vspace{0.3cm}
+
+\begin{minipage}{0.12\textwidth}
+Lloyd's\\Algorithm\\
+(convex hull):
+\end{minipage}%
+\begin{minipage}{0.85\textwidth}
+\subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Chapter3/Lloyd_convex_hull/Lloyd_normal.pdf}}\hfil
+\subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Chapter3/Lloyd_convex_hull/Lloyd_top.pdf}}\hfil
+\subfloat[Side]{\includegraphics[width=3cm]{5-Figures/Chapter3/Lloyd_convex_hull/Lloyd_side.pdf}}
+\end{minipage}
+
+\begin{minipage}{0.12\textwidth}
+Lloyd's\\Algorithm\\
+(half plane):
+\end{minipage}%
+\begin{minipage}{0.85\textwidth}
+\subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Chapter3/Lloyd_half_plane/Lloyd_half_plane_normal.pdf}}\hfil
+\subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Chapter3/Lloyd_half_plane/Lloyd_half_plane_top.pdf}}\hfil
+\subfloat[Side]{\includegraphics[width=3cm]{5-Figures/Chapter3/Lloyd_half_plane/Lloyd_half_plane_side.pdf}}
+\end{minipage}
+\caption{Agent positions resulting from each distribution method.}
+\label{annex:methods_points_on_sphere}
+\end{figure}
+
+Table~\ref{tab.5:method_comparison_convergence} summarizes, for each method, the mean run time, the mean number of iterations needed to converge (computed only over runs that did converge), and the convergence rate over 100 runs. Table~\ref{tab.5:method_comparison_spacing} reports three spacing-quality metrics evaluated on a representative run: the ratio of the minimum to the average nearest-neighbor distance ($d_{NN,\min}/d_{NN,avg}$, where 1.0 is ideal uniform spacing), the coefficient of variation of the nearest-neighbor distance ($CV(d_{NN})$, lower is more uniform), and the Riesz energy ($s=1$, lower is more evenly distributed). Figure~\ref{annex:methods_points_on_sphere} illustrates the distributing of points on the two-sphere for (30, 1001, 30) points respectively.
+
+\begin{table}[htbp]
+\centering
+\caption[Convergence behavior of point-sampling method]{Convergence behavior of point-sampling methods (30 agents, 100 runs, 1000 iterations max, tol $=5\times10^{-3}$ m).}
+\label{tab.5:method_comparison_convergence}
+\begin{tabular}{lcccc}
+\toprule
+Method & \makecell{Mean run\\time (s)} & \makecell{Mean iters.\\to converge} & \makecell{Converged\\/ 100} & \makecell{Did not\\converge} \\
+\midrule
+Thomson (min.\ energy) & 0.085 & ------ & 0  & 100 \\
+Lloyd (convex hull)    & 0.033 & 20.470 & 100 & 0   \\
+Lloyd (half plane)     & 1.367 & 29.110 & 93 & 7   \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Spacing quality of point-sampling methods (30 agents, 1 representative run).}
+\label{tab.5:method_comparison_spacing}
+\begin{tabular}{lccc}
+\toprule
+Method & $d_{NN,\min}/d_{NN,avg}$ & $CV(d_{NN})$ & Riesz Energy ($s=1$) \\
+\midrule
+Thomson (min.\ energy) & 0.3246 & 0.6950 & 461.79 \\
+Lloyd (convex hull)    & 0.8585 & 0.1202 & 363.06 \\
+Lloyd (half plane)     & 0.8486 & 0.0728 & 360.77 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.85\textwidth]{5-Figures/Appendix/iterative_comparison/iterative_run_comparing_methods_box_shape_3.pdf.pdf}
+  \caption[Run time of 100 simulations for all iterative points distribution methods]{Run time of 100 simulations of 1000 iterations each for 30 agents, all three methods. Because the half-plane method is orders of magnitude slower, the Thomson and convex-hull methods are compressed to near-flat lines on this scale.}
+  \label{fig.5:run_time_comparison_all}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.85\textwidth]{5-Figures/Appendix/iterative_comparison/iterative_run_comparing_methods_box_shape_2.pdf.pdf}
+  \caption[Run time of 100 simulations for Thomson and convex-hull methods]{Run time of 100 simulations of 1000 iterations each for 30 agents, Thomson and convex-hull methods only, shown at a scale that resolves their distributions.}
+  \label{fig.5:run_time_comparison_zoom}
+\end{figure}
+
+\paragraph{Thomson (minimal energy)} This method never converged within the tolerance across all 100 runs; because no run converged, no mean iterations-to-convergence value is defined (Table~\ref{tab.5:method_comparison_convergence}), indicating the method approaches but does not settle into a stable equilibrium under this convergence criterion within the 1000-iteration limit. Its spacing quality is also markedly worse than the other two methods: $d_{NN,\min}/d_{NN,avg} = 0.3246$ is far from the ideal of 1.0, $CV(d_{NN}) = 0.6950$, and its Riesz energy (461.79) is the highest of the three, confirming a comparatively uneven and energetically unfavorable distribution.
+
+\paragraph{Lloyd (convex hull)} This method converges universally (100/100 runs) in a mean of 20.470 iterations, making it both the fastest-converging and the only method with a perfect convergence rate in this test. Its spacing metrics are close to those of the half-plane variant ($d_{NN,\min}/d_{NN,avg} = 0.8585$ vs.\ $0.8486$; Riesz energy 363.06 vs.\ 360.77), with only a modestly higher $CV(d_{NN})$ (0.1202 vs.\ 0.0728).
+
+\paragraph{Lloyd (half plane)} This method produces the most uniform spacing of the three, the lowest $CV(d_{NN})$ (0.0728) and lowest Riesz energy (360.77), but at a steep computational cost: a mean run time of 1.367 s (about $41\times$ slower than the convex-hull method and $16\times$ slower than the Thomson method), and a lower convergence rate (93/100) requiring more iterations on average (29.110) when it does converge.
+
+\paragraph{Final analysis} In short, Thomson's method is unsuitable under the present convergence criterion despite its low per-run cost, since it never converges and yields the poorest spacing. The two Lloyd variants are much closer contenders: convex hull offers substantially faster run time than half plane with a perfect, reliable convergence, while half plane offers a further, but comparatively small, improvement in spacing uniformity at a disproportionate cost in run time and a slightly reduced convergence rate. Given that the spacing-quality gap between the two Lloyd variants is small relative to the order-of-magnitude difference in run time, both are retained for full system-level testing of the control architecture, so that this trade-off can be assessed under simulation operating conditions rather than resolved on run time alone.

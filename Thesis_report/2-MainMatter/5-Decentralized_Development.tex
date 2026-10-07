@@ -1,247 +1,391 @@
+
 %!TEX root = ../template.tex
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 4-Work_Done.tex
+%% 5-Decentralized_Development.tex
 %% NOVA thesis document file
 %%
 %% Chapter with the template manual
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\typeout{NT FILE 5-Decentralized_Development.tex}%
+\typeout{NT FILE 4-Centralized_Development.tex}%
 
-\chapter{Decentralized Development}
+\chapter{Decentralized Encirclement}
 \label{cha:Decentralized Development}
 
 \glsresetall
 
 \section{Introduction} \label{sec.5:Introduction}
 
-This chapter focuses on the decentralized implementation of an encirclement algorithm, building heavily on the architecture introduced in Chapter~\ref{cha:Centralized Development}. Due to the system being decentralized the direct computation methods used for final desired position are no longer viable due to the need for a without prior knowledge of the total number of agents in the formation. Furthermore, applying the Munkres algorithm, as done previously, would require each agent to have access to the positions of all other agents, which contradicts the principles of a decentralized approach.
+This chapter presents the decentralized implementation of the encirclement algorithm, building on top of the control architecture introduced in Chapter~\ref{cha:Centralized Development}. In accordance with the terminology discussed in Section~\ref{sec.2:Centralized and decentralized systems}, the term \emph{decentralized} is used here to describe the system architecture: no global coordinator computes the formation configuration or assigns a desired position to each agent. Instead, each agent computes its update using locally available information from its neighboring agents.
 
-As in the previous chapter, this chapter is divided into two main sections: the distribution of points on the two-sphere, and the control architecture responsible for safely guiding agents from arbitrary positions in $\mathbb{R}^3$ to their assigned positions on the two-sphere.
+This distinction is important because the term \emph{decentralized} does not, by itself, uniquely characterize the sensing or interaction properties of a formation-control strategy. The implementation presented in this chapter is more specifically characterized by its \emph{neighbor-based interaction} and its use of \emph{relative agent-position information}. In particular, agents do not require knowledge of the total number of agents or the positions of all agents in the formation.
 
-\section{Comparison of Agent Distributions on the Two-Sphere} \label{sec.5:Comparison of Agent Distributions on the Two-Sphere}
+Consequently, the direct computation methods used in the centralized implementation to generate a complete set of desired positions are not applicable in the same form. For example, the Fibonacci-lattice construction requires knowledge of the total number of agents, while the Munkres assignment algorithm requires access to the positions of all agents. Both requirements are incompatible with the local-information architecture considered here.
 
-As outlined in Section~\ref{sec.3:Iterative computation agent spacing on the two-sphere}, multiple approaches exist for distributing points on the two-sphere, allowing for the total number of agents to be unknown, vary in time, and work under a non fully connected implementation. In this section, the outcomes of each method is presented and systematically compared. Based on this comparison, the most suitable  method is identified in light of the objectives and constraints.
+Instead, the desired distribution is generated iteratively through a local Voronoi-based implementation of Lloyd's algorithm. Each agent constructs an approximation of its own Voronoi region using information obtained from neighboring agents and computes a new desired position from the centroid of that region. The resulting update is therefore performed independently by each agent, while the collective formation emerges from the interaction between neighboring agents.
+
+As in the previous chapter, this chapter is divided into two main parts. The first addresses the iterative distribution of points over the two-sphere, while the second describes the control architecture used to guide agents from arbitrary positions in $\mathbb{R}^3$ toward the desired positions generated on the two-sphere.
+
+
+\section{Iterative points separation on the two-sphere} \label{sec.5:Iterative computation agent spacing on the two-sphere}
+
+In this chapter two implementations based on the same underlying Lloyd-type method, previously introduced in Section~\ref{annex:Lloyd's algorithm}, are considered, a convex-hull-based method and a half-plane method, while another method was implemented, it was not used and is presented in Appendix~\ref{annex:Other iterative computation agent spacing on the two-sphere}, together with the comparison between all methods and the justification for selecting the ones here presented. 
+
+Lloyd's algorithm when applied to the two-sphere uses the distance metric defined by the geodesic distance along the spherical surface rather than the Euclidean distance in the ambient space. This accounts for the geometry of the domain and is therefore appropriate for distributing agents over a spherical surface.
+
+The accuracy of any locally-computed Voronoi cell depends on the interaction  topology: a cell obtained from an agent's neighborhood coincides with the true  global Voronoi cell only when that neighborhood contains every site that  influences the cell's boundary. Both implementations described below inherit  this dependency when applied in the decentralized setting.
+
+These methods further assume that agents operate on a common spherical domain,  with sufficiently consistent representations of the sphere geometry and of the  coordinate frame used to process relative measurements, and that relative  localization and communication are accurate enough to maintain a meaningful  neighborhood structure. Errors in relative position measurements, or  discrepancies between the geometric representations used by different agents,  can lead neighboring agents to construct incompatible approximations of their  local Voronoi cells. Such inconsistencies affect the resulting centroid  estimates and, consequently, the convergence and uniformity of the formation.
+
+\paragraph{Voronoi convex hull}
+
+The Voronoi region \gls{voronoi_region} is calculated from the convex hull of the agent positions using the internal $\text{MATLAB}^{\text{\textregistered}}$ function \textit{convhull} \cite{MATLAB:R2024a,MATLAB_convhull}. The resulting triangular faces define the Delaunay triangulation of the points. Since the points lie on the unit two-sphere, the normal vectors associated with the triangular faces can be used to determine the corresponding spherical circumcenters \cite{renkaAlgorithm772STRIPACK1997}. These circumcenters form the vertices of the spherical Voronoi regions.
+
+The area of each Voronoi region is calculated by decomposing it into spherical triangles and applying L'Huilier's formula~\eqref{eq.5:Huilier_form}. For a spherical triangle with side lengths $a$, $b$, and $c$, and semiperimeter $s=(a+b+c)/2$, its area on the unit sphere is
+
+\begin{equation}
+A =
+4\arctan\left(
+\sqrt{
+\tan\frac{s}{2}
+\tan\frac{s-a}{2}
+\tan\frac{s-b}{2}
+\tan\frac{s-c}{2}
+}
+\right).
+\label{eq.5:Huilier_form}
+\end{equation}
+The area of the Voronoi region is then obtained by summing the areas of its constituent spherical triangles. Figure~\ref{fig.3:Convex_hull_demonstration} shows the resulting convex hull and Delaunay triangulation for a random formation of 30 points on the two-sphere.
 
 \begin{figure}[htbp]
 \centering
-\begin{minipage}{0.12\textwidth}
-Thomson\\Minimal Energy:
-\end{minipage}%
-\begin{minipage}{0.85\textwidth}
-\subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Chapter4/thomson_sphere/thomson_normal.png}}\hfil   
-\subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Chapter4/thomson_sphere/thomson_top.png}}\hfil
-\subfloat[Side]{\includegraphics[width=3cm]{5-Figures/Chapter4/thomson_sphere/thomson_side.png}}
-\end{minipage}
-
-\vspace{0.3cm}
-
-\begin{minipage}{0.12\textwidth}
-Lloyd's\\Algorithm\\
-(convex hull):
-\end{minipage}%
-  \begin{minipage}{0.85\textwidth}
-  \subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Chapter3/Lloyd_convex_hull/Lloyd_normal.pdf}}\hfil   
-  \subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Chapter3/Lloyd_convex_hull/Lloyd_top.pdf}}\hfil
-  \subfloat[Side]{\includegraphics[width=3cm]{5-Figures/Chapter3/Lloyd_convex_hull/Lloyd_side.pdf}}
-\end{minipage}
-
-\begin{minipage}{0.12\textwidth}
-Lloyd's\\Algorithm\\
-(half plane):
-\end{minipage}%
-  \begin{minipage}{0.85\textwidth}
-  \subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Chapter3/Lloyd_half_plane/Lloyd_half_plane_normal.pdf}}\hfil   
-  \subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Chapter3/Lloyd_half_plane/Lloyd_half_plane_top.pdf}}\hfil
-  \subfloat[Side]{\includegraphics[width=3cm]{5-Figures/Chapter3/Lloyd_half_plane/Lloyd_half_plane_side.pdf}}
-\end{minipage}
-\caption{Agent positions resulting from each distribution methods.}
-\label{fig.5:methods_points_on_sphere}
+\includegraphics[width=0.8\textwidth]{5-Figures/Chapter3/Lloyd_convex_hull/convex_hull_demonstration.pdf}
+\caption{Convex hull for 30 points.}
+\label{fig.3:Convex_hull_demonstration}
 \end{figure}
+
+In addition to its area, the centroid of each Voronoi region must be computed at
+every iteration of Lloyd's algorithm, since it is used to update the position of
+the corresponding site. This is achieved through a triangulation strategy applied
+directly to the Voronoi polygon itself, rather than to the surrounding Delaunay
+triangles used above. A Voronoi region on the sphere is a spherical polygon with
+$\gls{num_voronoi_vertices}$ vertices $\gls{voronoi_vertex}$,
+$j = 1, \dots, \gls{num_voronoi_vertices}$, ordered counter-clockwise around the
+site $\gls{voronoi_site}$. To compute its centroid, the polygon is decomposed into
+a triangle fan anchored at the first vertex $\mathbf{v}_1$: each triangle is formed
+by $\mathbf{v}_1$ together with a consecutive pair of the remaining vertices,
+$\mathbf{v}_j$ and $\mathbf{v}_{j+1}$, for $j = 2, \dots, \gls{num_voronoi_vertices}-1$.
+This yields $\gls{num_voronoi_vertices}-2$ triangles, which together tile the
+polygon exactly.
+
+The centroid of the Voronoi region, $\gls{voronoi_centroid}$, is then approximated as
+an area-weighted sum of the centroids of these constituent spherical
+triangles, each re-normalized onto the sphere:
+\begin{equation}
+\gls{voronoi_centroid} \;\approx\; \Pi^{1,\gls{target_pos}} \left( 
+    \sum_{j=2}^{\gls{num_voronoi_vertices}-1}
+    A \big(\mathbf{v}_1, \mathbf{v}_j, \mathbf{v}_{j+1}\big)\,
+    \frac{\mathbf{v}_1 + \mathbf{v}_j + \mathbf{v}_{j+1}}{\left\| \mathbf{v}_1 + \mathbf{v}_j + \mathbf{v}_{j+1} \right\|}
+\right)
+,
+\end{equation}
+where $A(\mathbf{v}_1, \mathbf{v}_j, \mathbf{v}_{j+1})$
+denotes the area of the spherical triangle with vertices $\mathbf{v}_1$, $\mathbf{v}_j$,
+$\mathbf{v}_{j+1}$. Each term
+$(\mathbf{v}_1 + \mathbf{v}_j + \mathbf{v}_{j+1})/\|\mathbf{v}_1 + \mathbf{v}_j + \mathbf{v}_{j+1}\|$
+is the normalized average of the triangle's own vertices, i.e., an approximation to
+that triangle's spherical centroid, so weighting by $\gls{spherical_triangle_area}$
+before summing gives an area-weighted average over the whole region. The result is
+finally normalized to lie on the unit sphere, and the centroid $\gls{voronoi_centroid}$ is used as
+the site $\gls{voronoi_site}$ for the subsequent iteration.
+
+This implementation has a computational cost that depends on both the number of sites and the number of vertices defining the individual Voronoi regions. The total number of iterations required for convergence additionally depends on the initial configuration and the resulting geometry of the tessellation.
+
+A limitation of this implementation is that the convex-hull construction imposes restrictions on the number and configuration of input points. In particular, the MATLAB implementation requires a sufficient number of non-degenerate points to construct a three-dimensional convex hull. For small numbers of agents and certain configurations, the resulting spherical Voronoi construction can also become geometrically inconsistent.
+
+The observed failure is related to the fact that the convex-hull construction does not directly encode the intended spherical Voronoi topology in all configurations. Since the two-sphere is a closed manifold, selecting the shorter geodesic between two points does not necessarily produce the boundary corresponding to the intended Voronoi region. In configurations where a Voronoi boundary should follow the complementary, longer portion of a great circle, the convex-hull construction may instead select the shorter arc. Subsequent Lloyd iterations can therefore move the sites toward an incorrect partition, potentially causing several sites to collapse toward the same region.Figure~\ref{fig.3:Convex_hull_problems} illustrates an example of such a configuration.
 
 \begin{figure}[htbp]
-  \centering
-  \includegraphics[width=0.85\textwidth]{5-Figures/Chapter5/iterative_run_comparing_methods_box_shape.pdf}
-  \caption{Run time of 100 simulations of 100 iterations each}
-  \label{fig.5:run_time_comparison}
+\centering
+\includegraphics[width=0.8\textwidth]{5-Figures/Chapter3/Lloyd_convex_hull/convex_hull_problems.pdf}
+\caption{Problematic convex-hull configuration.}
+\label{fig.3:Convex_hull_problems}
 \end{figure}
+
+In Figure~\ref{fig.3:llyod_convex_hull_algorithm_distribution} its demonstrated a successful distributions after 300 iterations, together with the corresponding Voronoi boundaries.
 
 \begin{figure}[htbp]
-    \centering
-    \subfloat[Thomson]{\includegraphics[width=3cm]{5-Figures/Chapter5/Comparisions/thomson_normal_100_iter.pdf}}\hfil
-    \subfloat[convex hull]{\includegraphics[width=3cm]{5-Figures/Chapter5/Comparisions/Lloyd_convex_hull_normal_100_iter.pdf}}\hfil
-    \subfloat[half plane]{\includegraphics[width=3cm]{5-Figures/Chapter5/Comparisions/Lloyd_half_plane_normal_100_iter.pdf}}
-    \caption{Different methods results after 100 iterations}
-    \label{fig.5:results_afete_100_iter}
+\centering
+\subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Chapter3/Lloyd_convex_hull/Lloyd_normal.pdf}}\hfil
+\subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Chapter3/Lloyd_convex_hull/Lloyd_top.pdf}}\hfil
+\subfloat[Side]{\includegraphics[width=3cm]{5-Figures/Chapter3/Lloyd_convex_hull/Lloyd_side.pdf}}
+\caption{Lloyd's algorithm using the convex-hull implementation.(1001 points)}
+\label{fig.3:llyod_convex_hull_algorithm_distribution}
 \end{figure}
 
-\begin{table}[htbp]
-    \caption{Runtime comparison of point sampling methods}
-    \label{tab.5:Runtime comparison of point sampling methods}
-    \centering
-    \begin{tabular}{l c c c c}
-        \hline
-        \textbf{Property}
-        & \makecell{\textbf{Thomson}}
-        & \makecell{\textbf{Lloyd (convex hull)}}
-        & \makecell{\textbf{Lloyd (half plane)}}\\
-        \hline
-        \makecell{Parameters}
-        & \makecell{MaxIter=100,\\ Seed=0}
-        & \makecell{--} 
-        & \makecell{--} \\
+\paragraph{Voronoi half-plane}
 
-        \makecell{Number of points}
-        & \makecell{1001}
-        & \makecell{1001} 
-        & \makecell{30} \\
+The second implementation of Lloyd's algorithm is referred to as the \emph{half-plane method}. Unlike the convex-hull approach, this method constructs the Voronoi region directly from pairwise bisector constraints. It therefore avoids some of the geometric ambiguities encountered in the convex-hull implementation and can be applied to a wider range of agent configurations.
 
-        \makecell{Mean runtime\\ (s)}
-        & \makecell{0.0752}
-        & \makecell{0.0806} 
-        & \makecell{0.0574} \\
+The main idea is to construct each Voronoi region as the intersection of half-spaces defined on the spherical surface. For a given agent, its cell is obtained by applying the bisector constraints associated with the other sites considered in the construction.
 
-        \makecell{Std. deviation\\ $\sigma$ (s)}
-        & \makecell{0.0054}
-        & \makecell{0.0051} 
-        & \makecell{0.0048} \\
-        \hline
-    \end{tabular}
-\end{table}
+Let \gls{ith_voronoi_site} denote the position of the $i$-th site on the unit sphere and let $\mathbf{s}_j$ denote the position of another site. The boundary between these two sites is the set of points on the sphere that are equidistant from them in the geodesic metric. This boundary is a great-circle arc. The geodesic midpoint can be expressed as
 
-In Figure~\ref{fig.5:run_time_comparison} and Table~\ref{tab.5:Runtime comparison of point sampling methods}, all three methods were executed 100 times, and the average computation time over the first 100 simulation iterations for 30 agents was recorded. This approach was chosen to reduce ambiguities caused by different numbers of agents used in each method or by occasional iterations that were significantly slower than the average, while still representing a realistic encirclement scenario.
+\begin{equation}
+\mathbf{m_{ij}} =
+\frac{
+\sin((1-\frac{1}{2})\theta)\gls{ith_voronoi_site}
++
+\sin(\frac{1}{2}\theta)\mathbf{s}_j
+}
+{\sin(\theta)},
+\qquad
+\theta = \arccos(\gls{ith_voronoi_site} \cdot \mathbf{s}_j),
+\end{equation}
+and the normal vector to the plane containing both sites is
+\begin{equation}
+\mathbf{n_{ij}} =
+\frac{S(\gls{ith_voronoi_site}) \mathbf{s}_j}
+{\|S(\gls{ith_voronoi_site}) \mathbf{s}_j\|}.
+\end{equation}
+amd the normal direction to the bisector at $m_{ij}$ is then given by
+\begin{equation}
+\mathbf{t_{ij}} =
+\frac{S(\mathbf{n_{ij}}) \mathbf{m_{ij}}}
+{\|S(\mathbf{n_{ij}}) \mathbf{m_{ij}}\|}.
+\end{equation}
+The corresponding bisecting plane passes through $\mathbf{m_{ij}}$ and has normal vector $\mathbf{t_{ij}}$. The Voronoi region of site $i$ is obtained by intersecting the sphere with the appropriate half-planes surrounding it. In the global formulation, this can be written as
+\begin{equation}
+\gls{ith_voronoi_region}
+=
+\Omega
+\bigcap_{j \neq i}
+\left\{
+\mathbf{x}\in\mathbb{R}^3
+\mid
+\mathbf{(x-m_{ij})\cdot t_{ij}} < 0
+\right\},
+\label{eq:half_plane_voronoi_calculation}
+\end{equation}
+where $\Omega$ denotes the spherical domain.
 
-It is easy to observe that the Lloyd's convex hull implementation is considerably faster to compute than the other methods, while the half-plane approach is the slowest. However, Figure~\ref{fig.5:results_afete_100_iter} shows that the Thomson method exhibits a much slower convergence toward an approximately uniform point distribution. Even after 100 iterations, many points remain unevenly distributed.
+In practice, the spherical surface is discretized into a finite set of points $x$. The half-plane constraints are then evaluated over this discretization to obtain a binary representation of the corresponding Voronoi region.
 
-Fast convergence to a well-spaced formation is important because, if (N) drones leave the formation for any reason, the remaining agents should quickly redistribute themselves to fill the resulting gaps and restore an even spacing between agents.
+For the decentralized implementation, however, the agent does not have access to all sites. Instead, the constraint set is restricted to the agents contained in its communication or sensing neighborhood, denoted by \gls{node_neighbour_set}:
+\begin{equation}
+\gls{node_neighbour_set}^{local}
+=
+\Omega
+\bigcap_{j \in \gls{node_neighbour_set}}
+\left\{
+x\in\mathbb{R}^3
+\mid
+\mathbf{(x-m_{ij})\cdot t_{ij}} < 0
+\right\}.
+\end{equation}
+This distinction is important: $\gls{node_neighbour_set}^{local}$ coincides with the corresponding cell of the global Voronoi diagram only when the neighborhood contains all sites whose bisectors contribute to the boundary of agent $i$'s Voronoi cell. Thus, the local construction is an approximation of the global Voronoi partition whose accuracy depends on the interaction topology.
 
-A direct comparison of computation times may therefore be biased by implementation details. For this reason, both theoretical computational complexity and prior comparisons are considered when selecting the most appropriate method. The computational complexity of the Thomson formulation is $\mathcal{O}(n^2)$ due to pairwise interactions. Lloyd's algorithm, when implemented using convex hulls, has complexity $\mathcal{O}(kn)$, where $k$ is the number of edges associated with each point and $n$ is the total number of points~\cite{giffonQuicKmeansAcceleratingInference2021}. In contrast, the half-plane implementation of Lloyd's algorithm also exhibits $\mathcal{O}(n^2)$ complexity~\cite{fanHalfPlaneVoronoiDiagram2011}. 
+The centroid of the region \gls{ith_voronoi_centroid} is computed numerically by triangulating the valid surface elements of the discretized sphere and the centroid is approximated as an area-weighted combination of the centroids of these triangles,
 
-Since the thomson method is slower to converge than the other two it is discarded between the other two methods both have their drawbacks, as has been said in \ref{subsec.3:Voronoi diagrams} for certain initial conditions and number of agents the implemented algorithm may have all agents final desired position collapse to a single points while the half plane method suffures from its high computational cost for example when evaluated with 1001 points, the half-plane implementation required approximately 855.8370 seconds (14.2639 minutes) per iteration.
+\begin{equation}
+    \gls{ith_voronoi_centroid}
+    \approx
+    \frac{
+    \sum_j A_j c_{\Delta,j}
+    }{
+    \sum_j A_j
+    },
+\end{equation}
+where $A_j$ and $c_{\Delta,j}$ denote the area and centroid of the $j$-th triangular surface element, respectively. The resulting centroid is subsequently projected onto the unit sphere.
 
-From the above analysis it is concluded that complete system simulations of the complete control architecture is to be tested for both Lloyd's implementation methods developed, since both have their benefits.
+The half-plane implementation avoids the specific convex-hull ambiguity described previously and provides a more direct construction of the spherical Voronoi boundaries. Its principal computational limitation is the increased cost associated with evaluating multiple pairwise constraints and performing the numerical surface integration. When all pairwise constraints are considered, this procedure scales quadratically with the number of sites. In the decentralized implementation, the computational cost can instead depend on the number of neighbors available to each agent, although the resulting Voronoi region is then determined by the local interaction topology.
+
+The resulting point distribution for 30 sites is shown in Figure~\ref{fig.3:llyod_half_plane_algorithm_distribution}.
+
+\begin{figure}[htbp]
+\centering
+\subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Chapter3/Lloyd_half_plane/Lloyd_half_plane_normal.pdf}}\hfil
+\subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Chapter3/Lloyd_half_plane/Lloyd_half_plane_top.pdf}}\hfil
+\subfloat[Side]{\includegraphics[width=3cm]{5-Figures/Chapter3/Lloyd_half_plane/Lloyd_half_plane_side.pdf}}
+\caption{Lloyd's algorithm using the half-plane implementation for 30 sites.}
+\label{fig.3:llyod_half_plane_algorithm_distribution}
+\end{figure}
 
 \section{Control architecture}
 
-The control architecture of the decentralized system is very similar to the final version of the centralized one. The major difference is the use of the Lloyd's Algorithm instead of the fibonacci lattice due to no agent knowing the total number of agents in the formation nor their position. With the use of this two additions it is possible for the system to be completely decentralized. In Figure~\ref{fig.5:Controller architecture} its possible to see the complete system architecture, note that the only input of the system is the target position.
+The control architecture of the decentralized implementation follows the structure introduced for the centralized system, with the principal difference being the manner in which desired formation positions are generated.
+
+In the centralized implementation, the desired positions can be computed using the total number of agents and global information about their configuration. In the decentralized implementation, such information is not assumed to be available to individual agents. The Fibonacci-lattice construction used previously is therefore replaced by the local Lloyd-based redistribution described above.
+
+The resulting architecture is decentralized in the architectural sense: no global coordinator is required to calculate or distribute the desired position of each agent. Instead, each agent computes its own desired position from information available within its local interaction neighborhood. The system therefore combines decentralized computation with neighbor-based relative-position sensing.
+
+Figure~\ref{fig.5:Controller architecture} shows the complete control architecture. The target position is provided as the external reference, while the formation-distribution mechanism generates the local desired position used by each agent.
 
 \begin{figure}[htbp]
-  \centering
-  \includegraphics[width=0.85\textwidth]{5-Figures/Chapter5/controller_architecture/decentralized_complete_controller_architecture.drawio.pdf}
-  \caption{Controller architecture}
-  \label{fig.5:Controller architecture}
+\centering
+\includegraphics[width=0.85\textwidth]{5-Figures/Chapter5/controller_architecture/decentralized_complete_controller_architecture.drawio.pdf}
+\caption{Decentralized control architecture.}
+\label{fig.5:Controller architecture}
 \end{figure}
 
-\section{Spacial Network}
+\section{Voronoi Based Spacial Network}
+A key property of the method is that each agent requires only local information.  In particular, knowledge of the total number of agents and direct access to the  positions of all agents are not required. This allows the formation to adapt to  changes in the number of participating agents without recomputing a globally assigned set of formation points.
 
-Spacial network have been previously define in Section~\ref{sec.3:Network topologies} and explicitly defined in Section~\ref{sec.4:Spatial Network explained}, to further drive the point of not using $k$-nearest neighbor Figure~\ref{fig.5:KNN_problems} illustrates that if the number of $k$ neighbours is too low then  some edges that should define the natural boundaries between regions are neglected. This leads to inconsistencies, such as regions being effectively counted multiple times due to missing adjacency relationships.
+\paragraph{Note on network topology construction}
+In this thesis implementation, due to project scope constraints, the Delaunay triangulation is instead calculated globally, using the known positions of all active agents to construct a connectivity Laplacian matrix \gls{laplacian_matrix}. Despite this, other works have developed algorithms based on the Delaunay triangulation and \gls{CVT} to construct a decentralized communication network between sensors \cite{10.1145/2491288.2491296}. It is worth noting, however, that such works typically address a distinct problem: rather than physically relocating mobile agents toward local centroids, they operate on a network of \emph{static} nodes with no location information available, relying instead on hop-count distances between neighbors. In that setting, the "centroid" of a cell is not a point to move toward, but the existing node whose internal hop-distances have minimal variance, which is then selected as the new generating point for the cell. The resulting Voronoi/Delaunay structure is used to build a communication topology over the fixed sensor deployment, rather than to drive a physical redistribution process.
 
-\begin{figure}[htbp]
-  \centering
-  \includegraphics[width=0.85\textwidth]{5-Figures/Chapter5/Networks/KNN_problems.pdf}
-  \caption{k-nearest neighbor faults}
-  \label{fig.5:KNN_problems}
-\end{figure}
+This distinction also clarifies how such an approach avoids a circular dependency between communication and triangulation. The triangulation is not required to establish communication in the first place: a raw, dense communication graph already exists prior to any triangulation, formed simply by which nodes are within direct radio, or more generally sensing, range of one another. Distances used to build the CVT cells are then obtained as hop-counts over this raw graph via local flooding, rather than through geometric measurement. The Delaunay triangulation is subsequently constructed as a sparse overlay on top of this raw graph, connecting the generating points of adjacent cells, and is used afterward for higher-level tasks such as routing or localization rather than for establishing connectivity itself.
 
-\section{Voronoi-Based Decentralized Update}
+A theoretical decentralized implementation of the present formation-control method could follow the same ordering. Rather than relying on hop-counts, each agent would use a raw, range-limited sensing or communication graph, obtained directly from onboard sensing or short-range communication with any agent within a fixed interaction radius, to obtain relative-position measurements to its immediate neighbors. These locally available relative positions, rather than global coordinates, would then be used to construct each agent's approximate local Voronoi cell and corresponding centroid, following the same formulation as \gls{CVT}-based methods. Analogously to the generating-point update in \cite{10.1145/2491288.2491296}, each agent would exchange its updated position (or a representative summary thereof) only with agents inside this interaction radius, so that the desired position update and the associated local connectivity structure could be recomputed at every iteration without any agent requiring global knowledge of the full agent set or its positions. The connectivity Laplacian matrix \gls{laplacian_matrix} used in this thesis could then, in principle, be replaced by a locally assembled equivalent, built incrementally from these pairwise neighbor exchanges rather than from a globally known agent configuration.
 
-The decentralized redistribution of agents over a spherical surface is achieved through a local Voronoi-based update rule. In this formulation, each agent constructs a local Voronoi diagram considering only its own position and those of its immediate neighbors, this means that each agent evaluates its own Voronoi region. The centroid of this local cell is then computed, and the agent updates its position accordingly. Importantly, from the perspective of each agent, it is the only entity that moves, while neighboring agents are treated as static during the update step.
+\section{Simulation Results}
 
-Although each agent operates using only local information, the collective behavior of the system approximates that of a fully centralized implementation. That is, if all agents simultaneously apply this local rule, the resulting motion is equivalent to each agent moving toward the centroid of its corresponding Voronoi cell in the global tessellation.
+Eight simulations are presented, four for each method. For each method, two simulations use a stationary target and two use a target moving according to \eqref{eq.4:sim_target_motion}. Within each pair, one simulation keeps all agents active throughout, while in the other a third of the agents leave the formation after 10 seconds. The departing agents receive no input and enter free fall. This scenario tests how well the remaining agents redistribute themselves over the sphere once part of the formation has been lost.
 
-A key advantage of this method is that it requires only local communication. Each agent needs access solely to the positions of its neighboring agents, and no global knowledge such as the total number of agents in the system is required. This makes the approach scalable and well-suited for distributed implementations.
+The decentralized system was evaluated with 12 agents. All parameters are identical to those of the centralized implementation (Table~\ref{tab.4:all_params}), except for the radial and geometric controllers gains, which were increased to $\gls{k_radii} = 0.7$ and $\gls{k_geo} = 100$. These higher gains allow the reference of each drone to move quickly to its new position on the sphere when the number of agents in the formation changes.
 
-However, this method assumes that the domain in which the agents operate is bounded. In Euclidean space ($\mathbb{R}^2$), this corresponds to environments with well-defined boundaries. In the case of a spherical surface, the domain is inherently bounded by the geometry of the sphere itself, which naturally constrains the Voronoi regions. The formal description of the Lloyd algorithm method can be viewed in Section~\ref{sec.3:Lloyd's algorithm}.
-
-In Figure~\ref{fig.5:voronoi_centralized_vs_decentralized} it is possible to see for 8 sites on a ($\mathbb{R}^2$) surface and using a half plane method the evolution of the sites overtime when the spacial network is correctly defined.
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.85\columnwidth]{5-Figures/Chapter5/voronoi_proof/voronoi_centralized_comparison.pdf}
-    \caption{overlap  of site evolution overtime of centralized and decentralized implementation}
-    \label{fig.5:voronoi_centralized_vs_decentralized}
-\end{figure}
-
-\section{Simulation Results (convex hull)}
-
-The system was evaluated using a total of 12 agents performing the encirclement of a moving target. The results are presented in Figures \ref{fig.5:decentralized_results_drone_1} and \ref{fig.5:lyapunov_solution_t_0.5}--\ref{fig.5:lyapunov_solution_t_30}. The parameters used are identical to those of the centralized system and are listed in Tables~\ref{tab.4:all_params} and \ref{tab.4:Drone_positions}. The reference target position, $\gls{target_pos}^\star$, was chosen to be the same as in the centralized system experiments.
+\paragraph{Convex hull} 
+The results are presented in the following order: static target without formation variation, static target with loss of 4 agents, moving target without formation variation, and moving target with loss of 4 agents.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.85\columnwidth]{5-Figures/Chapter5/Simulations_convex_hull/decentralized_results_drone_1.pdf}
-    \caption{Distance and velocity between drone 1 and a moving target (convex hull)}
-    \label{fig.5:decentralized_results_drone_1}
+    \subfloat[Radial Distance to Target]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/convex/static_simulation/radial_hist_12_agents.pdf}}
+    \hfil
+    \subfloat[Inter-agent Distance]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/convex/static_simulation/inter_agent_dist_12_agents.pdf}}
+    \\
+    \subfloat[Separation of \gls{q_desired} metrics]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/convex/static_simulation/qd_separation_12_agents.pdf}}
+    \hfil
+    \subfloat[Tracking Error]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/convex/static_simulation/tracking_error_12_agents.pdf}}
+    \\
+    \subfloat[Trajectory of all Drones]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/convex/static_simulation/trajectory_12_agents.pdf}}
+    \caption[Simulation for 12 drones with a static target (Convex Hull)]{Simulation results for the 12-drone static scenario (Convex Hull).}
+    \label{fig.5:multiple_results_joined_12_agents_static_convex_hull}
 \end{figure}
+
+Figure~\ref{fig.5:multiple_results_joined_12_agents_static_convex_hull} shows that all agents move towards their desired points on the sphere while keeping a minimum inter-agent distance of 0.9337~m. All agents reach the desired radius, converging between 25 and 30 seconds after initialization. The separation of the desired points on the sphere stabilizes in less than one second, consistent with Table~\ref{tab.5:method_comparison_convergence}, which reports an average of 20.47 iterations (0.2~s) for the desired points to settle. The tracking error, defined as the difference between the reference given by the path planner and the position achieved by the low-level Mellinger controller, never settles. The cause is that the desired positions on the sphere are continuously updated: the target position is estimated, so even for a static target its measured value fluctuates, and the desired points shift with it. The trajectories show that the agents are distributed around the target. Unlike in the centralized version, however, the points move around the sphere as the desired positions evolve.
 
 \begin{figure}[htbp]
     \centering
-    \subfloat[$t=0.5~\mathrm{s}$]{%
-        \includegraphics[width=0.5\columnwidth]{5-Figures/Chapter5/Simulations_convex_hull/decentralized_moving_t_0.5.pdf}\hfil
-        \label{fig.5:lyapunov_solution_t_0.5}
-    }
-        \subfloat[$t=3~\mathrm{s}$]{%
-        \includegraphics[width=0.5\columnwidth]{5-Figures/Chapter5/Simulations_convex_hull/decentralized_moving_t_3.pdf}\hfil
-        \label{fig.5:lyapunov_solution_t_3}
-    }\\
-    \subfloat[$t=6~\mathrm{s}$]{%
-        \includegraphics[width=0.5\columnwidth]{5-Figures/Chapter5/Simulations_convex_hull/decentralized_moving_t_6.pdf}\hfil
-        \label{fig.5:lyapunov_solution_t_6}
-    }
-    \subfloat[$t=30~\mathrm{s}$]{%
-        \includegraphics[width=0.5\columnwidth]{5-Figures/Chapter5/Simulations_convex_hull/decentralized_moving_t_30.pdf}
-        \label{fig.5:lyapunov_solution_t_30}
-    }
-    \caption{Encirclement of a moving target using the Lyapunov-based (convex hull) control strategy for three drones at different time instants.}
-    \label{fig.5:lyapunov_solution}
+    \subfloat[Radial Distance to Target]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/convex/static_simulation/radial_hist_12_agents.pdf}}
+    \hfil
+    \subfloat[Inter-agent Distance]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/convex/static_simulation_dropped/inter_agent_dist_12_agents.pdf}}
+    \\
+    \subfloat[Separation of \gls{q_desired} metrics]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/convex/static_simulation_dropped/qd_separation_12_agents.pdf}}
+    \hfil
+    \subfloat[Tracking Error]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/convex/static_simulation_dropped/tracking_error_12_agents.pdf}}
+    \\
+    \subfloat[Trajectory of all Drones]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/convex/static_simulation_dropped/trajectory_12_agents.pdf}}
+    \caption[Simulation for 12 drones with drone loss and static target (Convex Hull)]{Simulation results for the 12-drone static scenario with a loss of 4 agents at 10 seconds (Convex Hull).}
+    \label{fig.5:multiple_results_joined_12_agents_static_loss_convex_hull}
 \end{figure}
 
-\begin{figure}[htbp]
-  \centering
-  \subfloat[Normal]{\includegraphics[width=5cm]{5-Figures/Chapter5/Simulations_convex_hull/decentralized_simulation_normal.pdf}}\hfil   
-  \subfloat[Top]{\includegraphics[width=5cm]{5-Figures/Chapter5/Simulations_convex_hull/decentralized_simulation_top.pdf}}\hfil
-  \subfloat[Side]{\includegraphics[width=5cm]{5-Figures/Chapter5/Simulations_convex_hull/decentralized_simulation_side.pdf}}
-  \caption{3 views of final simulation drone positioning (convex hull)}
-  \label{fig.5:lyapunov_solution_demonstration}
-\end{figure}
-
-\section{Simulation Results (half plane)}
-
-In this section it is shown the simulation for a decentralized approach using the control architecture previously and Lloyds half plane implementation method, having a initial formation of 8 drones and passing to a formation of 5, 15 seconds after initiation. The results are presented in Figures \ref{fig.5:decentralized_half_plane_results_drone_1} and \ref{fig.5:decentralized_half_plane_dropped_solution_t_0.5}--\ref{fig.5:decentralized_half_plane_dropped_solution_t_30}. The parameters used are identical to those of the centralized system and are listed in Tables~\ref{tab.4:all_params} and \ref{tab.4:Drone_positions}. The reference target position, $\gls{target_pos}^\star$, was chosen to be the same as in the centralized system experiments.
+Figure~\ref{fig.5:multiple_results_joined_12_agents_static_loss_convex_hull} shows the static-target case with the loss of 4 agents at 10 seconds. The remaining agents must redistribute themselves to fill the voids left by the lost agents. The separation metrics of $\gls{q_desired}$ show that the homogeneity of the point distribution dips momentarily at 10 seconds before recovering. The nearest-neighbor distance $d_{NN}$ increases, as expected, since fewer points are spread over the same sphere. The inter-agent distance also varies after the loss, as the agents move to their newly assigned positions. The tracking error is unaffected compared with the simulation without loss.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.85\columnwidth]{5-Figures/Chapter5/Simulations_half_plane/decentralized_results_drone_1.pdf}
-    \caption{Distance and velocity between drone 1 and a moving target (half plane)}
-    \label{fig.5:decentralized_half_plane_results_drone_1}
+    \subfloat[Radial Distance to Target]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/convex/dynamic_simulation/radial_hist_12_agents.pdf}}
+    \hfil
+    \subfloat[Inter-agent Distance]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/convex/dynamic_simulation/inter_agent_dist_12_agents.pdf}}
+    \\
+    \subfloat[Separation of \gls{q_desired} metrics]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/convex/dynamic_simulation/qd_separation_12_agents.pdf}}
+    \hfil
+    \subfloat[Tracking Error]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/convex/dynamic_simulation/tracking_error_12_agents.pdf}}
+    \\
+    \subfloat[Trajectory of all Drones]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/convex/dynamic_simulation/trajectory_12_agents.pdf}}
+    \caption[Simulation for 12 drones with a dynamic target (Convex Hull)]{Simulation results for the 12-drone dynamic scenario (Convex Hull).}
+    \label{fig.5:multiple_results_joined_12_agents_dynamic_convex_hull}
 \end{figure}
+
+Figure~\ref{fig.5:multiple_results_joined_12_agents_dynamic_convex_hull} shows the moving target with no loss of agents. The agents do not remain on their desired positions, and their radial distance oscillates within a margin around the desired radius. This behavior was already observed in the centralized version (Section~\ref{sec.4:simulations}) and is not caused by decentralization. It arises because the target velocity is not used by the controller, so the agents lag behind the moving sphere.
+
+The dispersion of the desired points on the sphere is also larger than in the static case. This is unexpected at first, since the placement of points on the sphere does not depend directly on the target motion. A plausible explanation is that the target-position estimate is less accurate during motion, so each agent works with a slightly different estimate of the sphere centre and of the relative positions of its neighbors. As discussed in Section~\ref{sec.5:Iterative computation agent spacing on the two-sphere}, the iterative spacing method assumes that agents share a consistent representation of the sphere and of the reference frame, and that relative measurements are accurate enough to define a meaningful neighborhood. When these assumptions are violated, neighboring agents build incompatible local Voronoi cells. This biases the centroid estimates and reduces the uniformity of the final distribution.
 
 \begin{figure}[htbp]
     \centering
-    \subfloat[$t=0.5~\mathrm{s}$]{%
-        \includegraphics[width=0.5\columnwidth]{5-Figures/Chapter5/Simulations_half_plane_dropped/decentralized_half_plane_dropped_moving_t_0.5.pdf}\hfil
-        \label{fig.5:decentralized_half_plane_dropped_solution_t_0.5}
-    }
-        \subfloat[$t=3~\mathrm{s}$]{%
-        \includegraphics[width=0.5\columnwidth]{5-Figures/Chapter5/Simulations_half_plane_dropped/decentralized_half_plane_dropped_moving_t_3.pdf}\hfil
-        \label{fig.5:decentralized_half_plane_dropped_solution_t_3}
-    }\\
-    \subfloat[$t=6~\mathrm{s}$]{%
-        \includegraphics[width=0.5\columnwidth]{5-Figures/Chapter5/Simulations_half_plane_dropped/decentralized_half_plane_dropped_moving_t_6.pdf}\hfil
-        \label{fig.5:decentralized_half_plane_dropped_solution_t_6}
-    }
-    \subfloat[$t=30~\mathrm{s}$]{%
-        \includegraphics[width=0.5\columnwidth]{5-Figures/Chapter5/Simulations_half_plane_dropped/decentralized_half_plane_dropped_moving_t_30.pdf}
-        \label{fig.5:decentralized_half_plane_dropped_solution_t_30}
-    }
-    \caption{Decentralized encirclement of a moving target using the Lyapunov-based (half plane) control strategy from eight to five drones at different time instants.}
-    \label{fig.5:decentralized_half_plane_dropped_solution}
+    \subfloat[Radial Distance to Target]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/convex/dynamic_simulation/radial_hist_12_agents.pdf}}
+    \hfil
+    \subfloat[Inter-agent Distance]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/convex/dynamic_simulation_dropped/inter_agent_dist_12_agents.pdf}}
+    \\
+    \subfloat[Separation of \gls{q_desired} metrics]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/convex/dynamic_simulation_dropped/qd_separation_12_agents.pdf}}
+    \hfil
+    \subfloat[Tracking Error]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/convex/dynamic_simulation_dropped/tracking_error_12_agents.pdf}}
+    \\
+    \subfloat[Trajectory of all Drones]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/convex/dynamic_simulation_dropped/trajectory_12_agents.pdf}}
+    \caption[Simulation for 12 drones with drone loss and dynamic target (Convex Hull)]{Simulation results for the 12-drone dynamic scenario with a loss of 4 agents at 10 seconds (Convex Hull).}
+    \label{fig.5:multiple_results_joined_12_agents_dynamic_loss_convex_hull}
 \end{figure}
 
+Finally, the moving target with the loss of 4 agents (Figure~\ref{fig.5:multiple_results_joined_12_agents_dynamic_loss_convex_hull}) combines the effects described above. The desired points are less evenly distributed over the sphere, and the agents do not settle at the desired radius. The loss of 4 agents, however, does not noticeably degrade the quality of the formation around the target compared with the moving-target case without loss.
+
+\paragraph{Half Plane}
+The same four scenarios are presented in the same order but this time using the Half Plane implementation.
+
 \begin{figure}[htbp]
-  \centering
-  \subfloat[Normal]{\includegraphics[width=5cm]{5-Figures/Chapter5/Simulations_half_plane_dropped/decentralized_half_plane_dropped_simulation_normal.pdf}}\hfil   
-  \subfloat[Top]{\includegraphics[width=5cm]{5-Figures/Chapter5/Simulations_half_plane_dropped/decentralized_half_plane_dropped_simulation_top.pdf}}\hfil
-  \subfloat[Side]{\includegraphics[width=5cm]{5-Figures/Chapter5/Simulations_half_plane_dropped/decentralized_half_plane_dropped_simulation_side.pdf}}
-  \caption{3 views of final simulation drone positioning (half plane)}
-  \label{fig.5:decentralized_half_plane_dropped_demonstration}
+    \centering
+    \subfloat[Radial Distance to Target]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/half_plane/static_simulation/radial_hist_12_agents.pdf}}
+    \hfil
+    \subfloat[Inter-agent Distance]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/half_plane/static_simulation/inter_agent_dist_12_agents.pdf}}
+    \\
+    \subfloat[Separation of \gls{q_desired} metrics]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/half_plane/static_simulation/qd_separation_12_agents.pdf}}
+    \hfil
+    \subfloat[Tracking Error]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/half_plane/static_simulation/tracking_error_12_agents.pdf}}
+    \\
+    \subfloat[Trajectory of all Drones]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/half_plane/static_simulation/trajectory_12_agents.pdf}}
+    \caption[Simulation for 12 drones with a static target (Half Plane)]{Simulation results for the 12-drone static scenario (Half Plane).}
+    \label{fig.5:multiple_results_joined_12_agents_static_half_plane}
 \end{figure}
+
+Figure~\ref{fig.5:multiple_results_joined_12_agents_static_half_plane} shows the static target without formation variation. All agents reach the desired radius $r^\star = 2$~m in approximately 12 seconds, less than half the time required by the convex-hull implementation, and remain on the sphere afterwards. The inter-agent distance settles with a minimum of approximately \SI{2}{\meter}, a mean of about \SI{2.9}{\meter} and a maximum of about \SI{4}{\meter}, which corresponds to the sphere diameter: a pair of agents ends up on opposite sides of the target. The separation metrics of $\mathbf{q}^\star$ show an almost perfectly uniform distribution. After the first second $d_{NN}$ is approximately 2.1~m for every agent, the ratio $d_{NN,min}/d_{NN,mean}$ is close to 1 and $CV(d_{NN})$ is close to zero. This value agrees with the edge length of a regular icosahedron inscribed in a sphere of radius 2~m ($\approx 2.10$~m), the optimal arrangement of 12 points, so the local Lloyd iteration converges to it. The tracking error peaks at about 1~m at the start, for the agent that begins farthest from the target, and decays to roughly 0.03~m within 10 seconds.
+
+\begin{figure}[htbp]
+    \centering
+    \subfloat[Radial Distance to Target]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/half_plane/static_simulation_dropped/radial_hist_12_agents.pdf}}
+    \hfil
+    \subfloat[Inter-agent Distance]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/half_plane/static_simulation_dropped/inter_agent_dist_12_agents.pdf}}
+    \\
+    \subfloat[Separation of \gls{q_desired} metrics]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/half_plane/static_simulation_dropped/qd_separation_12_agents.pdf}}
+    \hfil
+    \subfloat[Tracking Error]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/half_plane/static_simulation_dropped/tracking_error_12_agents.pdf}}
+    \\
+    \subfloat[Trajectory of all Drones]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/half_plane/static_simulation_dropped/trajectory_12_agents.pdf}}
+    \caption[Simulation for 12 drones with drone loss and static target (Half Plane)]{Simulation results for the 12-drone static scenario with a loss of 4 agents at 10 seconds (Half Plane).}
+    \label{fig.5:multiple_results_joined_12_agents_static_loss_half_plane}
+\end{figure}
+
+Figure~\ref{fig.5:multiple_results_joined_12_agents_static_loss_half_plane} shows the static target with the loss of 4 agents at 10 seconds. The radial distance of the remaining agents shows a brief excursion of up to about 3 m and returns to $r^\star$ within roughly 3 seconds. The minimum inter-agent distance dips to about 0.8~m at the moment of the loss and then settles at about 2.2~m, while the maximum settles at about 3.8 m. As expected, $d_{NN}$ increases from about 2.1 m to about 2.3 m because fewer points are spread over the same sphere. The homogeneity of $\mathbf{q}^\star$ dips only momentarily: $CV(d_{NN})$ peaks at about 0.08 and recovers within one second. Unlike in the convex-hull case, the tracking error is visibly affected by the loss. The desired points are reassigned abruptly, so the mean error rises to about 0.6~m (up to 1~m for individual agents) before returning to about 0.05~m after approximately 5 seconds. This is the intended effect of the increased geometric-controller gains, which let the references move quickly to their new positions. The half-plane construction also keeps the agents well separated after the loss, whereas in the convex-hull case the minimum inter-agent distance drifts below 1~m.
+
+\begin{figure}[htbp]
+    \centering
+    \subfloat[Radial Distance to Target]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/half_plane/dynamic_simulation/radial_hist_12_agents.pdf}}
+    \hfil
+    \subfloat[Inter-agent Distance]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/half_plane/dynamic_simulation/inter_agent_dist_12_agents.pdf}}
+    \\
+    \subfloat[Separation of \gls{q_desired} metrics]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/half_plane/dynamic_simulation/qd_separation_12_agents.pdf}}
+    \hfil
+    \subfloat[Tracking Error]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/half_plane/dynamic_simulation/tracking_error_12_agents.pdf}}
+    \\
+    \subfloat[Trajectory of all Drones]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/half_plane/dynamic_simulation/trajectory_12_agents.pdf}}
+    \caption[Simulation for 12 drones with a dynamic target (Half Plane)]{Simulation results for the 12-drone moving target scenario (Half Plane).}
+    \label{fig.5:multiple_results_joined_12_agents_dynamic_simulation_half_plane}
+\end{figure}
+
+Figure~\ref{fig.5:multiple_results_joined_12_agents_dynamic_simulation_half_plane} shows the simulation for a moving target with no loss of agents, it can be seen that the radial distance does not converge in the given 30 seconds of simulation to the desired value of 2 meters. Once again, as in the convex hull, the separation metrics are worse in the case of a moving target, for the same reasons as previously described, the tracking remains unaffected and inter-agent distance indicated that at no point collisions occur.  
+
+\begin{figure}[htbp]
+    \centering
+    \subfloat[Radial Distance to Target]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/half_plane/dynamic_simulation_dropped/radial_hist_12_agents.pdf}}
+    \hfil
+    \subfloat[Inter-agent Distance]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/half_plane/dynamic_simulation_dropped/inter_agent_dist_12_agents.pdf}}
+    \\
+    \subfloat[Separation of \gls{q_desired} metrics]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/half_plane/dynamic_simulation_dropped/qd_separation_12_agents.pdf}}
+    \hfil
+    \subfloat[Tracking Error]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/half_plane/dynamic_simulation_dropped/tracking_error_12_agents.pdf}}
+    \\
+    \subfloat[Trajectory of all Drones]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter5/half_plane/dynamic_simulation_dropped/trajectory_12_agents.pdf}}
+    \caption[Simulation for 12 drones with drone loss and dynamic target (Half plane)]{Simulation results for the 12-drone moving target scenario with a loss of 4 agents at 10 seconds (Half Plane).}
+    \label{fig.5:multiple_results_joined_12_agents_dynamic_loss_simulation_half_plane}
+\end{figure}
+
+Figure~\ref{fig.5:multiple_results_joined_12_agents_dynamic_loss_simulation_half_plane} shows the moving target with the loss of 4 agents. The agents approach the desired sphere much more slowly than in the static case and have not settled within the 30 seconds of simulation. At $t = 30$~s the mean radial distance is still about 4.3~m, and one agent remains at about 9.8~m. The half plane implementation, with the same controller and gains, reached the sphere in under 10 seconds for the moving target. The reason was not isolated in these simulations. The formation quality of the desired points is nevertheless preserved: $d_{NN}$ increases from about 2.0~m to about 2.2~m after the loss, $d_{NN,min}/d_{NN,mean}$ stays between 0.9 and 0.97, and $CV(d_{NN})$ remains below about 0.1, slightly higher than in the static case, as was also observed for the convex-hull method. The minimum inter-agent distance drops to about 1.7~m at the loss and stays close to that value afterwards, so no near-collisions occur. The steady-state tracking error is about 0.4~m, the same as for the convex-hull implementation, which is consistent with the fact that the target velocity is not used by the controller. The loss at 10 seconds produces a transient of up to about 1~m in the tracking error that decays within about 5 seconds.
+
+Overall, the half-plane implementation converges faster in the static scenarios and produces a more uniform distribution than the convex-hull implementation, in agreement with the comparison in Appendix~\ref{annex:Other iterative computation agent spacing on the two-sphere} (Table~\ref{tab.5:method_comparison_spacing}, $CV(d_{NN}) = 0.0728$ against $0.1202$). It also does not suffer from the degenerate configurations described in Section~\ref{sec.5:Iterative computation agent spacing on the two-sphere}. These benefits come at a higher computational cost, with a mean run time of 1.367~s against 0.033~s and a convergence rate of 93/100 against 100/100 (Table~\ref{tab.5:method_comparison_convergence}).

@@ -22,32 +22,92 @@
 
 \section{Motivation} \label{sec.1:Motivation}
 
-The interest in drones has been growing from a research and military standpoint. Drones are being increasingly used for aerial surveillance, \gls{3D} mapping, among other things. Doing such tasks autonomously requires reliable navigation from the drones, particularly in unknown areas. Moreover, \gls{UAV} are becoming more developed for scenarios where it is advantageous to deploy an unmanned vehicle that has a high level of autonomy to carry out tasks that can be done without human supervision. However, these devices aren't used only in the research and industry fields, as many people have incorporated drones in their day to day lives, usually as a hobby. Although there is nothing wrong with using drones for fun there are some issues, such as safety and privacy, that need to be respected. A good example are airports, where the sighting of a drone within the airport's aerial space can cause a temporary shutdown, leading to delayed flights. Another example is the use of drones as a form to break the privacy of others. If not regulated drones can be used a hardly traceable method for spying into people's homes, permitting the drone's owner to see and record inside someone's property, which is a clear breach of privacy. For this reasons many countries, including Portugal, have laws and regulations on this subject. Some of the rules applied to the piloting of drones in Portugal set forth by \gls{ANAC} include not flying over crowds of people, not flying above 120 meters, and not dropping materials from the drone. Moreover, it is necessary to go to the authorities in order to get assigned a category to be able to fly the drone legally, where each category has a slightly different sets of rules, depending on the desired purpose for the drone. With this in mind a clear question comes on how to encircle safely and with the least impact the law evading target. This thesis focuses on methods of guaranteeing encirclement evader without the use of destructive methods.
+The interest in drones has grown considerably from both research and military perspectives. These systems are increasingly employed for applications such as aerial surveillance, \gls{3D} mapping, infrastructure inspection, and other data-collection tasks. However, their use is no longer limited to research, industry, or military applications, as drones have become increasingly accessible to the general public and are frequently used for recreational and hobbyist purposes. Although recreational drone use is generally harmless, it also introduces several safety and privacy concerns that must be addressed.
+
+Airports provide a particularly relevant example of the potential risks associated with drone operations. The sighting of a drone within or in the vicinity of an airport's airspace can result in the temporary suspension of airport operations \cite{euronews2025drone,dw2025berlin,abcnews2025drone,inews2025denmark}. In Germany alone, air traffic control authorities reported 161 drone-related disruptions in 2024 and 225 in 2025 \cite{dfs2026airtraffic}. Such incidents can result in flight delays, diversions, or cancellations, potentially causing significant operational and economic consequences. An even more critical situation can arise when drones interfere with helicopter operations at hospital heliports, where disruptions may delay emergency medical transport and potentially create life-threatening circumstances.
+
+The increasing accessibility and affordability of consumer drones may contribute to the growing frequency of such incidents. As drones become easier to acquire and operate, some users may lack sufficient knowledge of aviation regulations, restricted airspace, and the potential consequences of operating a drone in prohibited areas. Consequently, incidents may occur unintentionally, with operators potentially entering restricted airspace without being fully aware of the associated risks or regulatory requirements.
+
+For this reason many countries, including Portugal, have laws and regulations on this subject. Some of the rules applied to the piloting of drones in Portugal set forth by \gls{ANAC} include not flying over crowds of people, not flying above 120 meters, and not dropping materials from the drone. Moreover, it is necessary to go to the authorities in order to get assigned a category to be able to fly the drone legally, where each category has a slightly different sets of rules, depending on the desired purpose for the drone. 
+
+This motivates the question of how a target entering restricted airspace can be safely surrounded while minimizing the risk and operational impact of the intervention while  also indicating to the target that it's entering restricted areal space. This thesis focuses on methods of guaranteeing encirclement of an evader without the use of destructive methods.
 
 \section{Problem Statement} \label{sec.1:Problem Statement}
 
-The guaranteed capture of an agent such as a drone, ship, or aircraft has been a subject of research for over a century, dating back to early work in game theory \cite{game_theory_1925}. Closely related is the problem of determining optimal formation for encircling a target be it fixed or moving.
+The guaranteed capture of an agent such as a drone, ship, or aircraft has been a subject of research for over a century, dating back to early work in game theory \cite{game_theory_1925}. Closely related is the problem of determining desirable formations for encircling a target, whether fixed or moving.
 
-Despite extensive research, most found existing encirclement strategies are formulated in \gls{2D} environments. In particular, current multi-agent encirclement methods predominantly focus on planar pursuit scenarios, with the majority of implementations targeting \gls{UAV}. Representative examples include circular formation control and encirclement strategies in \gls{2D} space \cite{Litimein2021, Jin2018, Kim2007, 2D_encirclement_guaranteed_sectors, Lin2004}, being available \gls{3D} methods based in the separation of space in sections and having one or multiple drones guaranteed to be located at said spaces.
+Despite extensive research, most existing encirclement strategies are formulated in \gls{2D} environments. In particular, current multi-agent encirclement methods predominantly focus on planar pursuit scenarios, with the majority of implementations targeting \gls{UAV}. Representative examples include circular formation control and encirclement strategies in \gls{2D} space \cite{Litimein2021, Jin2018, Kim2007, 2D_encirclement_guaranteed_sectors, Lin2004}. Existing \gls{3D} approaches, on the other hand, commonly divide the surrounding space into predefined sections and seek to guarantee that one or more chasers occupy specific regions around the target.
 
-This emphasis on \gls{2D} pursuit limits the applicability of existing approaches to fully \gls{3D} environments, where altitude, spatial constraints, and maneuverability play a critical role. Addressing these limitations motivates the need for encirclement strategies that explicitly account for \gls{3D} motion and coordination in a believed to be new and distinct method unprecedented in the field.
+Furthermore, the term 'encirclement' is not defined uniformly across the literature, with different studies adopting different criteria to describe both the underlying problem and the resulting formation. Some approaches define encirclement as the target being contained within the convex region formed by the chasers \cite{mycielskiTheoriesPursuitEvasion1988,Wang_2021,Patra2025,wangAchievingSafeMinimum2024}. Other formulations consider the overlap between the target's reachability region and the regions reachable by the chasers, while others focus primarily on positioning agents around the target in a circular or spherical formation. These definitions correspond to different objectives and, consequently, lead to different formation requirements.
 
-\section{Proposed solution} \label{sec.1:Proposed solution}
 
-In this thesis, the focus is on guaranteeing encirclement in a \gls{3D} environment. Specifically, the work addresses, the creation of positions around a target, their navigation and the generation of collision-free trajectories during this process. The objective is to ensure safe and coordinated motion while achieving and maintaining an encirclement configuration in \gls{3D} space.
+In this thesis, the latter interpretation is of primary interest. The objective is not necessarily to guarantee the physical containment or capture of the target, but rather to establish a formation that provides a clear and visually observable indication that the target has entered, or is approaching, restricted airspace. Although complete encirclement remains a desirable outcome, the formation is primarily intended to function as a visible barrier or deterrent to the target and, consequently, to its operator. A formation of agents around or in front of the target is therefore considered a more appropriate objective than containment within a convex region alone. The problem considered in this thesis therefore emphasizes the formation of a visually observable spatial barrier that communicates both the presence of the chasers and the restricted nature of the surrounding airspace. 
 
-The proposed solution can be separated nto three main category's, centralized, decentralized formations creating a two-sphere shape around the target and generalize version for a any desired formation shape. The generalized formation shape method is used for not only ensuring encirclement around a target if the same is in restricted aerial space but also create a physical barrier discouraging the entrance of the same into the restricted aerial space. The agents where chosen to be equally spaced in the formation independently of the formation shape, this is due to the unknown behavior of the target guaranteeing independently of the desired motion of the same that all areas are equally covered by the drone formation.  
+This emphasis on \gls{2D} pursuit and on containment-oriented definitions of encirclement limits the applicability of existing approaches to the considered scenario. In a fully \gls{3D} environment, altitude, spatial constraints, and maneuverability play a critical role in determining the formation and coordination of multiple agents. Addressing these limitations motivates the development of an encirclement strategy that explicitly accounts for \gls{3D} motion and coordination.
 
-\section{Report Organization} \label{sec.1:Report organization}
+\section{Proposed solution and contributions} \label{sec.1:Proposed solution}
 
-Chapter~\ref{cha:State of the art} refers some contextualization about the previous available works be it \gls{2D} and \gls{3D} referring the most common and well known methods as well as a focus on some specific papers about encirclement but also some other works considered important and necessary for the developed work along the thesis.
+In this thesis, the focus is on achieving encirclement in a \gls{3D} environment. Specifically, the work addresses, the creation of positions around a target, their navigation and the generation of collision-aware trajectories during this process. The objective is to ensure safe and coordinated motion while achieving and maintaining an encirclement configuration in \gls{3D} space, with the intended operational effect of discouraging entry into, or encouraging departure from, a designated restricted aerial space.
 
-Chapter~\ref{cha:Background} focuses on a more mathematical approach to some themes that are of great relevance for the complete understanding of the work developed. It was considered a necessary section due to its distinct theming compared with the state of the art.
+The proposed solution can be separated into three main categories, centralized, decentralized formations creating a two-sphere shape around the target and a generalized version for a desired formation of any arbitrary well-defined surface mesh. The generalized formation shape method is used for not only ensuring encirclement around a target if the same is in restricted aerial space but also to create a physical barrier discouraging the entrance of the same into the restricted aerial space. The agents were chosen to be as equally spaced as possible in the formation independently of the formation shape, this is due to the unknown behavior of the target guaranteeing independently of the desired motion of the same that all areas are equally covered by the drone formation. 
 
-Chapter~\ref{cha:Centralized Development} presets methods for achieving an almost evenly spaced distributions of points on the two-sphere. These methods are used to define desired agent configurations around the target. It is also shown different methods to guarantee a collision free navigation.
+The scope of this thesis is limited to the creation, navigation, and maintenance of an encirclement formation around a target in a \gls{3D} environment. The proposed methods are not intended to address operators with malicious intent who deliberately disregard the formation, nor targets whose dynamics or autonomy prevent them from being safely influenced or redirected. Furthermore, this work does not consider physical capture, forced interception, or collision-based methods for stopping or immobilizing a target. If a target remains within the restricted aerial space after encirclement, any subsequent intervention, decision-making, or enforcement action falls outside the scope of this thesis and is left to the relevant authorities. Accordingly, the thesis focuses on the generation and maintenance of safe, collision-aware formations and trajectories. The effectiveness of such formations in influencing operator behavior is not evaluated in this work, as well as the intent classification, the assessment of intent, or the legal and operational procedures that may follow encirclement.
 
-Chapter~\ref{cha:Decentralized Development} evolves on the results obtained in the previous chapter having the system decentralized based on new methods for agents distribution, communication topology and swarm consensus on target position estimation.
+This thesis contributes a framework for the generation, navigation, and maintenance of collision-aware \gls{3D} encirclement formations for aerial agents. The proposed framework addresses both centralized and decentralized formation generation and incorporates trajectory planning subject to realistic dynamic and collision constraints. The main contributions of this work are:
 
-Chapter~\ref{cha:Generalized Development} takes the encirclement problem and generalizes it having the swarm formation take shape of any Riemannian manifold not only the two-sphere, this leads to the possibility of not only encircling the target but prevent its entrance to restricted air space by creating a physical barrier.
+\begin{itemize}
+\item \textbf{Comparison of point-distribution methods on the two-sphere:} a systematic comparison of methods, both directly computed or iterative, for distributing agents approximately uniformly over a spherical surface, with the objective of obtaining well-spaced encirclement configurations and uniform spatial coverage around a target.
 
-Chapter~\ref{cha:Conclusions and Future Work} takes into account all previous chapters and reflect upon the results, use cases and future advances in this field. 
+\item \textbf{Comparison of path-planning and control approaches:} an evaluation and comparison of different path-planning approaches for navigating the agents toward the desired formation, considering their ability to achieve coordinated and collision-aware motion.
+
+\item \textbf{Lyapunov-based target-encirclement controller:} development of a Lyapunov-based control strategy for guiding agents toward and maintaining an encirclement configuration around a moving target, providing a stability-based formulation for the formation-control problem.
+
+\item \textbf{Decentralized formation-maintenance architecture:} development of a decentralized architecture in which agents coordinate their relative positions to maintain a well-formed and approximately uniformly distributed mesh around the target, reducing the reliance on a centralized formation controller.
+
+\item \textbf{Generalized formation-shape generation:} development of a generalized method for generating formations with arbitrary desired shapes around a target. This extends the spherical encirclement formulation to configurations that can be used both to surround a target within a restricted aerial space and to form a spatial barrier intended to discourage entry into the restricted region.
+
+\item \textbf{\gls{MPC}-based collision-aware trajectory planning:} formulation of a \gls{MPC}-based trajectory-planning approach capable of incorporating realistic constraints on velocity and acceleration, while explicitly accounting for collision avoidance between agents and with the surrounding environment.
+
+\item \textbf{Integration of formation generation, control, and trajectory planning:} integration of the proposed formation-generation, formation-control, and trajectory-planning methods into a unified framework for the safe creation and maintenance of \gls{3D} encirclement formations.
+
+\end{itemize}
+
+\section{Thesis Organization} \label{sec.1:Report organization}
+
+The rest of this thesis is separated into multiple chapters, each chapter focuses on a single subject being the three development chapters made to build on each previous one, each chapter talks about the following subjects:
+
+Chapter~\ref{cha:State of the art} (State of the art) refers some contextualization about the previous available works on encirclement, agent spacing, collision avoidance, trajectory planning, system model and internal drone controllers, referring the most common and well known methods.
+
+Chapter~\ref{cha:Background} (Background) focuses on a more mathematical approach to some themes that are of great relevance for the complete understanding of the work developed. It was considered a necessary section due to its distinct theming compared with the state of the art.
+
+Chapter~\ref{cha:Centralized Development} (Centralized Development) presents methods for achieving an almost evenly spaced distributions of points on the two-sphere, as well as the trajectory planning between current agent position and desired position on the two-sphere. These methods are used to define desired agent configurations around the target. It is also shown different methods to create a collision-aware navigation, finalizing with simulation results for a 3-agent and 31-agent swarm.
+
+Chapter~\ref{cha:Decentralized Development} (Decentralized Development) changes the objective displacement to iterative methods for achieving almost evenly spaced points on the two-sphere, showing results for the two implemented methods.
+
+Chapter~\ref{cha:Generalized Development} (Generalized Development) takes the encirclement problem and generalizes it having the swarm formation take shape of arbitrary well-defined surface meshes, not only the two-sphere, this leads to the possibility of not only encircling the target but prevent its entrance to restricted air space by creating a physical barrier. It was also added a \gls{MPC} for trajectory planning replacing the previous one and enabling realistic restrictions on maximal velocity, acceleration as well as collision avoidance between targets or targets and predefined obstacles.
+
+Chapter~\ref{cha:Conclusions and Future Work} (Conclusions and Future Work) takes into account all previous chapters and reflects upon the results, use cases and future advances in this field. 
+
+Appendix~\ref{cha:Appendix} presents additional methods and results that were investigated throughout the development of this thesis but were not selected for the final proposed solution. These include methods evaluated for both direct and iterative point distribution on the two-sphere, alternative approaches to agent spacing that did not achieve the desired formation properties, and additional path-planning controllers. The appendix also provides the specifications of the computer system used for the simulations and presents the comparative results obtained across the evaluated methods.
+
+\section{Notation}
+
+This section defines the notation used throughout the remainder of this thesis.
+
+The notation $a \cdot b$ denotes the inner product between $a$ and $b$. While $S(\cdot)$ is the cross-product skew-symmetric matrix satisfying $S(a) b = a \times b$, for $a,b\in\mathbb{R}^3$ and its inverse mapping $S^{-1}(\cdot)$ defined in Equation~\eqref{eq.4:skew_matrix}.
+
+\begin{equation}
+    S(r)
+=
+\begin{bmatrix}
+0 & -r_3 & r_2 \\
+r_3 & 0 & -r_1 \\
+-r_2 & r_1 & 0
+\end{bmatrix},
+\qquad
+S^{-1}\left(S(r)\right) = r, r \in \mathbb{R}^3
+\label{eq.4:skew_matrix}
+\end{equation}
+
+Throughout this thesis, regular lowercase letters denote scalars $'x'$, regular uppercase letters denote sets $'\mathcal{C}'$, bold lowercase letters denote vectors $'\mathbf{x}'$, and bold uppercase letters denote matrices $'\mathbf{X}'$.
+

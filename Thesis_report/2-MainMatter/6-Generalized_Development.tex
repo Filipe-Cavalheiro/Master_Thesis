@@ -8,194 +8,1313 @@
 
 \typeout{NT FILE 6-Generalized_Development.tex}%
 
-\chapter{Generalized Development}
+\chapter{Generalized Surrounding of Targets}
 \label{cha:Generalized Development}
 
 \glsresetall
 
-\section{Introduction} \label{sec.6:Introduction}
-This section will focus on the generation of the architecture so that the encirclement may use other shapes other then the two-sphere, this generation as will be shown allows for some useful use cases associated with the restricted aerial space use case. 
-As in previous chapters first the new architecture will be shown and explained being the base the Decentralized version demonstrated in Chapter~\ref{cha:Decentralized Development}.
+This chapter focuses on the generalization of the architecture to shapes other than the two-sphere, allowing for some useful use cases associated with the restricted aerial space. As in previous chapters it is first discussed the implemented method for point distribution followed by the new architecture.
 
-\section{Agent distributions}
+\section{Agent Distribution} \label{sec.6:Iterative computation agent spacing on the two-sphere}
 
-As previously mentioned this version is not only useful for the two sphere but also other shapes, in Figure~\ref{fig.6:llyod_dijkstra_algorithm_distribution} is is possible to see the distribution of 1001 agents using a new method also based on the voronoi method but in this case using the disktra method in order to obtain the new centroid center \gls{voronoi_centroid}. In Figure~\ref{fig.6:llyod_dijkstra_algorithm_distribution_stl} it is possible to see the distribution of 8 agents in two meshes obtain from stl files of the dataset thingi10k\cite{zhouThingi10KDataset100002016}, a data set with 10 thousand stl's from thingiverse \cite{thingiverse_website}
+The presented method continues to use Lloyd's algorithm, presented in Section\ref{annex:Lloyd's algorithm}, being the geodesic distances on the mesh approximated using the shortest-path distance computed with Dijkstra's algorithm.
+
+\paragraph{Voronoi Dijkstra}
+Voronoi separation using the Dijkstra method is a graph-based approach for constructing discrete Voronoi regions on generalized, well-defined meshes. In this framework, the mesh is interpreted as a weighted graph whose vertices correspond to mesh nodes and whose edges encode adjacency, with weights typically derived from geometric properties such as edge lengths or anisotropic metrics.
+
+Given a set of seed points (sites), the algorithm simultaneously propagates fronts from each site across the mesh using Dijkstra's shortest-path procedure. Each vertex is assigned to the site from which it has the minimal geodesic distance, resulting in a partition of the mesh into Voronoi cells.
+
+Voronoi edges are implicitly defined along mesh edges that connect vertices assigned to different sites. In other words, if two adjacent vertices have different nearest sites, the edge between them lies on the boundary between Voronoi regions. Some implementations refine this by interpolating along edges to obtain a more precise boundary location. A more complex and complete algorithm than the one implemented in this thesis can be found in \cite{mengEfficientAlgorithmApproximate2023}.
+
+This approach is particularly suitable for irregular or non-Euclidean domains, as it does not rely on explicit geometric constructions but instead leverages the intrinsic connectivity of the mesh.
 
 \begin{figure}[htbp]
     \centering
     \subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Chapter3/Lloyd_disktra/Voronoi_dijkstra_normal.pdf}}\hfil
     \subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Chapter3/Lloyd_disktra/Voronoi_dijkstra_top.pdf}}\hfil
     \subfloat[Side]{\includegraphics[width=3cm]{5-Figures/Chapter3/Lloyd_disktra/Voronoi_dijkstra_side.pdf}}
-    \caption{Lloyd's algorithm (dijkstra) distribution. (1001 points)}
+    \caption{Lloyd's algorithm (Dijkstra) distribution. (1001 points)}
     \label{fig.6:llyod_dijkstra_algorithm_distribution}
 \end{figure}
 
-The spacing between agents is not desirable but this is due to the graphical limitation of the computer used for simulation since the mesh verticies define the positions each site can be located (this is implementation dependent) and for the use of 1001 sites a mesh of 10000 points was used, this mesh points where placed using the fibonacci lattice method to ensure the mesh formation was as even as possible, ensuring a better site distribution on the mesh. The dijkstra method used in this implementation not only can only place sites on the location of vertices of the underlying mesh but also requires for the underlying mesh to be well defined (evenly spread forming the desired shape).
+In Figure~\ref{fig.6:llyod_dijkstra_algorithm_distribution}, the non-uniform spacing observed between some agents is primarily a consequence of the discretization of the underlying mesh. In this implementation, sites can only be positioned at mesh vertices, consequently, the set of possible site locations is restricted by the mesh resolution. For a simulation with 1001 sites, a mesh containing approximately 10,000 vertices was used. Although the vertices were distributed according to a Fibonacci lattice to obtain an approximately uniform coverage of the sphere, the finite number of vertices limits the accuracy with which the desired continuous Voronoi distribution can be represented. This limitation becomes particularly apparent as the number of sites increases, since there are fewer suitable vertices available around each site and the resulting inter-site distances can therefore exhibit noticeable variations. Increasing the mesh resolution would provide a larger set of possible site locations and would consequently allow the discrete Voronoi and Lloyd distributions to more closely approximate their continuous counterparts, this was not done due to computational (memory) limitation. 
+
+From Figure~\ref{fig.6:llyod_dijkstra_algorithm_distribution_stl} it is possible to see the distribution of 8 sites in two meshes obtain from stl files of the dataset thingi10k\cite{zhouThingi10KDataset100002016}, a data set with 10 thousand stl's from thingiverse \cite{thingiverse_website}, where the sites are represented by black dots, the inter site distance via the surface gradient being colder colors closer to a site and warmer color further away and finally any point defined as a Voronoi edge marked with a red cross, these two examples demonstrate how this distribution method is capable of separating points on well-defined meshes. 
 
 \begin{figure}[htbp]
     \centering
-    \subfloat[Bust]{\includegraphics[width=6cm]{5-Figures/Chapter6/Voronoi_dijkstra_bust.pdf}}\hfil
-    \subfloat[Frog]{\includegraphics[width=6cm]{5-Figures/Chapter6/Voronoi_dijkstra_frog.pdf}}
+    \subfloat[Bust \cite{ivanbortolin_thingiverse34228}]{\includegraphics[width=6cm]{5-Figures/Chapter6/Voronoi_dijkstra_bust.pdf}}\hfil
+    \subfloat[Frog \cite{thingiverse18479}]{\includegraphics[width=6cm]{5-Figures/Chapter6/Voronoi_dijkstra_frog.pdf}}
     \caption{Lloyd's algorithm (dijkstra) distribution. (8 points)}
     \label{fig.6:llyod_dijkstra_algorithm_distribution_stl}
 \end{figure}
 
-In the Figure~\ref{fig.6:llyod_dijkstra_algorithm_distribution_stl} it is possible to visualize the sites as black dots the distance from said points via the surface gradient being colder colors closer to a site and warmer color further away and finally any point defined as a Voronoi edge marked with a red cross, with these two examples it is possible to see that this distribution is capable of separating points on any well defined mesh. 
 
 \section{Control architecture}
 
-As has been previously mentioned in the introduction the architecture of the control system has been simplified since the geometric controller and the radial controller are no longer used, assuming that the agents/drones are initialized in the mesh as sites or the mesh is initialized in a way that encompasses all agents, the Mellinger controller has as a direct reference the final desired position, in this case the updated sites of the Voronoi. In Figure~\ref{fig.6:generalized_controller_architecture} it is possible to see the new architecture of the system with the added mesh controller responsible for given the position of the target modify the position and shape of the mesh.
+This architecture is based on the decentralized architecture described previously. However, since points may no longer lie on the two-sphere, the previous path planning algorithm,  composed of the geometric controller and the radial controller, is no longer applicable.
+
+Instead, path planning is performed via a \gls{MPC}. Its desired goal is the output of Lloyd's Algorithm, subject to constraints on velocity, acceleration, and position. These restrictions help with collision avoidance between agents, as well as defining a path that the given agent is capable of following in terms of maximal velocity and acceleration.
+
+Figure~\ref{fig.6:generalized_controller_architecture} shows the new architecture of the system. It includes the aforementioned \gls{MPC}, as well as a newly added mesh controller. This mesh controller is responsible for modifying the position and shape of the mesh.
 
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=0.85\textwidth]{5-Figures/Chapter6/controller_architecture/genrelized_complete_controller_architecture.drawio.pdf}
-  \caption{Generalized controller architecture}
+  \caption{Generalized controller architecture.}
   \label{fig.6:generalized_controller_architecture}
 \end{figure}
 
 \subsection{Mesh Controller}
 
-The mesh controller is responsible for dynamically modifying the shape of the mesh (i.e., the position of its vertices and the connectivity between them) according to the relative position of a target with respect to a restricted airspace. The objective is to ensure that a swarm of drones, located at the boundary of this region, can physically block or contain the target while avoiding collisions.
+The newly added mesh controller is responsible for dynamically modifying the geometry of the mesh, namely the position of its vertices and their connectivity, according to the position of a target relative to the restricted airspace.
 
-When the target is outside the restricted airspace, the drones form a planar circular barrier. As the target approaches and reaches the boundary, the mesh deforms continuously by pushing the center of the circle inward, preventing penetration while maintaining a safe distance. If the target moves further inside, specifically more than one radius length, the mesh transitions into a closed spherical configuration, fully enclosing the target.
+It is important to reiterate that the purpose of the formation is neither to collide with nor to physically impede the target from entering the restricted airspace. Instead, the formation acts as a deterrent and should be regarded as a safety mechanism intended to warn the drone operator that the target is approaching or entering restricted airspace and should retreat.
 
-In Figure~\ref{fig:mesh_controller_demonstration}, a mesh composed of $P = 1001$ vertices is shown, with a target (red point) located at positions corresponding to the three stages. The radius of the circle and sphere is $R = 5$.
+When the target is sufficiently far from the restricted-airspace boundary, the drones form a planar circular barrier. As the target approaches the boundary, the mesh progressively deforms, with the centre of the circular configuration moving towards the target while the mesh changes from a circular to a conical shape. This deformation provides a continuous transition while maintaining a separation between the formation and the target. Once the target crosses the boundary and penetrates further into the restricted airspace, the mesh progressively transitions from the conical configuration into a closed spherical configuration. When the target has penetrated the restricted airspace by at least a mesh radius, the spherical configuration is reached. From this point onwards, the mesh remains spherical and follows the target such that the target remains approximately at its centre.
+
+In Figure~\ref{fig:mesh_controller_demonstration}, a mesh composed of \(P=1001\) vertices and with a radius of \(R=5\) is shown for three representative target positions corresponding to the different stages of the transformation.
+
+\begin{figure}[htbp]
+\centering
+\subfloat[Target outside]{\includegraphics[width=6cm]{5-Figures/Chapter6/mesh_controller/mesh_controller_outside.pdf}}\hfil
+\subfloat[Target at edge]{\includegraphics[width=6cm]{5-Figures/Chapter6/mesh_controller/mesh_controller_border.pdf}}\hfil
+\subfloat[Target inside]{\includegraphics[width=6cm]{5-Figures/Chapter6/mesh_controller/mesh_controller_inside.pdf}}
+\caption{Mesh controller demonstration at different stages of target interaction.}
+\label{fig:mesh_controller_demonstration}
+\end{figure}
+
+The mathematical algorithm used to achieve this behavior is based on the interpolation between three predefined mesh configurations. First, three sets of vertex coordinates are computed: a circular configuration \(\mathbf{V}_{\mathrm{circle}}\in\mathbb{R}^{P\times3}\), a conical configuration \(\mathbf{V}_{\mathrm{cone}}\in\mathbb{R}^{P\times3}\), and a spherical configuration \(\mathbf{V}_{\mathrm{sphere}}\in\mathbb{R}^{P\times3}\). The current mesh geometry is subsequently obtained through two consecutive interpolation stages. The first stage interpolates between the circular and conical configurations, \(\mathbf{V}_{\mathrm{circle}}\rightarrow\mathbf{V}_{\mathrm{cone}}\), while the second stage interpolates between the resulting conical configuration and the spherical configuration, \(\mathbf{V}_{\mathrm{cone}}\rightarrow\mathbf{V}_{\mathrm{sphere}}\).
+
+Let \gls{d_pT_normal} denote the signed distance between the target and the restricted-airspace boundary, measured along the normal to the boundary plane. Positive values of \gls{d_pT_normal} indicate that the target is outside the restricted airspace, whereas negative values indicate that the target has entered the restricted airspace. Based on this signed distance, a transformation parameter \gls{interpolation} is defined as
+
+\begin{equation}
+\gls{interpolation} =
+\begin{cases}
+0, & \gls{d_pT_normal} \geq \dfrac{R}{2},\\[6pt]
+
+\dfrac{1}{2} + \dfrac{\gls{d_pT_normal}}{R},
+& -\dfrac{R}{2} < \gls{d_pT_normal} < \dfrac{R}{2},\\[8pt]
+
+\dfrac{2\gls{d_pT_normal}}{R},
+& \gls{d_pT_normal} \leq -\dfrac{R}{2}.
+\end{cases}
+\end{equation}
+
+This parameter divides the transformation into two stages. During the first stage, corresponding to \(\gls{interpolation}\leq1\), the mesh transitions from the circular to the conical configuration. The interpolation parameter for this stage is therefore $\gls{interpolation}_1=\gls{interpolation}, \gls{interpolation}_2=0$.
+
+For $\gls{interpolation}>1$, the circular-to-conical transition is complete and the second transformation stage begins. The corresponding interpolation parameters are $\gls{interpolation}_1=1, \gls{interpolation}_2 = \min(i-1,1)$.
+
+The first stage of the deformation is obtained using a linear interpolation between the circular and conical vertex configurations,
+
+$$
+\mathbf{V}_{1}
+=
+(1-\gls{interpolation}_1)\mathbf{V}_{\mathrm{circle}}
++
+\gls{interpolation}_1\mathbf{V}_{\mathrm{cone}}.
+$$
+
+Once the second stage begins, the resulting configuration is further interpolated towards the spherical configuration,
+
+$$
+\mathbf{V}_{2}
+=
+(1-\gls{interpolation}_2)\mathbf{V}_{1}
++
+\gls{interpolation}_2\mathbf{V}_{\mathrm{sphere}}.
+$$
+
+Thus, the final vertex configuration can be expressed compactly as
+
+$$
+\boxed{
+\mathbf{V}
+=
+(1-\gls{interpolation}_2)
+\left[
+(1-\gls{interpolation}_1)\mathbf{V}_{\mathrm{circle}}
++
+\gls{interpolation}_1\mathbf{V}_{\mathrm{cone}}
+\right]
++
+\gls{interpolation}_2\mathbf{V}_{\mathrm{sphere}}
+}
+$$
+
+where $\gls{interpolation}_1$ and $\gls{interpolation}_2$ determine the contribution of the three predefined configurations.
+
+In addition to modifying the shape of the mesh, its position in the world frame is updated according to the transformation stage. During the first stage, the mesh follows the target in the directions parallel to the boundary while its position along the boundary normal remains fixed. Assuming that the \(x\)-axis is aligned with the boundary normal, the mesh position is given by
+
+$$
+\mathbf{p}_{\mathrm{mesh}}
+=
+\begin{bmatrix}
+0\\
+y_t\\
+z_t
+\end{bmatrix},
+\qquad \gls{interpolation}\leq1.
+$$
+
+During the second stage, the mesh progressively translates along the boundary normal towards the target. Its position is then defined as
+
+$$
+\mathbf{p}_{\mathrm{mesh}}
+=
+\begin{bmatrix}
+x_t-\dfrac{R}{2}+\gls{interpolation}_2\dfrac{R}{2}\\
+y_t\\
+z_t
+\end{bmatrix},
+\qquad \gls{interpolation}>1.
+$$
+
+Finally, the interpolated vertices are translated from the mesh frame to the world frame according to
+
+$$
+\boxed{
+\mathbf{V}_{\mathrm{world}}
+=
+\mathbf{V}
++
+\mathbf{1}\mathbf{p}_{\mathrm{mesh}}^{T}
+}
+$$
+
+where $\mathbf{1}\in\mathbb{R}^{P\times1}$ is a column vector containing ones.
+
+The mesh connectivity is also updated during the deformation. For small values of $\gls{interpolation}_2$, the original planar triangulation is retained. Once the deformation towards the spherical configuration becomes sufficiently pronounced, the convex hull of the current vertices is computed and used to define the mesh faces. This transition is performed when $\gls{interpolation}_2 \geq 0.2$, this value was chosen empirically simply as a value where the cone already encircles the target \gls{target_pos}. When $\gls{interpolation}_2=1$, the spherical configuration is complete and the resulting convex-hull connectivity forms a closed surface around the target. Consequently, the mesh provides a continuous geometric transition from an open planar barrier to a closed spherical surface while simultaneously adapting its position to the target.
+
+
+\section{MPC}
+
+As described previously, \gls{MPC} is employed to generate a dynamically feasible trajectory between the current position of quadrotor $i$ and its desired goal position, which is obtained using Lloyd's algorithm. At each control iteration, the MPC solves a finite-horizon optimization problem that accounts for the desired goal position, trajectory smoothness, velocity constraints, acceleration constraints, and collision avoidance. The formulation adopted is based on the approach presented in \cite{10161063}.
+
+Let $k\in{0,\ldots,\gls{Horizon}-1}$ denote the discrete prediction step, where \gls{Horizon} is the number of prediction points (Horizon). The predicted position of quadrotor $i$ at step $k$ is denoted by $\gls{p_i_pos_h}[k]\in\mathbb{R}^3$. The optimization problem is formulated by:
+
+\begin{align}
+\min_{\gls{p_i_pos_h}} \quad &
+\underbrace{
+w_g \sum_{k=0}^{\gls{Horizon}-1}
+\left\|\gls{p_i_pos_h} [k]-\gls{p_i_desired}\right\|^2
+}_{\text{Goal cost}}
++
+\underbrace{
+w_s \sum_{k=0}^{\gls{Horizon}-1}
+\left\|\gls{p_i_acc_h} [k]\right\|^2
+}_{\text{Smoothness cost}}
+\label{eq.6:MPC_optimization}
+\\
+\text{s.t.} \quad
+&
+\underbrace{
+\gls{p_i_pos_h}^{(l)}[0]
+=
+\gls{chaser_i_pos}^{(l)}
+\quad \forall l\in\{0,1,2\}
+}_{\text{Initial-state consistency}}
+\label{eq.6:MPC_initial_state}
+\\
+&
+\underbrace{
+\gls{p_i_vel_h} [k]
+\leq 
+\overline{v},
+\quad \forall k
+}_{\text{Velocity constraint}}
+\label{eq.6:MPC_velocity}
+\\
+&
+\underbrace{
+\gls{p_i_acc_h} [k]
+\leq 
+\overline{a},
+\quad \forall k
+}_{\text{Acceleration constraint}}
+\label{eq.6:MPC_acceleration}
+\\
+&
+\underbrace{
+h_{ij}[k]
+=
+\left\|
+\boldsymbol{\Theta}_{ij}^{-1}
+\left(\gls{p_i_pos_h} [k] - \mathbf{p_{j_H}} [k]\right)
+\right\|^2
+-1
+\geq 0,
+\quad \forall k,j
+}_{\text{Collision-aware constraint}}.
+\label{eq.6:MPC_collision}
+\end{align}
+Here, $\gls{p_i_pos_h}^{(l)}$ denotes the $l$-th time derivative The relative position between two agents is expressed in spherical
+coordinates to obtain the polar variables required by the collision
+avoidance constraint. Let
+\[
+\gls{d_ij_euc}
+=
+\mathbf{p}_i-\mathbf{p}_j
+=
+\begin{bmatrix}
+x_{ij} & y_{ij} & z_{ij}
+\end{bmatrix}^{\top}
+\]
+denote the relative Euclidean vector between two agents. The corresponding distance and angular
+coordinates are computed directly as
+\[
+r_{ij}
+=
+\left\|\gls{d_ij_euc}\right\|_2
+=
+\sqrt{x_{ij}^{2}+y_{ij}^{2}+z_{ij}^{2}},
+\]
+\[
+\alpha_{ij}
+=
+\operatorname{atan2}(y_{ij},x_{ij}),
+\qquad
+\beta_{ij}
+=
+\arccos\left(\frac{z_{ij}}{r_{ij}}\right).
+\]
+Hence, the polar variables are obtained through the direct
+Cartesian-to-spherical transformation
+\[
+\zeta_{2,ij}
+=
+\begin{bmatrix}
+\alpha_{ij}\\
+\beta_{ij}
+\end{bmatrix},
+\qquad
+\zeta_{3,ij}=r_{ij}.
+\]
+In contrast to the original formulation, these variables are not
+obtained by solving separate minimization subproblems. Instead, they
+are directly determined from the current relative position at each
+prediction step.of the position trajectory, with $\gls{p_i_pos_h}^{(0)}$ representing position, $\gls{p_i_pos_h}^{(1)}$ velocity, and $\gls{p_i_pos_h}^{(2)}$ acceleration. The variables $\gls{chaser_i_pos}$ and $\gls{p_i_desired}$ denote the current position of the chaser and its desired goal position, respectively.
+
+The collision-aware constraint is defined with respect to an ellipsoidal safety envelope. Specifically, the diagonal matrix
+\begin{equation}
+\boldsymbol{\Theta}_{ij} = \operatorname{diag}(a_{ij},b_{ij},c_{ij})
+\label{eq:MPC_collision_ellipsoid}
+\end{equation}
+contains the semi-axis lengths of the ellipsoidal safety envelope associated with agent $i$ and neighboring agent or obstacle $j$. The position of the neighboring agent or obstacle at time step $k$ is denoted by $\mathbf{p_{j_H}}[k]$. It is important to note that the obstacle avoidance is only enforced at the discretized prediction points of the horizon \gls{Horizon}, and that the collision-aware constraint is simply a penalty cost for the minimization of \gls{p_i_pos_h}, this topic has previously been discussed in Section~\ref{sec.3:CBF_QP_MPC}.
+
+For obstacles, it is assumed the same is sensed and, $\mathbf{p_{j_H}}[k]$ represents the predicted obstacle position over the planning horizon. In the case of another quadrotor, the agents communicate through the proposed Spatial Network and share their predicted trajectories over the entire MPC horizon. Consequently, the collision-avoidance constraint can account for the predicted future motion of both dynamic obstacles and neighboring agents.
+
+
+The condition $h_{ij}[k]\geq 0$ requires the predicted position to
+lie outside or on the boundary of this ellipsoid. Consequently, the constraint makes the quadrotor less likely from entering the specified collision-avoidance region.
+The objective function consists of two components. The goal cost in Equation~\eqref{eq.6:MPC_optimization} penalizes the squared distance between the predicted position and the desired goal position. The weighting factor \gls{w_g} determines the relative importance of goal tracking.
+
+The smoothness cost penalizes the squared norm of the second derivative of the position, $\gls{p_i_acc_h} [k]$, over the entire prediction horizon. Depending on the trajectory representation, this term penalizes total translational acceleration and therefore discourages abrupt variations in the trajectory. Its weight, \gls{w_s}, controls the importance of generating a smooth trajectory.
+
+The initial-state consistency constraint in Equation~\eqref{eq.6:MPC_initial_state} ensures that the predicted trajectory starts from the quadrotor's current state. Specifically, it constrains the initial position, velocity, and acceleration to match their measured or estimated values, represented by $\gls{chaser_i_pos}^{(l)}$. This prevents the optimizer from generating a trajectory that is disconnected from the quadrotor's actual state.
+
+The velocity constraint in Equation~\eqref{eq.6:MPC_velocity} limits the magnitude of the predicted velocity to the maximum allowable velocity $\overline{v}$. This ensures that the resulting trajectory remains within the quadrotor's velocity capabilities. The same logic applies to the acceleration constraint in Equation~\eqref{eq.6:MPC_acceleration} limiting the magnitude of the total acceleration.  Finally, the collision-avoidance constraint in Equation~\eqref{eq.6:MPC_collision} ensures that the predicted position of quadrotor $i$ remains outside the safety envelope associated with each neighboring quadrotor or obstacle $j$.
+
+Together, the objective function and constraints enable the MPC to generate trajectories that balance goal-reaching behavior, smoothness, dynamic feasibility, and collision avoidance. The first time step of the resulting trajectory horizon (position, velocity and acceleration) is then passed to the low-level controller (Mellinger) of the quadrotor. At the next \gls{MPC} iteration, the current state and updated neighboring-agent information are used to construct a new optimization problem, resulting in the receding-horizon behavior characteristic of MPC.
+
+\subsection{Bernstein Polynomial Trajectory Representation}
+\label{subsec:bernstein_trajectory}
+
+Instead of representing the MPC prediction horizon as a finite sequence of discrete positions in $\mathbb{R}^3$, the positions trajectory is parameterized using Bernstein polynomials, previously introduced in Section~\ref{subsec.2:Bernstein_polynomials}. The trajectory is therefore described by a finite set of control points, providing a compact representation of the position over the entire prediction horizon. Moreover, the first and second derivatives of a Bernstein polynomial can be expressed as linear mappings of its control points. Consequently, position, velocity, and acceleration constraints can be formulated using matrix operations, which is convenient for the subsequent optimization problem.
+
+Let $n$ denote the degree of the Bernstein polynomial and let $n_{\mathrm{ctrl}} = n+1$ be the number of control points. The optimization vector is defined as
+
+\begin{equation}
+    \gls{bern_coefs} =
+    \begin{bmatrix}
+        c_{0x} & c_{0y} & c_{0z} \\
+        c_{1x} & c_{1y} & c_{1z} \\
+        \vdots \\
+        c_{nx} & c_{ny} & c_{nz} \\
+    \end{bmatrix}
+    \in \mathbb{R}^{(n+1)\times 3}.
+    \label{eq.6:control_point_matrix}
+\end{equation}
+
+Rather than optimizing the trajectory position independently at each
+discretized time step, the entire curve is defined by the control points
+and a set of Bernstein basis polynomials.
+
+Given \gls{Horizon} discretized points in the normalized time interval, the
+Bernstein basis matrix is defined as
+\begin{equation}
+    \gls{W_0} =
+    \begin{bmatrix}
+        b_{0,n}(\tau_0) & b_{1,n}(\tau_0) & \cdots & b_{n,n}(\tau_0) \\
+        b_{0,n}(\tau_1) & b_{1,n}(\tau_1) & \cdots & b_{n,n}(\tau_1) \\
+        \vdots & \vdots & \ddots & \vdots \\
+        b_{0,n}(\tau_{\gls{Horizon}-1}) & b_{1,n}(\tau_{\gls{Horizon}-1}) & \cdots &
+        b_{n,n}(\tau_{\gls{Horizon}-1})
+    \end{bmatrix}
+    \in \mathbb{R}^{\gls{Horizon}\times(n+1)},
+    \label{eq.6:bernstein_basis_matrix}
+\end{equation}
+where
+\begin{equation}
+    \tau_k = \frac{k}{\gls{Horizon}-1},
+    \qquad k=0,\ldots,\gls{Horizon}-1.
+\end{equation}
+Consequently, the sampled position trajectory can be computed as
+\begin{equation}
+    \gls{P} = W_0 \gls{bern_coefs},
+    \qquad
+    \gls{P}\in\mathbb{R}^{\gls{Horizon}\times3}.
+    \label{eq.6:sampled_position_trajectory}
+\end{equation}
+
+\subsubsection{Derivative Representation}
+
+An important property of Bernstein polynomials is that their derivatives
+can be expressed using Bernstein polynomials of lower degree. The first
+derivative of the trajectory with respect to the normalized time parameter
+is given by
+\begin{equation}
+    \frac{dp}{d\tau}
+    =
+    n\sum_{i=0}^{n-1}
+    b_{i,n-1}(\tau)
+    \left(c_{i+1}-c_i\right).
+    \label{eq.6:bernstein_first_derivative}
+\end{equation}
+Similarly, the second derivative is
+\begin{equation}
+    \frac{d^2p}{d\tau^2}
+    =
+    n(n-1)\sum_{i=0}^{n-2}
+    b_{i,n-2}(\tau)
+    \left(c_{i+2}-2c_{i+1}+c_i\right).
+    \label{eq.6:bernstein_second_derivative}
+\end{equation}
+These expressions show that the first and second derivatives depend on
+the first- and second-order finite differences of the control points,
+respectively. This property allows the derivatives of the trajectory to
+be evaluated efficiently without explicitly differentiating the complete
+polynomial at every time step.
+
+Let $\mathbf{B_1}\in\mathbb{R}^{\gls{Horizon}\times n}$ and
+$\mathbf{B_2}\in\mathbb{R}^{\gls{Horizon}\times(n-1)}$ denote the Bernstein basis matrices of
+degree $n-1$ and $n-2$, respectively. The corresponding finite-difference
+matrices are defined as
+\begin{equation}
+    \mathbf{D_1} =
+    \begin{bmatrix}
+        -1 & 1 & 0 & \cdots & 0 \\
+        0 & -1 & 1 & \cdots & 0 \\
+        \vdots & \vdots & \ddots & \ddots & \vdots \\
+        0 & 0 & \cdots & -1 & 1
+    \end{bmatrix}
+    \in\mathbb{R}^{n\times(n+1)},
+    \label{eq.6:first_difference_matrix}
+\end{equation}
+and
+\begin{equation}
+    \mathbf{D_2} =
+    \begin{bmatrix}
+        1 & -2 & 1 & \cdots & 0 \\
+        0 & 1 & -2 & \ddots & \vdots \\
+        \vdots & \ddots & \ddots & \ddots & 1
+    \end{bmatrix}
+    \in\mathbb{R}^{(n-1)\times(n+1)}.
+    \label{eq.6:second_difference_matrix}
+\end{equation}
+The derivative basis matrices can then be constructed as
+\begin{align}
+    \gls{W_1} &= \frac{n \mathbf{B_1}\mathbf{D_1}}{T},
+    \label{eq.6:first_derivative_basis_matrix}\\
+    \gls{W_2} &= \frac{n(n-1)\mathbf{B_2}\mathbf{D_2}}{T^2},
+    \label{eq.6:second_derivative_basis_matrix}
+\end{align}
+being $T$ the time scaling that will be introduced next. 
+
+The sampled first- and second-order derivatives are therefore obtained directly from the control-point matrix:
+\begin{align}
+    P^{(1)} &= \gls{W_1} \gls{bern_coefs},
+    \label{eq.6:sampled_first_derivative}\\
+    P^{(2)} &= \gls{W_2} \gls{bern_coefs}.
+    \label{eq.6:sampled_second_derivative}
+\end{align}
+
+\subsubsection{Time Scaling}
+
+The derivatives above are defined with respect to the normalized time
+parameter $\tau\in[0,1]$. If the physical time is denoted by
+$t\in[0,T]$, the normalized parameter is
+\begin{equation}
+    \tau = \frac{t}{T}.
+\end{equation}
+Applying the chain rule, the physical velocity and acceleration are
+\begin{align}
+    \frac{dp}{dt}
+    &=
+    \frac{1}{T}\frac{dp}{d\tau},
+    \label{eq.6:physical_velocity}\\
+    \frac{d^2p}{dt^2}
+    &=
+    \frac{1}{T^2}\frac{d^2p}{d\tau^2}.
+    \label{eq.6:physical_acceleration}
+\end{align}
+Therefore, since the horizon parameter used in the implementation represents
+physical time rather than merely the number of discretization points, the
+corresponding derivative matrices are scaled accordingly.
+
+\subsection{Constraint Reformulation}
+
+The velocity, acceleration, and collision-avoidance constraints in Equations~\eqref{eq.6:MPC_velocity}--\eqref{eq.6:MPC_collision} are quadratic in the trajectory variables. In particular, the collision-avoidance constraint, which requires the trajectory to remain outside the obstacle ellipsoid, is non-convex. This non-convexity is the main source of difficulty in the resulting optimization problem, since the feasible set lies outside an ellipsoidal region and is therefore not convex. Directly solving the resulting problem consequently leads to a \gls{QCQP} with a non-convex collision-avoidance constraint.
+
+The norm constraints are nonlinear because they involve the magnitude of a vector. In order to obtain a \gls{QP}-compatible formulation, each constrained vector is expressed as a magnitude multiplied by a unit direction vector. If the direction is fixed during an optimization step, the resulting equality is affine in the trajectory variables and the magnitude. Following the approach presented in \cite{10161063}, these constraints are therefore reformulated using a polar representation. This reformulation allows the nonlinear norm constraints to be represented by affine relations when the direction is held fixed, facilitating the solution of the problem within a \gls{SQP} framework.
+
+Consider a general vector
+\begin{equation}
+\mathbf{y} = \mathbf{M}(v-v_0),
+\end{equation}
+where $\mathbf{M}$ is a diagonal scaling matrix, $v_0$ is the centre of the constraint, and $\mathbf{y}\in\mathbb{R}^3$. The vector can be represented in spherical coordinates as
+
+\begin{equation}
+ \mathbf{y}=\gls{r_d}\,\omega(\alpha,\beta),
+\end{equation}
+where $\gls{r_d}=\|\mathbf{y}\|$ is its magnitude and
+
+\begin{equation}
+\omega(\alpha,\beta)
+=
+\begin{bmatrix}
+\cos\alpha\sin\beta\\
+\sin\alpha\sin\beta\\
+\cos\beta
+\end{bmatrix}
+\end{equation}
+is a unit vector describing its direction.
+
+Applying this same transformation into polar coordinates for the restrictions of inequality of the type in Equation~\eqref{eq.6:general_min_restrictions} into the polar form in Equation~\eqref{eq.6:polar_form_of_general_min_restriction}.
+\begin{equation}
+\|\mathbf{M}(v-v_0)\|^2\leq\eta^2
+\label{eq.6:general_min_restrictions}
+\end{equation}
+\begin{equation}
+\mathbf{M}(v-v_0)
+-
+\gls{r_d}\boldsymbol{\omega}(\alpha,\beta) = 0,
+\gls{r_d}\leq\eta.
+\label{eq.6:polar_form_of_general_min_restriction}
+\end{equation}
+The angles $\alpha$ and $\beta$ used for the velocity and acceleration constraints are fixed during each MPC optimization. In contrast, for collision avoidance, these angles are recomputed for each obstacle and prediction-horizon sample from the relative position between the chaser and the predicted obstacle trajectory.The resulting direction vector obtained from $\omega(\cdot)$ is then held constant during the subsequent trajectory optimization. The equality constraint is consequently affine in the trajectory variables and the scalar magnitude \gls{r_d}.
+This transformation is therefore suitable for embedding the resulting
+problem within a \gls{QP} framework.
+
+Having this transformation implemented its application to the velocity, acceleration and obstacle avoidance restrictions follows.
+For the velocity constraint, the transformed vector is simply the
+velocity itself. The corresponding constraint set is given by Equation~\eqref{eq.6:velocity_restriction_in_polar}
+
+\begin{equation}
+    \begin{aligned}
+        \mathcal{C}_{i,v}[k]
+        =&
+        \left\{
+        \mathbf f_{i,v}[k]=0,\;
+        r_{i,v}[k]\leq\overline v
+        \right\}, \\
+        \mathbf f_{i,v}[k]
+        =&
+        \dot{\mathbf p}_i[k]
+        -
+        r_{i,v}[k]
+        \omega
+        \left(
+        \alpha_{i,v}[k],\beta_{i,v}[k]
+        \right).
+        \label{eq.6:velocity_restriction_in_polar}
+    \end{aligned}
+\end{equation}
+The scalar $r_{i,v}[k]$ is the magnitude of the velocity at prediction step $k$, while the angles $\alpha_{i,v}[k]$ and $\beta_{i,v}[k]$
+describe its direction.
+
+In a similar manner the acceleration constraint is given by Equation~\eqref{eq.6:acceleration_restriction_in_polar}
+
+\begin{equation}
+    \begin{aligned}
+    \mathcal{C}_{i,a}[k]
+    =&
+    \left\{
+    \mathbf f_{i,a}[k]=0,\;
+    r_{i,a}[k]\leq\overline a
+    \right\}, \\
+    \mathbf f_{i,a}[k]
+    =&
+    \ddot{\mathbf p}_i[k]
+    -
+    r_{i,a}[k]
+    \omega
+    \left(
+    \alpha_{i,a}[k],\beta_{i,a}[k]
+    \right).
+    \label{eq.6:acceleration_restriction_in_polar}
+    \end{aligned}
+\end{equation}
+The scalar $r_{i,a}[k]$ is therefore constrained by a maximum acceleration magnitude.
+
+Collision avoidance is almost the same but the transformation vector is not just the velocity or acceleration but the difference of position between the agent and other obstacles as it is defined by Equation~\eqref{eq.6:obstacle_collision_vector}
+
+\begin{equation}
+\boldsymbol{\Theta}_{ij}^{-1}
+\left(
+\gls{p_i_pos_h}[k] - \mathbf{p_{j_H}} [k]
+\right).
+\label{eq.6:obstacle_collision_vector}
+\end{equation}
+
+The corresponding transformed distance is
+\begin{equation}
+r_{ij,c}[k]
+=
+\left\|
+\boldsymbol{\Theta}_{ij}^{-1}
+\left(
+\gls{p_i_pos_h}[k] - \mathbf{p_{j_H}} [k]
+\right)
+\right\|.
+\end{equation}
+
+Being the collision constraint is therefore represented by Equation~\eqref{eq.6:collision_avoidace_in_polar}
+
+\begin{equation}
+    \begin{aligned}
+        \mathcal C_{ij,c}[k]
+        = &
+        \left\{
+        \mathbf f_{ij,c}[k]=0,\;
+        r_{ij,c}[k]\geq1
+        \right\},\\
+        \mathbf f_{ij,c}[k]
+        = &
+        \boldsymbol{\Theta}_{ij}^{-1}
+        \left(
+        \gls{p_i_pos_h} [k] - \mathbf{p_{j_H}} [k]
+        \right)
+        -
+        r_{ij,c}[k]
+        \boldsymbol{\omega}
+        \left(
+        \alpha_{ij,c}[k],\beta_{ij,c}[k]
+        \right).
+        \label{eq.6:collision_avoidace_in_polar}        
+    \end{aligned}
+\end{equation}
+The condition $r_{ij,c}[k] \geq 1$ corresponds exactly to the boundary of the ellipsoid, while $r_{ij,c}[k]>1$ places the predicted position outside the ellipsoid.
+    
+\subsection{Quadratic Programming Formulation}
+
+Once the Bernstein representation and the polar parametrization are in place, the MPC problem can be written in the generic quadratic-programming form
+\begin{equation}
+    \begin{aligned}
+        \min_{\zeta_{i,1}} \quad&
+        \frac12\zeta_{i,1}^{\mathsf T}
+        \mathbf{Q}
+        \zeta_{i,1}
+        +
+        \mathbf{q}^{\mathsf T}\zeta_{i,1}
+        \\
+        \text{s.t.}\quad& 
+        \gls{A_eq} \zeta_{i,1} = \gls{B_eq},\\
+        &\gls{A_obs}\zeta_{i,1}=\gls{B_obs}(\zeta_{i,2},\zeta_{i,3}),\\
+        &\mathbf{G}\zeta_{i,1} \le \gls{h_ineq},
+    \end{aligned}
+\label{eq.6:reformulated_optimization_MPC}
+\end{equation}
+where $\zeta_{i,1}$ collects the Bernstein control-point variables, $\zeta_{i,2}$ the polar-angle variables, and $\zeta_{i,3}$ the auxiliary magnitude variables. For fixed polar angles and magnitudes, both equality constraints are affine in $\zeta_{i,1}$. The problem therefore has a quadratic objective and linear equality constraints, and can be solved as a \gls{QP}.
+
+\paragraph{Polar variables.}
+The collision avoidance constraint requires the relative position between two agents in spherical coordinates. Let
+\begin{equation*}
+\Delta\mathbf{p}_{ij}
+=
+\mathbf{p}_i-\mathbf{p}_j
+=
+\begin{bmatrix}
+x_{ij} & y_{ij} & z_{ij}
+\end{bmatrix}^{\top}
+\end{equation*}
+denote this relative position. Its distance and angular coordinates follow directly from the Cartesian-to-spherical transformation $\xi(\cdot)$:
+\begin{equation*}
+\gls{r_d} = \left\|\Delta\mathbf{p}_{ij}\right\|,
+\qquad
+\alpha_{ij} = \operatorname{atan2}(y_{ij},x_{ij}),
+\qquad
+\beta_{ij} = \arccos\left(\frac{z_{ij}}{r_{ij}}\right),
+\end{equation*}
+so that
+\begin{equation*}
+\zeta_{2,ij}
+=
+\begin{bmatrix}
+\alpha_{ij}\\
+\beta_{ij}
+\end{bmatrix},
+\qquad
+\zeta_{3,ij}=r_{ij}.
+\end{equation*}
+Unlike the original formulation, these variables are not obtained by solving separate minimization sub-problems. They are computed directly from the current relative position at each prediction step. The resulting procedure for generating the desired trajectory is summarized in Algorithm~\ref{alg:trajectory_optimization}.
+
+\begin{algorithm}[t]
+\caption{Distributed trajectory optimization}
+\label{alg:trajectory_optimization}
+\begin{algorithmic}[1]
+
+\State $\mathcal{A} \gets \text{all agents}$ \Comment{active set}
+\For{$n_{\mathrm{MPC}}$ iterations}
+    \For{each active agent $i \in \mathcal{A}$}
+        \State Set $\mathbf{b}_{\mathrm{eq}} \gets
+        [\mathbf{p}_i^\top,\mathbf{v}_i^\top,\mathbf{a}_i^\top]^\top$.
+
+        \State Solve the trajectory subproblem
+        \begin{equation*}
+        \begin{bmatrix}
+        \bar{\mathbf A} & \gls{A_eq}^\top\\
+        \gls{A_eq} & \mathbf 0
+        \end{bmatrix}
+        \begin{bmatrix}
+        \mathbf c_i\\
+        \boldsymbol{\mu}
+        \end{bmatrix}
+        =
+        \begin{bmatrix}
+        \bar{\mathbf B}\\
+        \gls{B_eq}
+        \end{bmatrix},
+        \end{equation*}
+
+        \State Predict $\mathbf p_i[k]$ and, for each neighboring agent $j$, compute
+        \begin{equation*}
+        (\zeta_{2,ij}[k],\zeta_{3,ij}[k])
+        \gets
+        \xi\!\left( \mathbf{p}_{i}[k] - \mathbf{p}_{j,H}[k] \right),
+        \end{equation*}
+        \hspace{\algorithmicindent}then update $\mathbf b_{\mathrm{obs}}$.
+
+        \State Update the slack variables
+        \begin{equation*}
+        \mathbf s
+        \gets
+        \max\left(
+        \mathbf 0,\,
+        \mathbf h-\mathbf G\mathbf c_i
+        -\boldsymbol{\lambda}_{\mathrm{ineq}}/\rho_{\mathrm{ineq}}
+        \right).
+        \end{equation*}
+
+        \State Compute the residuals
+        \begin{equation*}
+        \mathbf r_{\mathrm{eq}}
+        =\gls{A_eq}\mathbf c_i-\gls{B_eq},
+        \quad
+        \mathbf r_{\mathrm{ineq}}
+        =\mathbf G\mathbf c_i-\mathbf h+\mathbf s,
+        \quad
+        \mathbf r_{\mathrm{obs}}
+        =\gls{A_obs}\mathbf c_i-\gls{B_obs}.
+        \end{equation*}
+
+        \State Update the dual variables
+        \begin{equation*}
+        \boldsymbol{\lambda}_{\mathrm{ineq}}
+        \gets
+        \boldsymbol{\lambda}_{\mathrm{ineq}}
+        +\rho_{\mathrm{ineq}}\mathbf r_{\mathrm{ineq}},
+        \qquad
+        \boldsymbol{\lambda}_{\mathrm{obs}}
+        \gets
+        \boldsymbol{\lambda}_{\mathrm{obs}}
+        +\rho_{\mathrm{obs}}\mathbf r_{\mathrm{obs}}.
+        \end{equation*}
+
+        \If{$\|\mathbf r_{\mathrm{eq}}\|+\|\mathbf r_{\mathrm{ineq}}\|+\|\mathbf r_{\mathrm{obs}}\|\le 0.02$}
+            \State Remove agent $i$ from $\mathcal{A}$.
+        \EndIf
+    \EndFor
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+The following subsections show how Equation~\eqref{eq.6:reformulated_optimization_MPC} is derived, together with its augmented Lagrangian form.
+
+\subsection{Objective Function Matrices}
+
+From the trajectory parameterization we know that the position can be given as the Bernstein polynomial \gls{W_0} and coefficient $\gls{bern_coefs}$.
+\begin{equation*}
+    \gls{P} = \gls{W_0} \gls{bern_coefs}
+\end{equation*}
+Applying this transformation to the Equation~\eqref{eq.6:MPC_optimization} the following is obtained
+
+\begin{equation*}
+    \begin{array}{c|c}
+        \text{Goal cost transformation} & \text{Smoothness cost transformation} \\
+        \begin{aligned}
+            J_g =&\; \gls{w_g} \sum_{k=0}^{\gls{Horizon}-1}
+            \|\gls{p_i_pos_h}[k] - \gls{p_i_desired}[k]\|^2
+            \Leftrightarrow \\
+            J_g =&\; \gls{w_g} \|\gls{W_0} \zeta - \gls{p_i_desired}\|^2
+            \Leftrightarrow \\
+            J_g =&\; \gls{w_g}
+            \left(
+                \zeta^\top \gls{W_0}^\top \gls{W_0} \zeta
+                - 2\gls{p_i_desired}^\top \gls{W_0} \zeta
+                + \gls{p_i_desired}^\top\gls{p_i_desired}
+            \right)
+            \Leftrightarrow \\
+            J_g =&\; \zeta^\top
+            \underbrace{(\omega_g \gls{W_0}^\top \gls{W_0})\zeta}_{Q_g}
+            - \underbrace{2\omega_g\gls{p_i_desired}^\top \gls{W_0}}_{q_g}
+            \zeta
+        \end{aligned}
+        &
+        \begin{aligned}
+            J_s =&\; \gls{w_s} \sum_{k=0}^{\gls{Horizon}-1} \|\gls{p_i_acc_h}[k]\|^2 \Leftrightarrow \\
+            J_s =&\; \gls{w_s} (\gls{W_2} \zeta)^\top (\gls{W_2} \zeta) \Leftrightarrow \\
+            J_s =&\; \zeta^\top
+            \underbrace{\gls{w_s}(\gls{W_2})^\top \gls{W_2}}_{Q_s}
+            \zeta
+        \end{aligned}
+    \end{array}
+\end{equation*}
+
+\begin{equation*}
+    J = J_g + J_s
+\end{equation*}
+\begin{equation*}
+    \mathbf{Q_{1D}} = \gls{w_g} \gls{W_0}^\top \gls{W_0} + \gls{w_s} \gls{W_2}^\top \gls{W_2} \qquad
+    q^\top_{(x,y,z)} = -2\gls{w_g} \gls{p_i_desired} \gls{W_0}
+\end{equation*}
+Since the three Cartesian coordinates are treated independently in the
+objective, the full Hessian is block diagonal,
+
+\begin{equation}
+\mathbf{Q}=
+\begin{bmatrix}
+\mathbf{Q_{1D}}&0&0\\
+0&\mathbf{Q_{1D}}&0\\
+0&0&\mathbf{Q_{1D}}
+\end{bmatrix}
+\in
+\mathbb{R}^{3(n+1)\times3(n+1)}.
+\label{eq:6:Q_matrix}
+\end{equation}
+The corresponding linear term is obtained by expanding the goal cost.
+For the three spatial coordinates,
+
+\begin{equation}
+\mathbf{q}=
+\begin{bmatrix}
+q_x\\
+q_y\\
+q_z
+\end{bmatrix},
+\qquad
+\begin{aligned}
+q_x&=
+-2\gls{w_g} \gls{p_desired}_x
+\gls{W_0}^{\mathsf T}\mathbf 1,\\
+q_y&=
+-2\gls{w_g} \gls{p_desired}_y
+\gls{W_0}^{\mathsf T}\mathbf 1,\\
+q_z&=
+-2\gls{w_g} \gls{p_desired}_z
+\gls{W_0}^{\mathsf T}\mathbf 1.
+\end{aligned}
+\end{equation}
+and $\mathbf 1\in\mathbb R^{\gls{Horizon}}$ is a vector of ones.
+
+\subsection{Equality Constraint Matrices}
+
+The initial-state constraints are represented using an equality matrix
+$A_{\mathrm{eq}}$. The first three derivative orders of the Bernstein
+trajectory are evaluated at the initial point and constrained to equal
+the measured state, $A_{\mathrm{eq}}x=B_{\mathrm{eq}}$, with $A_{\mathrm{eq}}$
+and $B_{\mathrm{eq}}$ given by
+
+\begin{equation}
+\gls{A_eq}
+=
+\left[
+\begin{array}{ccc}
+\gls{W_0} [0] & 0      & 0      \\
+0      & \gls{W_0} [0] & 0      \\
+0      & 0      & \gls{W_0} [0] \\ \hline
+\gls{W_1} [0] & 0      & 0      \\
+0      & \gls{W_1} [0] & 0      \\
+0      & 0      & \gls{W_1} [0] \\ \hline
+\gls{W_2} [0] & 0      & 0      \\
+0      & \gls{W_2} [0] & 0      \\ 
+0      & 0      & \gls{W_2} [0]
+\end{array}
+\right]
+\begin{matrix}
+\left.\begin{matrix} \\ \\ \\ \end{matrix}\right\} \text{position} \\
+\left.\begin{matrix} \\ \\ \\ \end{matrix}\right\} \text{velocity} \\
+\left.\begin{matrix} \\ \\ \\ \end{matrix}\right\} \text{acceleration} \\
+\end{matrix}
+,\qquad
+\gls{B_eq}
+=
+\begin{bmatrix}
+p_{i,a}\\
+v_{i,a}\\
+a_{i,a}
+\end{bmatrix}.
+\label{eq.6:a_eq_b_eq}
+\end{equation}
+Here  $A_{\mathrm{eq}}\in\mathbb{R}^{9\times 3(n+1)}$, and the decision vector $x\in\mathbb{R}^{3(n+1)}$ stacks the control points with the three axes. Each block row selects one axis of one derivative order, and $p_{i,a}$, $v_{i,a}$, $a_{i,a}\in\mathbb{R}^3$ denote the initial position, velocity and acceleration.
+
+The equality associated with obstacle avoidance is given by a helper matrix defined by $A_{\mathrm{obs,blk}}$
+\begin{equation*}
+    \mathbf{A}_{\mathrm{obs,blk}}
+    =
+    \begin{bmatrix}
+        \gls{W_0}&0&0\\
+        0&\gls{W_0}&0\\
+        0&0&\gls{W_0}
+    \end{bmatrix}.
+\end{equation*}
+If the optimization contains $N_{\mathrm{obs}}$ obstacles/neighbors, the
+complete obstacle matrix is formed by vertically stacking the block for
+each target,
+
+\begin{equation}
+    \gls{A_obs}
+    =
+    \begin{bmatrix}
+        \mathbf{A}_{\mathrm{obs,blk}}\\
+        \mathbf{A}_{\mathrm{obs,blk}}\\
+        \vdots\\
+        \mathbf{A}_{\mathrm{obs,blk}}
+    \end{bmatrix}.
+    \label{eq:6:A_obs}
+\end{equation}
+
+
+\subsection{Inequality Constraint Matrices} \label{subsec.6:Inequality_Constraint_Matrices}
+There are two restrictions, one in maximal velocity and another in maximal acceleration.
+
+The velocity matrix can be define by
+\begin{equation}
+\mathbf{G}_{\mathrm{vel}}
+=
+\begin{bmatrix}
+\gls{W_1}&0&0\\
+0&\gls{W_1}&0\\
+0&0&\gls{W_1}
+\end{bmatrix},
+\label{eq:6:G_velocity}
+\end{equation}
+where each block is interpreted according to the ordering of the
+optimization variables. This matrix maps the control-point vector to the
+sampled $x$, $y$, and $z$ components of velocity being each row of $G_{\mathrm{vel}}$ each one of the axis.
+
+Similarly, the acceleration mapping is
+\begin{equation}
+\mathbf{G}_{\mathrm{acc}}
+=
+\begin{bmatrix}
+\gls{W_2}&0&0\\
+0&\gls{W_2}&0\\
+0&0&\gls{W_2}
+\end{bmatrix}.
+\label{eq:6:G_acceleration}
+\end{equation}
+The resulting matrices have dimensions
+\begin{equation}
+\mathbf{G}_{\mathrm{vel}},
+\mathbf{G}_{\mathrm{acc}}
+\in
+\mathbb{R}^{3\gls{Horizon}\times3(n+1)}.
+\end{equation}
+The component-wise velocity bounds  $ |\gls{p_i_vel_h} [k]| \leq  \overline{v}$, can then be written as $G_{\mathrm{vel}} x \leq \overline{v}$, the same logic is applied to the acceleration $G_{\mathrm{acc}} x \leq \overline{a}$.
+These constraints can be assembled into a single matrix,
+\begin{equation}
+    \begin{aligned}
+        \mathbf{G}=
+        \begin{bmatrix}
+        \mathbf{G}_{\mathrm{vel}}\\
+        \mathbf{G}_{\mathrm{acc}}
+        \end{bmatrix},
+    \end{aligned}
+    \qquad
+    \begin{aligned}
+        \gls{h_ineq} = 
+        \begin{bmatrix}
+            \mathbf 1 \overline{v}\\
+            \mathbf 1 \overline{a}
+        \end{bmatrix}
+    \end{aligned}
+\label{eq:6:G_total}
+\end{equation}
+where $\mathbf 1 \in \mathbb{R}^{3H \times 1}$ is a vector of ones, therefore,
+
+\begin{equation}
+\mathbf{G}\in \mathbb{R}^{6\gls{Horizon}\times3(n+1)}, \quad \gls{h_ineq} \in \mathbb{R}^{6\gls{Horizon}\times1}.
+\end{equation}
+
+The negative blocks are introduced to convert lower bounds into the
+standard upper-bound inequality form used by the optimization solver being then the final inequality given by Equation~\eqref{eq.6:generic_veL_acc_inequality}.
+\begin{equation}
+    \mathbf{G} x \leq \mathbf{H}
+    \label{eq.6:generic_veL_acc_inequality}
+\end{equation}
+
+\subsection{Slack term and Lagrange multipliers}
+With all the terms of the \gls{QP} defined, the inequality constraints presented in subsection~\ref{subsec.6:Inequality_Constraint_Matrices} can be converted into equality constraints by introducing a nonnegative slack variable \gls{slack}:
+\begin{equation}
+    \gls{G_ineq}\mathbf{x} \leq \gls{h_ineq}
+    \;\Longleftrightarrow\;
+    \gls{G_ineq}\mathbf{x} - \gls{h_ineq} + \gls{slack} = \mathbf{0},
+    \qquad \gls{slack} \geq \mathbf{0}.
+    \label{eq.6:slack_constraint}
+\end{equation}
+A slack term is added for each of the inequality groups, associated with the velocity and acceleration restrictions.
+
+The constraints are then incorporated directly into the objective through the augmented Lagrangian in Equation~\eqref{eq.6:augmented_lagrangian}. It is the solution methods of Equation~\eqref{eq.6:reformulated_optimization_MPC}, but the restrictions appear as penalty terms, weighted by the multipliers \gls{lambda_obs} and \gls{lambda_ineq} and the penalty parameters \gls{rho_obs} and \gls{rho_ineq}. Further details can be found in \cite{boydDistributedOptimizationStatistical2011}.
+\begin{align}
+\gls{lagrangian}(\mathbf{x},\gls{lambda_obs},\gls{lambda_ineq})
+={}&
+\frac12 \mathbf{x}^{\mathsf T}\gls{qp_Q}\mathbf{x}
++
+\gls{qp_q}^{\mathsf T}\mathbf{x}
++
+\gls{lambda_obs}^{\mathsf T}(\gls{A_obs}\mathbf{x}-\gls{B_obs})
++
+\frac{\gls{rho_obs}}{2}
+\|\gls{A_obs}\mathbf{x}-\gls{B_obs}\|^2
+\nonumber\\
+&+
+\gls{lambda_ineq}^{\mathsf T}
+(\gls{G_ineq}\mathbf{x}-\gls{h_ineq}+\gls{slack})
++
+\frac{\gls{rho_ineq}}{2}
+\|\gls{G_ineq}\mathbf{x}-\gls{h_ineq}+\gls{slack}\|^2.
+\label{eq.6:augmented_lagrangian}
+\end{align}
+
+Setting the gradient with respect to $\mathbf{x}$ to zero yields
+\begin{align}
+\mathbf{0}={}&
+\gls{qp_Q}\mathbf{x}+\gls{qp_q}
++
+\gls{A_obs}^{\mathsf T}\gls{lambda_obs}
++
+\gls{rho_obs}\gls{A_obs}^{\mathsf T}(\gls{A_obs}\mathbf{x}-\gls{B_obs})
+\nonumber\\
+&+
+\gls{G_ineq}^{\mathsf T}\gls{lambda_ineq}
++
+\gls{rho_ineq}\gls{G_ineq}^{\mathsf T}(\gls{G_ineq}\mathbf{x}-\gls{h_ineq}+\gls{slack}).
+\end{align}
+Grouping the terms that depend on $\mathbf{x}$ on the left-hand side gives
+\begin{align}
+\Big(
+\gls{qp_Q}
++
+\gls{rho_obs}\gls{A_obs}^{\mathsf T}\gls{A_obs}
++
+\gls{rho_ineq}\gls{G_ineq}^{\mathsf T}\gls{G_ineq}
+\Big)\mathbf{x}
+={}&
+-\gls{qp_q}
+-
+\gls{A_obs}^{\mathsf T}\gls{lambda_obs}
+-
+\gls{G_ineq}^{\mathsf T}\gls{lambda_ineq}
+\nonumber\\
+&+
+\gls{rho_obs}\gls{A_obs}^{\mathsf T}\gls{B_obs}
++
+\gls{rho_ineq}\gls{G_ineq}^{\mathsf T}(\gls{h_ineq}-\gls{slack}).
+\label{eq:6:augmented_linear_system}
+\end{align}
+For fixed slack variables and Lagrange multipliers, updating the Bernstein control points therefore reduces to solving a linear system. Defining
+\begin{equation}
+    \begin{aligned}
+        \gls{A_bar}
+        &=
+        \gls{qp_Q}
+        +
+        \gls{rho_obs}\gls{A_obs}^{\mathsf T}\gls{A_obs}
+        +
+        \gls{rho_ineq}\gls{G_ineq}^{\mathsf T}\gls{G_ineq},
+        \\
+        \gls{B_bar}
+        &=
+        -\gls{qp_q}
+        -
+        \gls{A_obs}^{\mathsf T}\gls{lambda_obs}
+        -
+        \gls{G_ineq}^{\mathsf T}\gls{lambda_ineq}
+        +
+        \gls{rho_obs}\gls{A_obs}^{\mathsf T}\gls{B_obs}
+        +
+        \gls{rho_ineq}\gls{G_ineq}^{\mathsf T}(\gls{h_ineq}-\gls{slack}),
+    \end{aligned}
+\end{equation}
+the control-point update can be written compactly as
+\begin{equation}
+    \gls{A_bar}\,\mathbf{x} = \gls{B_bar}.
+\end{equation}
+
+\subsection{KKT System}
+
+The \gls{KKT} system provides the linear algebraic step used to update the Bernstein control points while enforcing the initial-state equality constraints. Once the control points are obtained, the position, velocity, and acceleration trajectories can be reconstructed using the corresponding Bernstein evaluation matrices.
+Let $A_{\mathrm{eq}}$ denote the matrix containing the initial-state
+constraints and let $b_{\mathrm{eq}}$ denote the corresponding current
+position, velocity, and acceleration. The KKT system is
+\begin{equation}
+\begin{bmatrix}
+\mathbf{\overline A} & \gls{A_eq}^{\mathsf T}\\
+\gls{A_eq} & 0
+\end{bmatrix}
+\begin{bmatrix}
+\gls{bern_coefs}^{k+1}\\
+\mu^{k+1}
+\end{bmatrix}
+=
+\begin{bmatrix}
+\mathbf{\overline B}\\
+\gls{B_eq}
+\end{bmatrix},
+\label{eq:6:KKT}
+\end{equation}
+where $\mu^{k+1}$ is the Lagrange multiplier associated with the initial-state equality constraints and $(\cdot)^{k+1}$ is the subscript for the solver iteration, not horizon iteration.
+
+The first block row corresponds to the augmented quadratic objective, while the second block row enforces the equality constraints. Solving this system yields the updated Bernstein control points $\gls{bern_coefs}^{k+1}$, from which the complete position, velocity, and acceleration trajectories can be reconstructed using \gls{W_0}, \gls{W_1}, and \gls{W_2}.
+
+\section{Taking Advantage of Velocity}
+\label{sec:velocity_weighting}
+
+Until this point, the formation-generation process has relied exclusively on the estimated position of the target. Although this information is sufficient to construct a spatial formation around the target, it does not provide any indication of the target's current direction of motion. Incorporating velocity information introduces an additional system knowledge, allowing the formation to be adapted according to the target's movement.
+
+Velocity can either be measured directly or estimated from the temporal variation of its position, this matter is not the thesis focus, using the vector \gls{target_vel} it's possible to obtain the instantaneous direction of motion defined by $\gls{target_vel} / \|\gls{target_vel}\|$. The inclusion of this directional information allows the formation to depart from an equally distributed arrangement around the target. In particular, the method aims to assign greater importance to the region located in front of the moving target, while reducing the relative importance of the region directly behind it. This is achieved by modifying the previously introduced Lloyd-based \gls{CVT} procedure through a velocity-dependent weighting of the spherical mesh.
+
+\subsection{Velocity-Dependent Mesh Weighting}
+
+To bias the formation towards the target's direction of motion, the CVT is computed on a weighted spherical mesh. The weights are derived from the target's velocity, so that regions of the sphere in front of the target receive a higher weight and therefore attract more generators.
+
+\paragraph{Mesh weights.}
+Consider a spherical mesh centered at the target position, defined by a set of vertices $\gls{M_mesh}=\{\mathbf{x}_i\}_{i=1}^{\gls{N_M}}$, where $\mathbf{x}_i$ is the position of vertex $i$. The vector from the target to vertex $i$ is
+\begin{equation}
+    \gls{d_pT} = \mathbf{x}_i - \gls{target_pos}.
+    \label{eq:relative_mesh_vector}
+\end{equation}
+The weight of each vertex depends on the angle between the direction of the vertex, $\gls{d_pT}/\|\gls{d_pT}\|$, and a reference direction opposite to the target's velocity, $-\gls{target_vel}/\|\gls{target_vel}\|$. This angular distance is
+\begin{equation}
+    \theta_i
+    =
+    \arccos\left(
+        \operatorname{clip}
+        \left(
+            - \left( \frac{\gls{d_pT}}{\|\gls{d_pT}\|} \right)^{\mathsf{T}}
+            \frac{\gls{target_vel}}{\|\gls{target_vel}\|},
+            -1,1
+        \right)
+    \right).
+    \label{eq:angular_distance}
+\end{equation}
+The clipping operation guards against numerical errors in the dot product, keeping the argument of the inverse cosine within its valid domain $[-1,1]$. With this definition, a vertex directly behind the target has $\theta_i=0$, and a vertex directly ahead of the target (aligned with the velocity) has $\theta_i=\pi$.
+
+For a spread parameter $\gls{sigma}>0$, the weight assigned to vertex $i$ is
+\begin{equation}
+    w_i =
+    \exp\left(
+        \frac{\theta_i^2}{2\gls{sigma}^2}
+    \right).
+    \label{eq.6:spherical_gaussian_weight}
+\end{equation}
+This is the reciprocal of a conventional Gaussian kernel centered on the reference direction $-\gls{target_vel}/\|\gls{target_vel}\|$. Consequently, the weight is lowest behind the target ($\theta_i=0$) and grows with the angular distance from that reference direction, reaching its maximum in front of the target ($\theta_i=\pi$). The minus sign in Equation~\eqref{eq:angular_distance} is what makes this work: the Gaussian is centered on the \emph{opposite} of the velocity, and inverting it turns that center into a minimum. Smaller $\gls{sigma}$ concentrates the weight more strongly towards the front.
+
+Unlike the unweighted formulation, the resulting regions now depend not only on the geometry of the mesh but also on the direction of the target's velocity. Once the weights have been updated, the standard \gls{CVT} procedure is applied. In case the estimated target velocity is zero then the unweighted formulation is used. The weighted formulation is also used only when the target is completely surrounded by a spherical mesh (mesh controller $i_2 = 1$). 
+
+\paragraph{Evaluation metrics.}
+Two metrics quantify how far the generators are shifted towards the direction of motion. Let $N$ be the number of generators, $\mathbf{r}_j$ the position of generator $j$ relative to the target, and $\hat{\mathbf{v}}=\gls{target_vel}/\|\gls{target_vel}\|$ the unit velocity direction.
+
+The mean directional alignment is
+\begin{equation}
+    A
+    =
+    \frac{1}{N}
+    \sum_{j=1}^{N}
+    \frac{\mathbf{r}_j^{\mathsf{T}}\hat{\mathbf{v}}}
+    {\|\mathbf{r}_j\|},
+    \qquad -1 \leq A \leq 1.
+    \label{eq:mean_directional_alignment}
+\end{equation}
+Here $A=1$ means all generators lie exactly in the direction of motion, and $A=-1$ means they all lie in the opposite direction. For a symmetric, uniformly distributed formation on a full sphere, contributions from opposite directions cancel and $A\approx 0$. An increase in $A$ after applying the weighting therefore directly indicates a shift of the generators towards the direction of motion.
+
+The forward hemisphere fraction is
+\begin{equation}
+    F_{\mathrm{forward}}
+    =
+    \frac{1}{N}
+    \sum_{j=1}^{N}
+    \mathbb{I}
+    \left(
+        \mathbf{r}_j^{\mathsf{T}}\hat{\mathbf{v}} > 0
+    \right),
+    \label{eq:forward_hemisphere_fraction}
+\end{equation}
+where $\mathbb{I}(\cdot)$ is the indicator function. For a symmetric distribution on a full sphere, $F_{\mathrm{forward}}=0.5$, so values above $0.5$ mean that more than half of the generators lie in the forward hemisphere.
+
+The two metrics are complementary: $A$ measures how closely the generators align with the velocity vector, while $F_{\mathrm{forward}}$ measures the imbalance between the forward and backward hemispheres.
+
+Figures~\ref{fig.6:3d_view_CVT_nonweighted} and~\ref{fig.6:3d_view_CVT_weighted} show a 12-point formation without and with velocity weighting, for a velocity aligned with the positive $X$ axis and $\gls{sigma} = 1.2$. The weighted formation achieves a mean directional alignment of $A=0.3202$ and a forward hemisphere fraction of $F_{\mathrm{forward}}=0.6667$ (8 of 12 generators). This is also visible in the top and front views, where more points lie on the positive $X$ side.
 
 \begin{figure}[htbp]
     \centering
-    \subfloat[outside]{\includegraphics[width=6cm]{5-Figures/Chapter6/mesh_controller/mesh_controller_outside.pdf}}\hfil
-    \subfloat[edge]{\includegraphics[width=6cm]{5-Figures/Chapter6/mesh_controller/mesh_controller_border.pdf}}\hfil
-    \subfloat[inside]{\includegraphics[width=6cm]{5-Figures/Chapter6/mesh_controller/mesh_controller_inside.pdf}}
-    \caption{Mesh controller demonstration at different stages of target interaction.}
-    \label{fig:mesh_controller_demonstration}
+    \subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Chapter6/weighted_CVT/3_view_3d_12_agents_no_v.pdf}}\hfil
+    \subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Chapter6/weighted_CVT/3_view_top_12_agents_no_v.pdf}}\hfil
+    \subfloat[Front]{\includegraphics[width=3cm]{5-Figures/Chapter6/weighted_CVT/3_view_front_12_agents_no_v.pdf}}
+    \caption{Non weighted CVT. (12 points)}
+    \label{fig.6:3d_view_CVT_nonweighted}
 \end{figure}
 
-The algorithm pre-computes three configurations of the mesh vertices, a circular configuration $\mathbf{v}_{\text{circle}} \in \mathbb{R}^{P \times 3}$, a conical configuration $\mathbf{v}_{\text{cone}} \in \mathbb{R}^{P \times 3}$ and a spherical configuration $\mathbf{v}_{\text{sphere}} \in \mathbb{R}^{P \times 3}$.
+\begin{figure}[htbp]
+    \centering
+    \subfloat[Normal]{\includegraphics[width=3cm]{5-Figures/Chapter6/weighted_CVT/3_view_3d_12_agents_ye_v.pdf}}\hfil
+    \subfloat[Top]{\includegraphics[width=3cm]{5-Figures/Chapter6/weighted_CVT/3_view_top_12_agents_ye_v.pdf}}\hfil
+    \subfloat[Front]{\includegraphics[width=3cm]{5-Figures/Chapter6/weighted_CVT/3_view_front_12_agents_ye_v.pdf}}
+    \caption{Weighted CVT. (12 points)}
+    \label{fig.6:3d_view_CVT_weighted}
+\end{figure}
 
-The final mesh is obtained through a two-stage interpolation process based on the target position $\mathbf{p} \in \mathbb{R}^3$. Let $u_1, u_2 \in [0,1]$ be interpolation parameters derived from the signed distance of the target to the surface. 
-
-The interpolation parameters are obtained from the signed distance between the target and the restricted airspace boundary. Let $d_s$ define the distance between the surface of the restricted air space and the target \gls{target_pos}.
-
-\begin{equation}
-    u_{\text{target}} =
-    \begin{cases}
-        0,                      & d_s \le -R/2\\
-        0.5 + \dfrac{d_s}{R},   & d_s > -R/2,\\
-        \dfrac{2 d_s}{R},       & d_s \ge R/2,\\
-        2, & \text{otherwise}
-    \end{cases}
-    \label{eq.6:u_target}
-\end{equation}
-
-where R is the mesh radius.
-
-The transition between configurations is divided into two stages. 
-The interpolation parameters \(u_1\) and \(u_2\) are computed from
-\(u_{\text{target}}\) as
-
-\begin{equation}
-(u_1,u_2)=
-\begin{cases}
-(u_{\text{target}},0), & u_{\text{target}} \le 1, \\[6pt]
-\left(1,\min(u_{\text{target}}-1,1)\right), & u_{\text{target}} > 1.
-\end{cases}
-\label{eq:u1u2}
-\end{equation}
-
-During the first stage (\(u_{\text{target}} \le 1\)), only the
-circle-to-cone interpolation is active, while the mesh remains attached
-to the restricted airspace boundary. In the second stage
-(\(u_{\text{target}} > 1\)), the cone-to-sphere interpolation is
-activated while the first interpolation remains fully completed
-(\(u_1=1\)).
-
-The mesh translation term is defined as
-
-\begin{equation}
-\mathbf{p}_{\text{mesh}}=
-\begin{cases}
-\begin{bmatrix}
-0 \\ p_y \\ p_z
-\end{bmatrix},
-& u_{\text{target}} \le 1, \\[14pt]
-\begin{bmatrix}
-p_x - \dfrac{R}{2} + u_2\dfrac{R}{2} \\
-p_y \\
-p_z
-\end{bmatrix},
-& u_{\text{target}} > 1,
-\end{cases}
-\label{eq:pmesh}
-\end{equation}
-
-where \(\mathbf{p} = [p_x,p_y,p_z]^T\) is the target position.
-This translation guarantees a continuous displacement of the mesh from
-the restricted airspace boundary toward the target center as the
-spherical enclosure is formed.
-
-The intermediate mesh is defined as:
-
-\begin{equation}
-    \mathbf{v}^{(1)} = (1 - u_1)\,\mathbf{v}_{\text{circle}} + u_1\,\mathbf{v}_{\text{cone}},
-\end{equation}
-followed by a second interpolation:
-
-\begin{equation}
-    \mathbf{v}^{(2)} = min((1 - u_2)\,\mathbf{v}^{(1)} + u_2\,\mathbf{v}_{\text{sphere}}).
-\end{equation}
-Thus, the final vertex positions are given by:
-
-\begin{equation}
-    \mathbf{v}_{\text{final}} = \mathbf{v}^{(2)} + \mathbf{p}_{\text{mesh}},
-\end{equation}
-This formulation guarantees that the mesh adapts continuously to the target position, enabling collision avoidance while maintaining containment of the target within the restricted airspace. 
-
-The mesh connectivity (i.e., the set of edges/faces) is computed dynamically. For partially open configurations—corresponding to $u_1 \in [0,1]$ and $u_2 \in [0,0.5)$ the \(\text{MATLAB}^\text{\textregistered}\)~\cite{MATLAB:R2024a} Delaunay triangulation \cite{MATLAB_delaunay} is used, as it provides a robust connection for non-closed surfaces. Once the mesh approaches a closed shape ($u_2 \ge 0.5$), the \(\text{MATLAB}^\text{\textregistered}\)~\cite{MATLAB:R2024a} convex hull \cite{MATLAB_convhull} is computed instead, ensuring a fully enclosed 3D surface.
+The weighting is applied only when the formation is a complete sphere. While the target is outside the restricted airspace, the weights have no influence on the CVT.
 
 \section{Simulation results}
 
-In this section, the simulation results are presented and discussed. The scenario consists of a target that moves in a circular trajectory, alternating between inside and outside the restricted airspace. A total of 12 agents are initially deployed on the mesh. The Voronoi update is the only component of the system that is not executed at every time step due to its computational cost; instead, it is performed every 100 time steps (once per second).
+In this section, the simulation results are presented and discussed. The scenario consists of a target that moves in the same circular trajectory as previously defined~\eqref{eq.4:sim_target_motion}, alternating between inside and outside the restricted airspace. A total of 12 agents are initially deployed on the mesh. The Voronoi update is the only component of the system that is not executed at every time step due to its computational cost, instead, it is performed every 100 time steps (once per second).
 
-During the simulation, the loss of three agents mid-flight, $t = 5$ sec, due to no control input (simulating loss of power) is also introduced to demonstrate the resilience of the system. As in the previous version, all agents operate in a fully decentralized manner and communicate through a spatial network. This allows them to collaboratively estimate the target's position, as well as exchange information about their own positions with neighboring agents in order to update the Voronoi diagram. In Figure~\ref{fig.6:simulation_results_composed} it is possible to see the composed image of the first 30 seconds of simulation being in Figure~\ref{fig.6:simulation_results_close} it is possible to see the how the mesh and agents in a close up view.
+During the simulation, the loss of four agents mid-flight, $t = 10$ sec, due to no control input (simulating power loss) is also introduced to demonstrate the resilience of the system and redistribution of the rest of the agents on the mesh, note that the agents that lose power do not become obstacles they simply are ignored by the other agents, this is one of multiple possible future enhancements. As in the previous version, all agents operate in a fully decentralized manner and communicate through a spatial network (with the assumption of instant communication). This allows them to collaboratively estimate the target's position, as well as exchange information about their own positions and horizon with neighboring agents in order to update the Voronoi diagram and be aware of possible collisions. A complete table of simulation parameters can be seen in Table~\ref{tab.6:all_params}
+
+\begin{table}
+    \centering
+    \caption{Simulation and Control Parameters.}
+    \label{tab.6:all_params}
+    \begin{tabular}{l c}
+    \hline
+    \textbf{Parameter} & \textbf{Value} \\
+    \hline
+
+    \multicolumn{2}{c}{\textit{General Simulation Parameters}} \\
+    \hline
+    Simulation duration \gls{t_end} & $30~\mathrm{s}$ \\
+    Sampling period \gls{time_step} & $0.01~\mathrm{s}$ \\
+    Gravity \gls{gravity} & $9.81~\mathrm{m/s^2}$ \\
+    Number of drones \gls{n_D} & $12$ \\
+    Desired sphere radius \gls{r_desired} & $5~\mathrm{m}$ \\
+    \hline
+
+    \multicolumn{2}{c}{\textit{Target Estimation and Fault Parameters}} \\
+    \hline
+    Lost agent during simulation & $4$ \\
+    Time of loss of agents & $10~\mathrm{s}$ \\
+    EMA smoothing factor \gls{alpha_EMA} & $0.2$ \\
+    Measurement noise & $\gls{target_pos} \pm 5\%$ \\
+    \hline
+
+    \multicolumn{2}{c}{\textit{MPC and SQP Optimization Parameters}} \\
+    \hline
+    Minimum safety distance $\boldsymbol{\Theta}_{ij}$ & $1~\mathrm{m}$ \\
+    Bernstein polynomial degree $n$ & $5$ \\
+    MPC horizon \gls{Horizon} & $5$ \\
+    Obstacle penalty \gls{rho_obs} & $100.0$ \\
+    Inequality penalty \gls{rho_ineq} & $20.0$ \\
+    Goal weight \gls{w_g} & $1000.0$ \\
+    Smoothness weight \gls{w_s} & $1.0$ \\
+    SQP maximum iterations \gls{iter_opti} & $100$ \\
+    Maximum velocity $\overline{v}$ & $3~\mathrm{m/s}$ \\
+    Maximum acceleration $\overline{a}$ & $5~\mathrm{m/s^2}$ \\
+    Gaussian distribution spread \gls{sigma} & $1.2$ \\
+    \hline
+
+    \multicolumn{2}{c}{\textit{Nonlinear Controller Parameters}} \\
+    \hline
+    Mass \gls{drone_mass} & $5~\mathrm{kg}$ \\
+    Inertia matrix \gls{drone_inertial_matrix}
+        & $\mathrm{diag}(0.02,\;0.02,\;0.03)$ \\
+    Drag coefficient \gls{p_drag_coef} & $0$ \\
+    Proportional gain \gls{K_p}
+        & $\mathrm{diag}(150,\;150,\;150)$ \\
+    Velocity gain \gls{K_v}
+        & $\mathrm{diag}(15,\;15,\;15)$ \\
+    Integral gain \gls{K_i}
+        & $\mathbf{0}_{3\times3}$ \\
+    Attitude gain \gls{K_r}
+        & $\mathrm{diag}(8,\;8,\;8)$ \\
+    Angular rate gain \gls{K_Omega}
+        & $\mathrm{diag}(0.5,\;0.5,\;0.5)$ \\
+    \hline
+
+    \end{tabular}
+\end{table}
+
+\subsection{Analysis of the results}
+\label{sec:6:results_analysis}
+
+Figures~\ref{fig.6:multiple time steps close up} and~\ref{fig.6:composed_12_agents} illustrate the qualitative behaviour of the formation, while Figure~\ref{fig.6:multiple_results_joined_12_agents_loss_dijkstra} quantifies it. Each sub-figure is analysed below.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.85\textwidth]{5-Figures/Chapter6/Simulation/decentralized_dijktra_composed.pdf}
-    \caption{Composed simulation of multiple time stamps}
-    \label{fig.6:simulation_results_composed}
+    \subfloat[1 sec]{\includegraphics[width=0.3\textwidth]{5-Figures/Chapter6/Results/close_up_100_12_agents.pdf}}\hfil
+    \subfloat[2.5 sec]{\includegraphics[width=0.3\textwidth]{5-Figures/Chapter6/Results/close_up_250_12_agents.pdf}}\hfil
+    \subfloat[4 sec]{\includegraphics[width=0.3\textwidth]{5-Figures/Chapter6/Results/close_up_400_12_agents.pdf}} \\
+    \subfloat[10 sec]{\includegraphics[width=0.3\textwidth]{5-Figures/Chapter6/Results/close_up_1000_12_agents.pdf}}\hfil
+    \subfloat[13 sec]{\includegraphics[width=0.3\textwidth]{5-Figures/Chapter6/Results/close_up_1300_12_agents.pdf}}\hfil
+    \subfloat[19 sec]{\includegraphics[width=0.3\textwidth]{5-Figures/Chapter6/Results/close_up_1900_12_agents.pdf}}
+    \caption[Close up view of agents at multiple time steps]{Close up view of agents $(\times)$, target $(\cdot)$, desired points $(\diamond)$ and mesh, at multiple time steps.}
+    \label{fig.6:multiple time steps close up}
 \end{figure}
+
 
 \begin{figure}[htbp]
     \centering
-
-    % First row
-    \begin{subfigure}[b]{0.45\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{5-Figures/Chapter6/Simulation/decentralized_dijktra_t_0.5_close.pdf}
-        \caption{$t = 0.5$}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.45\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{5-Figures/Chapter6/Simulation/decentralized_dijktra_t_3_close.pdf}
-        \caption{$t = 3$}
-    \end{subfigure}
-
-    \vspace{0.4cm}
-
-    % Second row
-    \begin{subfigure}[b]{0.45\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{5-Figures/Chapter6/Simulation/decentralized_dijktra_t_6_close.pdf}
-        \caption{$t = 6$}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.45\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{5-Figures/Chapter6/Simulation/decentralized_dijktra_t_30_close.pdf}
-        \caption{$t = 30$}
-    \end{subfigure}
-
-    \caption{Simulation results through time}
-    \label{fig.6:simulation_results_close}
+    \includegraphics[width=0.9\textwidth]{5-Figures/Chapter6/Results/composed_12_agents.pdf}
+    \caption{Composed view of all 6 time steps.}
+    \label{fig.6:composed_12_agents}
 \end{figure}
+
+\paragraph{Mesh evolution (Figures~\ref{fig.6:multiple time steps close up} and~\ref{fig.6:composed_12_agents}).}
+At $t=1$\,s the target is outside the restricted airspace and the agents are distributed over the planar circular mesh. At $t=2.5$\,s the target is close to the boundary and the mesh has deformed into a cone, with its centre displaced towards the target. At $t=4$\,s the target has penetrated the airspace by at least a mesh radius and the mesh is a closed sphere with the target near its centre. At $t=10$\,s, after  the loss of four agents, the remaining agents remain on the spherical mesh and the formation is still closed around the target. At $t=13$\,s and $t=19$\,s the target has left the restricted airspace and the mesh has returned to the planar configuration, remaining at the boundary while the target moves away. Figure~\ref{fig.6:composed_12_agents} overlays these instants and shows that the sequence disc-cone-sphere-(cone)-disc is continuous and follows the target's circular path.
+
+\begin{figure}[htbp]
+    \centering
+    \subfloat[Radial Distance to Target]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter6/Results/radial_hist_4_dropped_agents.pdf}}
+    \hfil
+    \subfloat[Inter-agent Distance]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter6/Results/inter_agent_dist_12_agents.pdf}}
+    \\
+    \subfloat[Velocity constraints]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter6/Results/velocity_12_agents.pdf}}
+    \hfil
+    \subfloat[Tracking Error]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter6/Results/low_level_tracking_error_12_agents.pdf}}
+    \\
+    \subfloat[Trajectory of all Drones]{\includegraphics[width=0.7\columnwidth]{5-Figures/Chapter6/Results/trajectory_12_agents.pdf}}
+    \caption[Simulation for 12 drones with a moving target (Dijkstra)]{Simulation results for the 12-drone moving targe with loss of agents (Dijkstra).}
+    \label{fig.6:multiple_results_joined_12_agents_loss_dijkstra}
+\end{figure}
+
+\subsection{Analysis of the results}
+\label{sec:6:results_analysis}
+
+\paragraph{Radial distance to the target (Figure~\ref{fig.6:multiple_results_joined_12_agents_loss_dijkstra}(a)).}
+While the target is inside the restricted airspace, the agents converge towards the nominal mesh radius $R=5$\,m (dashed line). The initial transient, in which the agents start at about $12$\,m from the target, is not uniform. Some agents overshoot below $R$ and one of them approaches the target very closely between $t\approx 2$ and $5$\,s. This occurs because the MPC only tracks the goals provided by the Voronoi step and has no agent--target separation constraint. After the power loss at $t=10$\,s, the four affected agents no longer appear in the plot and the remaining eight settle again around $R$. As the target leaves the airspace, the distance rises to a maximum of roughly $20$\,m at $t\approx 19$\,s. This is expected, since in this phase the mesh remains at the boundary instead of following the target, and it is not a tracking failure. When the target re-enters, the distance returns to $R$ at $t\approx 25$\,s and increases again at the end of the simulation as the target exits once more.
+
+\paragraph{Inter-agent distance (Figure~\ref{fig.6:multiple_results_joined_12_agents_loss_dijkstra}(b)).}
+The minimum pairwise distance (blue) starts below the safety threshold, because the agents are initially deployed close to each other, and rises above it within the first seconds. From then on it remains above the threshold for the entire simulation, settling at about $3$--$4$\,m. The margin with respect to the threshold is therefore large, which shows that the collision-aware constraint is conservative for this scenario. The maximum distance (red) decreases from its initial value to about $10$\,m once the agents are on the mesh, and the mean (dashed) remains roughly constant at about $6$--$7$\,m. A small step is visible in the mean at $t\approx 10$\,s, caused by the removal of the four agents from the set of active pairs. The figure does not show the agents that lost power, so it does not assess whether the remaining agents keep a safe distance from them.
+
+\paragraph{Velocity components (Figure~\ref{fig.6:multiple_results_joined_12_agents_loss_dijkstra}(c)).}
+All three components remain inside the imposed bounds $[v_\text{min}, v_\text{max}]$ (dashed lines) during the entire simulation. The bounds are reached in two situations. In the first, the agents move from their initial positions to the mesh in the first seconds, which saturates mainly $v_x$ and $v_y$. In the second, the agents follow the target along its circular trajectory, during which $v_y$ saturates at its upper bound for roughly ten seconds. During these periods the agents are velocity-limited, which contributes to the tracking error discussed below. The $v_z$ component stays close to zero with short oscillations, consistent with a target trajectory that changes altitude only slightly. The spikes that appear after $t=10$\,s correspond to the redistribution of the remaining agents after the power loss, and the flat segments at zero correspond to periods in which the agents are already at their goals.
+
+\paragraph{Tracking error (Figure~\ref{fig.6:multiple_results_joined_12_agents_loss_dijkstra}(d)).}
+The tracking error is the distance between each agent and its desired Lloyd point. Its staircase profile results from the Voronoi update running only once per second, since the goal is held constant between updates and then changes abruptly. The error is largest at the beginning and around $t=10$\,s, where it reaches a peak for one agent of roughly $8$--$9$\,m, because the goals change significantly when the agents are lost. In the following seconds it decreases to almost zero at $t\approx 14$\,s, when the target moves slowly relative to the formation. It then rises to about $4$\,m at $t\approx 20$\,s, when the target moves fastest and the agents are velocity-limited, and returns to near zero at $t\approx 25$\,s. This correlation with the velocity saturation of Figure~\ref{fig.6:multiple_results_joined_12_agents_loss_dijkstra}(c) indicates that the error is driven by the target's motion and the agents' velocity limit, and not by instability of the controller. The spread between agents is small during the smooth phases, which indicates consistent behaviour across the swarm.
+
+\paragraph{Trajectories (Figure~\ref{fig.6:multiple_results_joined_12_agents_loss_dijkstra}(e)).}
+The black curve is the target's circular path, with the start and end markers indicating its direction. The agents start away from the target (circular markers) and converge to the vicinity of the target's path, after which their trajectories remain entangled around it as they continuously reassign positions on the mesh. The four agents that lose power stop at their final positions (visible as the trajectories that end early), while the other eight continue to follow the target. The trajectories are smooth, with no abrupt direction changes, which is consistent with the smoothness term in the MPC cost. Some excursions away from the path occur when the target leaves the airspace and the agents return to the planar barrier.
+
+\paragraph{Summary.}
+Taken together, the results show that the formation converges to the target, deforms as a function of its position relative to the airspace boundary, and recovers after the loss of agents, with the velocity bounds always respected and the minimum inter-agent distance always above the safety threshold after the initial transient. The main weaknesses are the initial close approach to the target, the tracking error caused by the $1$\,Hz Voronoi update and velocity saturation.

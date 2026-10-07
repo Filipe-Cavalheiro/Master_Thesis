@@ -14,17 +14,52 @@
 \glsresetall
 
 \section{Conclusion}
+This thesis set out to show that a swarm of drones can encircle a non-cooperative target in three dimensions, without destructive means, so as to discourage its entry into restricted airspace. The simulation results support that this is feasible, and the work leads to the following conclusions.
 
-This thesis demonstrates, both in simulation and experimentally, the feasibility of using drones to encircle a target in order to discourage its entrance into a restricted aerial space.
+\paragraph{Encirclement in 3D needs evenly distributed formations.} 
+Because the target's behaviour is unknown, spreading the agents approximately uniformly over a surface covers every direction equally. Cyclic pursuit did not extend to a 3D formation, and leader--follower schemes require centralization, which conflicts with the decentralized goal of the later chapters. Artificial potential fields reduced collisions but failed as a distribution method, and they require the number of agents to be known in advance.
+
+\paragraph{Centralized case.} 
+A Fibonacci lattice combined with the Lyapunov-based geometric controller was the simplest and most versatile solution. It kept the agents above the minimum safety distance in the static and dynamic scenarios and scaled to 31-agents. The Lyapunov design is supported by a stability proof: convergence is asymptotic for every initial condition except the antipodal point.
+
+\paragraph{Decentralized case.} 
+Consensus over a spatial network gave the agents a shared target estimate without a central node, and Lloyd's algorithm on Voronoi cells redistributed them locally. The half-plane implementation produced a more uniform distribution than the convex-hull one (coefficient of variation of the nearest-neighbour distance of $0.073$ against $0.120$) and avoided degenerate configurations, at a higher computational cost (mean run time of $1.37$\,s against $0.03$\,s, and convergence in $93$ of $100$ runs against $100$ of $100$). The system also recovered after several agents were removed mid-chase, so the formation size can change without a redesign.
+
+\paragraph{Generalized case.} 
+Extending the method to arbitrary meshes made it possible to form a barrier as well as an enclosure. Lloyd's algorithm with Dijkstra distances handled any well-defined mesh and was among the fastest options for small meshes. Velocity-dependent weighting concentrated agents in the direction of the target's motion.
+
+\paragraph{Trajectory planning and safety.} 
+A single receding-horizon, Bernstein-polynomial MPC replaced the earlier planners. It enforces velocity and acceleration limits and treats collisions between agents, and with obstacles, as a high cost in the optimization. It therefore provides no formal safety guarantee, since a collision is penalized but not strictly excluded.
+ 
+\paragraph{Limitations.} 
+All results were obtained in simulation. Communication is assumed to be instantaneous, the target state comes from ground truth with artificial noise, and agents that lose power are ignored rather than treated as obstacles. The thesis also does not address operators with malicious intent, physical capture, or the legal procedures that follow an encirclement.
 
 \section{Future Work}
 
-Although the objectives of this thesis were achieved, several directions for future research remain open. One possible extension is the inclusion of physical obstacles in the environment, such as buildings or trees, while guaranteeing collision avoidance with both static and dynamic obstacles. This could be achieved through the integration of LIDAR measurements or other sensing and perception methods.
+Although the objectives of this thesis were achieved, several directions for future research remain open. These future directions can be separated between advancing system maturity, those that achieve more realistic results, higher \gls{TRL}, and expanding system capabilities, meaning the addition of other features that improve the system by adding new functionality.
 
-Another important improvement would be the use of more realistic target localization methods, such as radar-based position measurements, instead of idealized sensing assumptions.
+\subsection{System maturity}
 
-It may also be worthwhile to investigate alternative agent distributions within the mesh beyond the uniformly spaced configuration considered in this work. If the most likely direction of motion of the target is known, it may be advantageous to concentrate more agents in that direction or to deform the mesh accordingly. One possible approach is the use of weighted Voronoi diagrams.
+A natural direction for future work is the transition from the current simulation-based implementation toward a more realistic experimental platform. This could involve the use of more capable UAVs and a hardware and software stack based on PX4, Gazebo, ROS 2, and flight-control hardware such as a Pixhawk, together with an onboard computer such as a Raspberry Pi or NVIDIA Jetson. Such a platform would enable the capabilities of the proposed system to be evaluated under more realistic sensing, computation, communication, and actuation constraints. However, increasing the technology readiness level would require not only the integration of these components but also systematic validation in increasingly representative environments.
 
-Finally, future work could explore making the encirclement distance between the target and the swarm dependent on the reachability sets of either the target or the swarm agents. For example, given the dynamic characteristics of the drones and a desired overlap between the agents' reachability sets (e.g., 10\%), it would be useful to determine the maximum allowable spacing between agents and the target while still guaranteeing the required overlap.
+Communication protocols also warrant further investigation. Communication technologies and architectures could be evaluated according to the requirements of the swarm, including range, latency, reliability, bandwidth, and resilience to communication loss.
 
-Professor eu sei que está curto mas é para ter algo escrito, ainda não acabei a tese por isso vou deixar isto muito breve até Agosto/Setembro.
+Another important area concerns target identification and detection. In the current implementation, the target state is obtained from ground truth and corrupted with artificial noise to approximate measurement uncertainty. A more realistic perception pipeline could instead employ actual sensors and detection algorithms, allowing the system to account for issues such as false detections, missed detections, measurement delays, and imperfect state estimation. The integration of LiDAR or RGB-D cameras could further support target identification and obstacle avoidance, depending on the operational environment and the computational resources available.
+
+Finally, the transition toward real-world deployment requires a more comprehensive understanding of the applicable legal and regulatory framework. This includes identifying the relevant operational restrictions, certification requirements, and responsibilities associated with autonomous or semi-autonomous UAV operations. Engagement with local aviation authorities and other relevant stakeholders would be necessary to ensure that the system can operate safely and in compliance with applicable regulations. In particular, a system designed to prevent a target from entering restricted airspace must itself avoid creating additional hazards or violating the rules governing the use of that airspace.
+
+\subsection{New functionality}
+
+In parallel with improvements in realism, several extensions could be investigated initially in simulation and subsequently through isolated experimental tests. These developments would expand the capabilities of the proposed architecture without necessarily requiring a more realistic hardware implementation.
+
+The use of target velocity was introduced as a later improvement to the system. However, although velocity information influences the distribution of points over the spherical surface, it is not currently incorporated into the \gls{MPC} as a desired objective for matching the target's velocity. Future work could investigate velocity-aware control objectives, as well as mesh deformations based on the target's motion. For example, rather than merely clustering points according to the velocity vector, the mesh could be deformed to produce a more purposeful spatial arrangement.
+
+The mesh could also be adapted to the geometry or operational characteristics of the target. For instance, an arrangement shaped according to the target's form, such as an aircraft, could be explored. A further extension would involve incorporating knowledge of the target's dynamics. If a model of the target's dynamics were available, its reachability set could be estimated and used to define a region in which the agents should distribute themselves. This could potentially produce formations that account not only for the target's current state but also for its feasible future motions.
+
+Obstacle avoidance is another area where alternative approaches could be explored. The current implementation incorporates obstacle avoidance through an additional computationally costly matrix within the MPC formulation. Future research could investigate methods that achieve obstacle avoidance more efficiently, potentially reducing the computational burden while preserving safety and control performance.
+
+The current work focuses on encirclement and does not implement subsequent target-interaction or capture behaviours. Methods for managing the transition from encirclement to other mission objectives could therefore be investigated. For example, an operator might specify a desired direction of movement by creating an opening in the mesh or offsetting its centre relative to the target. Another possibility would be to identify the location of a camera on the target, when present, and concentrate agents in that region so that the target operator can visibly perceive the formation and its intended effect. Such behaviours would require careful consideration of safety, human interaction, and the operational context.
+
+Beyond the immediate extensions of the proposed architecture, other swarm applications may also be of interest. These include multi-agent object manipulation and transportation using mechanisms such as claws, suction devices, nets, or ropes. Another possible direction is the development of UAVs with additional degrees of freedom, allowing the vehicle body to adopt orientations other than the conventional configuration while maintaining the propellers directed upwards. Such capabilities could increase the flexibility of individual agents in complex environments.
+
+Finally, the use of multiple agents in a decentralized \gls{SLAM} system represents a broader research opportunity. By communicating and sharing information, agents could collaboratively construct a map more efficiently than a single agent operating alone. This could also motivate heterogeneous multi-agent systems combining \gls{UAV} and \gls{UGV}, in which different platforms specialize in different environments or sensing tasks. For example, small aerial agents could explore confined spaces, gliders could provide top-down aerial observations, and \gls{UGV} could operate at ground level. Such a system would represent a natural extension toward heterogeneous, collaborative robotic exploration.
