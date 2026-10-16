@@ -13,13 +13,15 @@ def drone_mellinger_ctrl(agent: DroneState, dpsi_d, param: Param):
     e_v = agent.velocity - agent.desired.velocity
 
     # Desired force vector with attitude
-    f_d = (-param.controller.Mellinger["kp"] @ e_p
-           - param.controller.Mellinger["kv"] @ e_v
+    f_d = (-param.controller.Mellinger.kp @ e_p
+           - param.controller.Mellinger.kv @ e_v
            + param.sim.drone_mass * param.sim.gravity * zW
            + param.sim.drone_mass * agent.desired.acceleration)
 
     # Compute thrust
     thrust =  np.squeeze(f_d.T @ zB)
+    # clip it since the drone as a maximum and minimum values
+    thrust = np.clip(thrust, 4*param.sim.thrust_min, 4*param.sim.thrust_max)
 
     # Compute desired rotation matrix
     norm_fd = np.linalg.norm(f_d)
@@ -63,8 +65,8 @@ def drone_mellinger_ctrl(agent: DroneState, dpsi_d, param: Param):
     )
 
     torque = (
-        -param.controller.Mellinger["kR"] @ e_R
-        -param.controller.Mellinger["kom"] @ e_om
+        -param.controller.Mellinger.kR @ e_R
+        -param.controller.Mellinger.kom @ e_om
     )
 
     return thrust, torque

@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.optimize import linear_sum_assignment
 from itertools import combinations
 
 # Project Capture
@@ -8,8 +7,7 @@ from itertools import combinations
 # Filipe Cavalheiro
 
 from Structs import Param, DroneState, SimulationData
-from target_motion import target_motion
-from actuate_control import actuate_control
+from drone_motion import drone_motion
 from Animation_display import create_figures
 from helper_funcs import *
 from fiboancci_funcs import *
@@ -35,26 +33,78 @@ active_ids = np.where(active_mask)[0]
 # Chaser initialization
 # =============================================================================
 chaser_list: list[DroneState] = []
-for i in range(param.sim.nD):
-    drone = DroneState(param)
-    # Random spherical coordinates for this drone
-    theta0 = 2 * np.pi * np.random.rand()
-    phi0   = 2 * np.pi * np.random.rand()
-    r0     = 15 * np.random.rand()
 
-    # Convert spherical coordinates to Cartesian coordinates
-    initial_pos = r0 * np.array([
-        [np.sin(theta0) * np.cos(phi0)],
-        [np.sin(theta0) * np.sin(phi0)],
-        [np.cos(theta0)]
-    ])
 
-    # Set drone states
-    drone.radii_to_target = np.float32(r0)
-    drone.position = initial_pos
-    drone.desired.position = fib_ref_points[i, :] + target.position
-    drone.desired.radii_to_target = np.linalg.norm(drone.position - target.position)
-    chaser_list.append(drone)
+# =============================================================================
+# Chaser initialization
+# =============================================================================
+
+chaser_list: list[DroneState] = []
+if param.sim.compare_with_experimental or param.sim.load_experimental_state:
+    (
+        position_list,
+        velocity_list,
+        attitude_list,
+        ang_vel_list,
+        real_world_time_offset,
+    ) = get_initial_real_offset(param)
+    for iD in range(param.sim.nD):
+        drone = DroneState(param)
+
+        # Set drone states
+        drone.position = np.asarray(position_list[iD], dtype=float)
+        drone.velocity = np.asarray(velocity_list[iD], dtype=float)
+        drone.attitude = np.asarray(attitude_list[iD], dtype=float)
+        drone.ang_vel = np.asarray(ang_vel_list[iD], dtype=float)
+
+        # Set actual distance from target
+        drone.radii_to_target = np.float32(
+            np.linalg.norm(drone.position - target.position)
+        )
+
+        # Set desired state
+        drone.desired.position = (
+            fib_ref_points[iD, :] + target.position
+        )
+        drone.desired.radii_to_target = np.linalg.norm(
+            drone.desired.position - target.position
+        )
+
+        chaser_list.append(drone)
+
+else:
+    for iD in range(param.sim.nD):
+        drone = DroneState(param)
+
+        # Random spherical coordinates
+        theta0 = 2 * np.pi * np.random.rand()
+        phi0 = np.pi * np.random.rand()
+        r0 = 15 * np.random.rand()
+
+        # Convert spherical coordinates to Cartesian coordinates
+        initial_pos = r0 * np.array([
+            [np.sin(phi0) * np.cos(theta0)],
+            [np.sin(phi0) * np.sin(theta0)],
+            [np.cos(phi0)],
+        ])
+
+        # Set drone position
+        drone.position = initial_pos + np.asarray(target.position).reshape(3, 1)
+
+        # Set actual distance from target
+        drone.radii_to_target = np.float32(
+            np.linalg.norm(drone.position - target.position)
+        )
+
+        # Set desired state
+        drone.desired.position = (
+            fib_ref_points[iD, :] + target.position
+        )
+        drone.desired.radii_to_target = np.linalg.norm(
+            drone.desired.position - target.position
+        )
+        chaser_list.append(drone)
+
 
 # Guidance reference state on S^2, integrated by the outer loop (eq. (11)),
 # initialized at each drone's initial direction relative to the target
@@ -101,7 +151,7 @@ for k in range(param.sim.Nsim):
     # ---------------------------------------------------------
     target.desired.position = param.traj.ref_target_traj["pos"](current_time+param.sim.dTi)
     target.desired.velocity = param.traj.ref_target_traj["vel"](current_time+param.sim.dTi)
-    target_motion(target,param)
+    drone_motion(target, param)
 
     # ---------------------------------------------------------
     # Active drones
@@ -139,29 +189,7 @@ for k in range(param.sim.Nsim):
         # ---------- Enforce S² constraint (local) ----------
         agent.desired.position = agent.desired.radii_to_target * q_hat + target.position
 
-        agent = actuate_control(agent, param)
-
-    #logs values
-    for iD in range(param.sim.nD):
-        agent = chaser_list[iD]
-        position_history[iD,:, k:k+1] = agent.position
-        p_d_hist[iD,:,k:k+1] = agent.desired.position
-        radial_hist[iD, k] = agent.radii_to_target
-
-    # Inter-agent pairwise distances at this timestep
-    for p_idx, (i, j) in enumerate(agent_pairs):
-        inter_agent_dist_hist[p_idx, k] = np.linalg.norm(
-            chaser_list[i].position - chaser_list[j].position
-        )
-
-    target_true_hist[:, k:k+1] = np.concatenate([
-        target.position,
-        target.velocity,
-        target.attitude,
-        target.ang_vel,
-        target.ei,
-        target.eI
-    ])
+        agent = drone_motion(agent, param)
 
     #logs values
     for iD in range(param.sim.nD):

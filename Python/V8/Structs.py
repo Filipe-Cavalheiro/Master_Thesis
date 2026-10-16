@@ -3,6 +3,10 @@ from numpy.typing import NDArray
 from typing import Optional
 import math
 from dataclasses import dataclass, field
+import tomllib
+from pathlib import Path
+
+from plot_real_data import * 
 
 # CONSTS
 GOLDEN_ANGLE = math.pi * (3 - math.sqrt(5))
@@ -56,7 +60,7 @@ class DroneState:
         self.constraints: MotionConstraints = MotionConstraints(param)
     
 class SimulationConfig:
-    def __init__(self):
+    def __init__(self, config_path="V8/drone_models.toml", drone_name="cf2x_P250"):
         # Simulation
         self.Tend = 30
         self.dTi = 0.01
@@ -70,24 +74,51 @@ class SimulationConfig:
 
         self.gravity = 9.81
 
+        self.compare_with_experimental = False
+        self.load_experimental_state = True
+
         # Drones
-        self.nD = 31 
+        self.nD = 3 
         self.sphere_radius = 2.0
 
         # Drop parameters
         self.nD_drop = 0
         self.nD_drop_time = 500
 
-        # Quadrotor
-        self.drone_mass = 5
-        self.J = np.diag([
-            2e-2,
-            2e-2,
-            3e-2
-        ])
+        # if a specific test is desired define its path here else the newest one is used
+        csv_path = None
 
-        self.drag = 0.0
-        self.ctf = 0.0135
+        # Load the real world data
+        self.real_trajectory_csv = Path(csv_path ) if csv_path else newest_log()
+
+        # Load drone parameters from TOML
+        with open(config_path, "rb") as f:
+            config = tomllib.load(f)
+
+        drone = config[drone_name]
+
+        # Quadrotor parameters
+        self.drone_mass = drone["mass"]
+        self.J = np.array(drone["J"], dtype=float)
+
+        self.thrust_min = drone["thrust_min"]
+        self.thrust_max = drone["thrust_max"]
+
+        self.acc_coef = drone["acc_coef"]
+        self.thrust_dyn_coef = drone["thrust_dyn_coef"]
+
+        self.drag_matrix = np.array(
+            drone["drag_matrix"], dtype=float
+        )
+
+        self.rpy_coef = np.array(
+            drone["rpy_coef"], dtype=float
+        )
+
+        self.rpy_rates_coef = np.array(
+            drone["rpy_rates_coef"], dtype=float
+        )
+
 
         # Measurements
         # 1: position
@@ -98,34 +129,6 @@ class SimulationConfig:
         # options: fibonacci, dijkstra 
         self.distribution = "dijkstra"
 
-class ControllerConfig:
-    def __init__(self):
-        self.selected_controller = "Mellinger"
-
-        self.Mellinger = {
-            "kp": np.diag([50, 50, 50]),
-            "kv": np.diag([15, 15, 15]),
-            "kR": np.diag([8, 8, 8]),
-            "kom": np.diag([0.5, 0.5, 0.5]),
-        }
-
-        self.Lee = {
-            "x": 10,
-            "v": 8,
-            "i": 10,
-            "R": 1.5,
-            "W": 0.35,
-            "I": 10,
-            "y": 0.8,
-            "wy": 0.15,
-            "yI": 2,
-        }
-
-        # Consensus parameters
-        self.c1 = 1.5
-        self.sigma = 10
-        self.c2 = 2
-        self.c3 = 2
 
 class TrajectoryConfig:
     def __init__(
@@ -270,13 +273,14 @@ class Param:
     ):
         self.sim = SimulationConfig()
 
-        self.controller = ControllerConfig()
+        self.controller = ControllerConfig(self)
 
         self.traj = TrajectoryConfig()
 
         self.display = GraphicalDisplay(
             self.sim.dTi
         )
+
 
         # Disturbance
         self.x_delta = np.array([
@@ -310,6 +314,27 @@ class Param:
         self.w_smooth = 0.1     # gain to reduce high accelerations
         self.v_max = 10          # max velocity constraint 
         self.a_max = 50          # max acceleration constraint 
+
+@dataclass
+class MellingerGains:
+    kp: np.ndarray
+    kv: np.ndarray
+    kR: np.ndarray
+    kom: np.ndarray
+
+class ControllerConfig:
+    def __init__(self, param: Param):
+        self.selected_controller = "Mellinger"
+        m, J = param.sim.drone_mass, param.sim.J
+        wn_p, zeta = 6.0, 0.9      # position loop bandwidth, rad/s
+        wn_R = 40.0                # attitude loop, ~7x faster than position
+
+        self.Mellinger = MellingerGains(
+            kp=np.diag([m * wn_p**2] * 3),
+            kv=np.diag([2 * zeta * wn_p * m] * 3),
+            kR=J * wn_R**2,
+            kom=J * 2 * zeta * wn_R,
+        )
 
 class Voronoi:
     def __init__(self, param: Param):
