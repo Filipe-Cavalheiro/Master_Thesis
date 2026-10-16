@@ -1,3 +1,9 @@
+"""
+Implementation of the centralized 
+fibonacci sphere with direct motion of drones to 
+the desired points (no path planner).
+"""
+
 import time
 from dataclasses import dataclass, field
 from typing import List
@@ -45,7 +51,6 @@ def uri_is_alive(uri, timeout=0.5):
 
     except Exception:
         return False
-
 
 def discover_active_uris():
     active = []

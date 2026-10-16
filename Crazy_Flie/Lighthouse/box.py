@@ -1,9 +1,7 @@
 import logging
 import sys
 import time
-from threading import Event, Thread
-import keyboard
-import math 
+from threading import Event
 import os
 import sys
 
@@ -14,7 +12,6 @@ from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
 from cflib.positioning.motion_commander import MotionCommander
 from cflib.utils import uri_helper
 from cflib.crazyflie.log import LogConfig
-from cflib.utils.power_switch import PowerSwitch
 
 
 # === Constants ===
@@ -39,7 +36,7 @@ attitude_estimate = [0]
 
 logging.basicConfig(level=logging.ERROR)
 
-def param_deck_flow(_, value_str):
+def param_deck_check(_, value_str):
     """
     Callback function triggered when the Lighthouse deck parameter is updated.
 
@@ -61,26 +58,6 @@ def param_deck_flow(_, value_str):
         print('Lighthouse Deck is attached!')
     else:
         print('Lighthouse Deck is NOT attached!')
-
-def take_off_simple(scf):
-    """
-    Performs a simple takeoff and climbs slightly higher.
-
-    Args:
-        scf (SyncCrazyflie):
-            Active Crazyflie connection object.
-
-    Behavior:
-        - Takes off to DEFAULT_HEIGHT.
-        - Waits 3 seconds for stabilization.
-        - Climbs an additional 0.3 meters.
-        - Holds position for 3 seconds.
-        - Lands automatically when MotionCommander exits.
-    """
-    with MotionCommander(scf, default_height=DEFAULT_HEIGHT) as mc:
-        time.sleep(3)
-        mc.up(0.3)
-        time.sleep(3)
 
 def move_linear_simple(scf):
     """
@@ -211,7 +188,7 @@ if __name__ == '__main__':
 
     with SyncCrazyflie(URI, cf=Crazyflie(rw_cache='./cache')) as scf:
         scf.cf.param.add_update_callback(group="deck", name="bcLighthouse4",
-                               cb=param_deck_flow)
+                               cb=param_deck_check)
         time.sleep(1)
 
         logconf = LogConfig(name='Position', period_in_ms=10)

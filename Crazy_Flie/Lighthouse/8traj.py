@@ -1,8 +1,7 @@
 import logging
 import sys
 import time
-from threading import Event, Thread
-import keyboard
+from threading import Event
 import math 
 import os
 import sys
@@ -14,7 +13,6 @@ from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
 from cflib.positioning.motion_commander import MotionCommander
 from cflib.utils import uri_helper
 from cflib.crazyflie.log import LogConfig
-from cflib.utils.power_switch import PowerSwitch
 
 # === Constants ===
 # URI of the Crazyflie radio link.
@@ -37,10 +35,6 @@ position_estimate = [0, 0, 0]
 attitude_estimate = [0]
 
 logging.basicConfig(level=logging.ERROR)
-
-def traj_8(t):
-    gain = 0.15
-    return 
 
 def param_deck_flow(_, value_str):
     """
@@ -93,45 +87,6 @@ def log_pos_callback(timestamp, data, logconf):
     position_estimate[2] = data['stateEstimate.z']
     attitude_estimate[0] = data['stateEstimate.yaw']
 
-def move_box_limit(scf):
-    """
-    Continuously moves the Crazyflie back and forth between
-    predefined X-axis boundaries.
-
-    Args:
-        scf (SyncCrazyflie):
-            Active Crazyflie connection object.
-
-    Behavior:
-        - Takes off to DEFAULT_HEIGHT.
-        - Starts moving forward.
-        - Reverses direction when the estimated X position
-          exceeds BOX_LIMIT or goes below -BOX_LIMIT.
-        - Runs indefinitely until externally interrupted.
-    """
-    with MotionCommander(scf, default_height=DEFAULT_HEIGHT) as mc:
-        body_x_cmd = 0.2
-        body_y_cmd = 0.2
-        max_vel = 0.2
-        
-        for i in range(100):
-            if position_estimate[0] > BOX_LIMIT:
-                body_x_cmd = -max_vel
-            elif position_estimate[0] < -BOX_LIMIT:
-                body_x_cmd = max_vel
-
-            if position_estimate[1] > BOX_LIMIT:
-                body_y_cmd = -max_vel
-            elif position_estimate[1] < -BOX_LIMIT:
-                body_y_cmd = max_vel
-
-            mc.start_linear_motion(body_x_cmd, body_y_cmd, 0)
-            time.sleep(0.1)
-        
-        mc.stop()
-    
-    return_home(scf)
-    
 def setup_flight(scf):
     cf = scf.cf
     cf.param.set_value('kalman.resetEstimation', '1')

@@ -1,4 +1,9 @@
 
+"""
+Implementation of the centralized 
+fibonacci sphere + lyapunov controller (path planner).
+"""
+
 import threading
 import os
 
