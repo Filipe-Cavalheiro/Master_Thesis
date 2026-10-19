@@ -22,12 +22,12 @@ class SimulationConfig:
         self.gravity = 9.81
 
         # Drones
-        self.nD = 12
+        self.nD = 3
         self.sphere_radius = 5.0
 
         # Drop parameters
         self.nD_drop = 4
-        self.nD_drop_time = 1000 # -1 to deactivate
+        self.nD_drop_time = -1 # -1 to deactivate
 
         # Quadrotor
         self.drone_mass = 5
@@ -172,7 +172,6 @@ class TrajectoryConfig:
                     [0]
                 ])
             }
-
 
         elif traj == 3:
             # Lissajous

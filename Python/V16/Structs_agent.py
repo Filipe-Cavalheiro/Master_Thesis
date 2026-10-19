@@ -22,12 +22,6 @@ class DesiredState:
     psi : float = 0.0
     old_psi: float = 0.0
 
-    # I dont remember what this is sorry but I know its associated with the 
-    # (NON WORKING in python) Lee controller
-    b1: np.ndarray = field(default_factory=lambda: np.array([1.0,0.0,0.0]).reshape(-1,1))
-    b1_dot: np.ndarray = field(default_factory=lambda: np.zeros((3,1)))
-    b1_2dot: np.ndarray = field(default_factory=lambda: np.zeros((3,1)))
-
     # radii control associated with the geometric controller of V8
     radii_to_target: np.floating = np.float32(0.0)
 
