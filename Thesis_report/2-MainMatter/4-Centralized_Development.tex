@@ -54,7 +54,7 @@ The Fibonacci lattice differs in the use of the \emph{golden angle} along the sp
 
 In some lattice constructions, the golden ratio $\varphi$ is replaced by a rational approximant given by a Fibonacci ratio, this is the case when the total number of points is constrained to be a Fibonacci number. The use of the golden ratio comes from the fact that in a precise sense, it is the 'most irrational' number (worst approximated by rationals) making so near-periodic alignments avoided. As a result, lattice points do not cluster, and spatial uniformity is preserved.
 
-To construct the lattice, let $n$ be a natural number and let the integer index $i$ range from $-n$ to $+n$. The spherical coordinates (in radians) of the $i$th point are given by $\text{lat}_i = \arcsin\!\left(\frac{2i}{2n + 1}\right), \text{lon}_i = 2\pi i \varphi^{-1}$, being the total number of points defined $p = 2n + 1$.
+To construct the lattice, let $n_F$ be a natural number and let the integer index $i$ range from $-n_F$ to $+n_F$. The spherical coordinates (in radians) of the $i$th point are given by $\text{lat}_i = \arcsin\!\left(\frac{2i}{2n_F + 1}\right), \text{lon}_i = 2\pi i \varphi^{-1}$, being the total number of points, and therefore of agents, $\gls{n_D} = 2n_F + 1$.
 
 Each point is assigned a unique latitude, while the longitudinal separation between consecutive points corresponds to the golden angle (or its complement), approximately $222.5^\circ$. Also notice that the total number of points is always odd, therefore, the number of agents cannot be any even natural number greater than 1.
 
@@ -115,7 +115,7 @@ Before detailing the path planner's implementation, it is useful to first introd
 \subsubsection{Problem Formulation}
 
 Let $\gls{target_pos} \in \mathbb{R}^3$ denote the position of a stationary or moving target, and let
-$\gls{chaser_i_pos} \in \mathbb{R}^3$, $i=1,\dots,N$, denote the position of the $i$-th UAV.
+$\gls{chaser_i_pos} \in \mathbb{R}^3$, $i=1,\dots,\gls{n_D}$, denote the position of the $i$-th UAV.
 
 The objective is to drive all UAVs toward desired positions
 $\gls{p_i_desired} \in \mathbb{R}^3$ distributed around the target i.e.,
@@ -440,13 +440,13 @@ The safeguard operates directly on the spherical manifold $\Gamma^2$ and modifie
     \gls{q_i}^{\gls{r_desired}} = \Pi^{\gls{r_desired},\gls{target_pos}}(\gls{chaser_pos}).
 \end{equation}
 
-Pairwise geodesic distances on $\Gamma^2$ are then computed. Let \gls{d_ij_geo} denote the spherical geodesic distance between UAVs $i$ and $j$. A minimum safe separation $\gls{min_dist} > 0$ is defined, chosen here as half of the average geodesic distance between the desired Fibonacci configuration points \gls{p_desired}. For each neighboring \gls{UAV} satisfying $\gls{d_ij_geo} < \gls{min_dist}$, a repulsive tangential displacement is generated. The outward normal direction at \gls{q_i} is given by $\mathbf{n_i} = \frac{\gls{q_i}^{\gls{r_desired}} - \gls{target_pos}}{\|\gls{q_i}^{\gls{r_desired}} - \gls{target_pos}\|}$ being the relative displacement vector given by $\Delta_{ij} = \gls{q_i}^{\gls{r_desired}} - \mathbf{q_j}^{\gls{r_desired}}$ is decomposed into radial and tangential components. Only the tangential component
+Pairwise geodesic distances on $\Gamma^2$ are then computed. Let \gls{d_ij_geo} denote the spherical geodesic distance between UAVs $i$ and $j$. A minimum safe separation $\gls{min_dist} > 0$ is defined, chosen here as half of the average geodesic distance between the desired Fibonacci configuration points \gls{p_desired}. For each neighboring \gls{UAV} satisfying $\gls{d_ij_geo} < \gls{min_dist}$, a repulsive tangential displacement is generated. The outward normal direction at \gls{q_i} is given by $\mathbf{n}_i = \frac{\gls{q_i}^{\gls{r_desired}} - \gls{target_pos}}{\|\gls{q_i}^{\gls{r_desired}} - \gls{target_pos}\|}$ being the relative displacement vector given by $\Delta_{ij} = \gls{q_i}^{\gls{r_desired}} - \mathbf{q}_j^{\gls{r_desired}}$ is decomposed into radial and tangential components. Only the tangential component
 \begin{equation}
     \Delta_{ij}^t
     =
     \Delta_{ij}
     -
-    (\Delta_{ij}^\top \mathbf{n_i})\, \mathbf{n_i}
+    (\Delta_{ij}^\top \mathbf{n}_i)\, \mathbf{n}_i
 \end{equation}
 is retained, ensuring that the safeguard does not interfere with radial stabilization. The repulsive contribution from agent $j$ to agent $i$ is defined as
 \begin{equation}
@@ -457,7 +457,7 @@ is retained, ensuring that the safeguard does not interfere with radial stabiliz
 \end{equation}
 if $\gls{d_ij_geo} < \gls{min_dist}$ and zero otherwise. The total artificial potential displacement is obtained by summing all active pairwise contributions:
 \begin{equation}
-    \mathbf{f} = \sum_{j \neq i} \mathbf{f_{ij}}.
+    \mathbf{f} = \sum_{j \neq i} \mathbf{f}_{ij}.
 \end{equation}
 To prevent excessive deviation from the nominal reference, the resulting displacement is saturated to a bounded magnitude (at most \gls{min_dist}), and the corrected reference is re-projected onto the sphere:
 \begin{equation}

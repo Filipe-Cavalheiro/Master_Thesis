@@ -36,7 +36,7 @@ n_i = \operatorname{round}\left(2N\sin\theta_i\right),
 $$
 Thus, the total number of points is
 $$
-P =
+\gls{n_D} =
 2+
 \sum_{i=1}^{N-1}
 \operatorname{round}
@@ -47,7 +47,7 @@ $$
 
 Unlike a conventional latitude--longitude grid with a fixed number of longitude points on every parallel, this approach reduces the number of points towards the poles, reflecting the decreasing circumference of the parallels. Nevertheless, the resulting distribution remains anisotropic because the points are generated according to the latitude--longitude parameterization.
 
-For example, for \(N=29\), the procedure produces \(P=1070\) points. As can be observed in Figure~\ref{fig.3:latlon_results_demonstration}, the resulting distribution is highly symmetric and structured. However, the convergence of the meridians produces non-uniform spacing between neighboring points, especially towards the poles.
+For example, for \(N=29\), the procedure produces \(\gls{n_D}=1070\) points. As can be observed in Figure~\ref{fig.3:latlon_results_demonstration}, the resulting distribution is highly symmetric and structured. However, the convergence of the meridians produces non-uniform spacing between neighboring points, especially towards the poles.
 
 \begin{figure}[htbp]
 \centering
@@ -239,17 +239,17 @@ This section discusses alternative methods that were considered to work to posit
 The standard Fibonacci lattice formulation could not be directly applied in this context. While the longitude increments between agents are constant, allowing a simple angular separation rule, the latitude is computed through a nonlinear $\arcsin(\cdot)$ mapping, which is inherently non-uniform. This nonlinearity prevents the use of a single, constant spacing rule across all agents. Several attempts were made to linearize this relationship so that all agents could rely on identical local control laws, but none yielded satisfactory results. For completeness, the tested approaches are summarized below.
 
 \subsection{Mean Distance Between Points on the two-sphere}
-In the first attempt, the reference spacing was taken as the mean of the Euclidean distances between consecutive-index points of the Fibonacci lattice (i.e., cyclical pursuit). This approach fails because consecutive indices are only spatially adjacent away from the poles: in the equal-area parameterization used to build the lattice, $\theta_i = \arcsin(2i/P)$, so
+In the first attempt, the reference spacing was taken as the mean of the Euclidean distances between consecutive-index points of the Fibonacci lattice (i.e., cyclical pursuit). This approach fails because consecutive indices are only spatially adjacent away from the poles: in the equal-area parameterization used to build the lattice, $\theta_i = \arcsin(2i/\gls{n_D})$, so
 \[
-\frac{d\theta}{di} = \frac{2/P}{\sqrt{1-\left(2i/P\right)^2}},
+\frac{d\theta}{di} = \frac{2/\gls{n_D}}{\sqrt{1-\left(2i/\gls{n_D}\right)^2}},
 \]
-which is small near the equator ($i \approx 0$) but diverges as $i \to \pm P/2$, i.e., as $\theta_i \to \pm\pi/2$. Physically, this means a single step in index $i$ spans an increasingly large latitudinal arc near the poles in order to preserve equal area per point, so "consecutive" indices there are no longer near neighbors in space, they jump across a disproportionately large patch of the sphere, producing a handful of pairwise distances far larger than the typical near-neighbor spacing elsewhere on the lattice. As illustrated in Figure~\ref{fig.4:fibonacci_diff_methods} (row~2), this skews the mean: with 1001 points on a sphere of radius $\gls{sphere_radius} = 5$, the mean consecutive-index distance was approximately 7.3270, more than half the sphere's diameter, so it does not provide a meaningful or usable spacing reference.
+which is small near the equator ($i \approx 0$) but diverges as $i \to \pm \gls{n_D}/2$, i.e., as $\theta_i \to \pm\pi/2$. Physically, this means a single step in index $i$ spans an increasingly large latitudinal arc near the poles in order to preserve equal area per point, so "consecutive" indices there are no longer near neighbors in space, they jump across a disproportionately large patch of the sphere, producing a handful of pairwise distances far larger than the typical near-neighbor spacing elsewhere on the lattice. As illustrated in Figure~\ref{fig.4:fibonacci_diff_methods} (row~2), this skews the mean: with 1001 points on a sphere of radius $\gls{r_desired} = 5$, the mean consecutive-index distance was approximately 7.3270, more than half the sphere's diameter, so it does not provide a meaningful or usable spacing reference.
 
 \subsection{Mean Latitude Spacing}
 Since the primary source of nonlinearity lies in the latitude distribution, a second approach considered using the average latitude increment instead of the $\arcsin(\cdot)$ mapping. However, this method introduces a different issue: the geodesic distance between agents increases as the effective radius of the latitude circle grows, particularly near $\theta = \pi$. This results in a pronounced clustering of points near longitudes $\phi = 0$ and $\phi = 2\pi$, as shown in Figure~\ref{fig.4:fibonacci_diff_methods} (row~3). While the $\arcsin(\cdot)$ formulation avoids this clustering, the mean-latitude approach fails to preserve uniform surface spacing.
 
 \subsection{Linearized Vertical Distribution with Uniform Angular Progression}
-A final attempt aimed to mitigate the clustering near the poles by enforcing a uniform angular progression while simultaneously linearizing the vertical distribution. Instead of relying on the nonlinear Fibonacci latitude mapping, a constant latitude increment $\theta_{\text{mean}} = \pi / P$ was imposed. In parallel, a constant longitude increment $\phi_{\text{mean}}$ was computed from the average difference of the Fibonacci-based longitudes.
+A final attempt aimed to mitigate the clustering near the poles by enforcing a uniform angular progression while simultaneously linearizing the vertical distribution. Instead of relying on the nonlinear Fibonacci latitude mapping, a constant latitude increment $\theta_{\text{mean}} = \pi / \gls{n_D}$ was imposed. In parallel, a constant longitude increment $\phi_{\text{mean}}$ was computed from the average difference of the Fibonacci-based longitudes.
 
 The Cartesian coordinates of each agent were defined as
 \begin{equation}
@@ -258,7 +258,7 @@ y_i = R \sin(i\theta_{\text{mean}})\sin(i\phi_{\text{mean}}),
 \end{equation}
 with the vertical coordinate distributed linearly according to
 \begin{equation}
-z_i = -R + \frac{R}{P} + \frac{2R(i-1)}{P},
+z_i = -R + \frac{R}{\gls{n_D}} + \frac{2R(i-1)}{\gls{n_D}},
 \end{equation}
 thereby enforcing equal spacing along the $z$-axis.
 
@@ -337,13 +337,13 @@ The use of numerical solvers was tried as an alternative way of placing the \gls
     \item \textbf{Cost function:} the objective is identically zero, $J(x) = 0$. No distance-to-target or effort term is minimized; the solver is used purely to find \emph{any} point that satisfies the constraints below, starting from the drones' current positions \gls{chaser_i_pos} as the initial guess.
     \item \textbf{Constraints:}
     \begin{align}
-        & \|\mathbf{p}_i\| - R = 0, \qquad i = 1,\dots,P\\
-        \intertext{(each point lies on the sphere of radius $R$)} \notag\\
-        & \gls{d_min} - d_{i,k} \leq 0, \quad i = 1,\dots,P, \quad k = 1,\dots,K\\
+        & \|\mathbf{p}_i\| - \gls{r_desired} = 0, \qquad i = 1,\dots,\gls{n_D}\\
+        \intertext{(each point lies on the sphere of radius $\gls{r_desired}$)} \notag\\
+        & \gls{min_dist} - d_{i,k} \leq 0, \quad i = 1,\dots,\gls{n_D}, \quad k = 1,\dots,K\\
         \intertext{(minimum geodesic distance to the $K=3$ nearest neighbours)}\notag
     \end{align}
-    where $d_{i,k}$ is the geodesic distance from point $i$ to its $k$-th nearest neighbor on the sphere, and \gls{d_min} is the average nearest-neighbor geodesic distance of the target Fibonacci lattice.
-    \item \textbf{Horizon and solve frequency:} there is no time horizon in this formulation. The optimization does not model drone dynamics or motion over time, it is a single static feasibility problem, solved once (offline) for a given number of drones \gls{n_D} and radius \gls{sphere_radius}, not re-solved online at each control step.
+    where $d_{i,k}$ is the geodesic distance from point $i$ to its $k$-th nearest neighbor on the sphere, and \gls{min_dist} is the average nearest-neighbor geodesic distance of the target Fibonacci lattice.
+    \item \textbf{Horizon and solve frequency:} there is no time horizon in this formulation. The optimization does not model drone dynamics or motion over time, it is a single static feasibility problem, solved once (offline) for a given number of drones \gls{n_D} and radius \gls{r_desired}, not re-solved online at each control step.
 \end{itemize}
 
 This approach suffers from a fundamental limitation. Because the nonlinear constraints above are only guaranteed to hold at the converged solution \gls{p_desired}, the intermediate iterates produced by the \gls{SQP} algorithm along the way are, in general, infeasible: they neither lie exactly on the sphere nor respect the minimum-distance constraint. Figure~\ref{fig.4:solver_solution} plots exactly these intermediate \gls{SQP} iterates, captured through \texttt{fmincon}'s \texttt{OutputFcn} at each optimizer iteration, connected in sequence. The solver does not take the physical trajectory of the drones moving through time and space only a visualization of the solver's internal search history. Consequently, the paths shown do not represent motion that respects collision avoidance, and no claim of continuous constraint satisfaction during a trajectory can be made from this figure, only the final configuration (marked with a cross) is guaranteed to satisfy both constraints. Since the problem is solved once, as a static placement, and not repeatedly along a receding horizon, this method cannot be used directly as an online, constraint-respecting motion planner, it can only guarantee a feasible final configuration.
@@ -400,13 +400,13 @@ The repulsive artificial potential applied to drone $i$ is given by
   u_i(k) =
   \sum_{j \in \gls{node_neighbour_set}}
   \left(
-  \frac{\gls{q_i}(k) - \mathbf{q_j}(k)}{\|\gls{q_i}(k) - \mathbf{q_j}(k)\|}
+  \frac{\gls{q_i}(k) - \mathbf{q}_j(k)}{\|\gls{q_i}(k) - \mathbf{q}_j(k)\|}
   \left( \gls{d_min} - \gls{d_ij_geo}(k) \right)
   \right).
 \end{equation}
 The term
 \begin{equation*}
-  \frac{\gls{q_i}(k) - \mathbf{q_j}(k)}{\|\gls{q_i}(k) - \mathbf{q_j}(k)\|}
+  \frac{\gls{q_i}(k) - \mathbf{q}_j(k)}{\|\gls{q_i}(k) - \mathbf{q}_j(k)\|}
 \end{equation*}
 defines the unit vector pointing from drone $j$ to drone $i$, while the magnitude $(\gls{d_min} - \gls{d_ij_geo}(k))$ increases linearly as the distance between the drones decreases below the safety threshold. This results in a symmetric repulsive interaction that pushes neighboring agents apart. To avoid excessively large corrections, the resulting vector is saturated as
 \begin{equation}
@@ -509,14 +509,14 @@ This section introduces other methods that were implemented but considered infer
 
 \subsection{Thomson minimum energy sphere} \label{annex:Thomson minimum energy sphere}
 
-In 1904, J. J. Thomson proposed a model for the atom in which electrons were thought to be evenly distributed within a positively charged sphere. In this model, each electron experiences repulsive forces from the others and is constrained to remain on the surface of the sphere. This concept led to what is now known as the Thomson problem, which seeks the arrangement of $N$ electrons on the surface of a unit sphere that minimizes their total electrostatic potential energy, given that they repel each other according to Coulomb's law. Thomson introduced this problem while developing his atomic model, later called the plum pudding model, reflecting the understanding that negatively charged electrons exist within a neutrally charged atom.\cite{thomson_min_energy_sphere}
+In 1904, J. J. Thomson proposed a model for the atom in which electrons were thought to be evenly distributed within a positively charged sphere. In this model, each electron experiences repulsive forces from the others and is constrained to remain on the surface of the sphere. This concept led to what is now known as the Thomson problem, which seeks the arrangement of \gls{n_D} electrons on the surface of a unit sphere that minimizes their total electrostatic potential energy, given that they repel each other according to Coulomb's law. Thomson introduced this problem while developing his atomic model, later called the plum pudding model, reflecting the understanding that negatively charged electrons exist within a neutrally charged atom.\cite{thomson_min_energy_sphere}
 
-The Thomson problem can be formulated mathematically as the minimization of the total Coulomb energy of $N$ point charges constrained to the surface of the unit sphere. Let $\mathbf{x}_i \in \mathbb{R}^3$ denote the Cartesian coordinates of the $i$-th point on the sphere, such that $\|\mathbf{x}_i\| = 1$ for all $i = 1, \dots, N$. The total electrostatic potential energy is given by
+The Thomson problem can be formulated mathematically as the minimization of the total Coulomb energy of \gls{n_D} point charges constrained to the surface of the unit sphere. Let $\mathbf{x}_i \in \mathbb{R}^3$ denote the Cartesian coordinates of the $i$-th point on the sphere, such that $\|\mathbf{x}_i\| = 1$ for all $i = 1, \dots, \gls{n_D}$. The total electrostatic potential energy is given by
 
 \begin{equation}
-E(\mathbf{X}) = \sum_{i=1}^{N} \sum_{j=i+1}^{N} \frac{1}{\|\mathbf{x}_i - \mathbf{x}_j\|_2},
+E(\mathbf{X}) = \sum_{i=1}^{\gls{n_D}} \sum_{j=i+1}^{\gls{n_D}} \frac{1}{\|\mathbf{x}_i - \mathbf{x}_j\|_2},
 \end{equation}
-where $\mathbf{X} = [\mathbf{x}_1, \mathbf{x}_2, \dots, \mathbf{x}_N] \in \mathbb{R}^{3 \times N}$ is the matrix of all point coordinates, and $\|\mathbf{x}_i - \mathbf{x}_j\|_2$ is the Euclidean distance between points $i$ and $j$. The goal of the Thomson problem is to find
+where $\mathbf{X} = [\mathbf{x}_1, \mathbf{x}_2, \dots, \mathbf{x}_{\gls{n_D}}] \in \mathbb{R}^{3 \times \gls{n_D}}$ is the matrix of all point coordinates, and $\|\mathbf{x}_i - \mathbf{x}_j\|_2$ is the Euclidean distance between points $i$ and $j$. The goal of the Thomson problem is to find
 
 \begin{equation}
 \mathbf{X}^* = \text{arg} \min_{\mathbf{X}} E(\mathbf{X}).

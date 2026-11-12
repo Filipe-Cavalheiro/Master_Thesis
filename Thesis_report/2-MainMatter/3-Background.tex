@@ -16,7 +16,7 @@
 \section{Introduction}
 \label{sec.3:Introduction}
 
-Several concepts are required for a proper understanding of this thesis, some of which have not yet been introduced in the state of the art presented in chapter~\ref{cha:State of the art}.
+Several concepts are required for a proper understanding of this thesis, some of which have not yet been introduced in the state of the art presented in chapter~\ref{cha:State of the art}. This chapter covers collision avoidance and safety-critical control, polynomial and Bernstein trajectory representations, Euclidean projections and the \gls{ADMM} used by the trajectory planner, the vehicle model and its low-level controller, Lyapunov stability, Lloyd's algorithm (including its geodesic version on meshes), network topologies and consensus.
 
 \section{Collision avoidance and safety-critical control}
 
@@ -38,7 +38,7 @@ $U_i^{\mathrm{att}}$ and a repulsive potential $U_i^{\mathrm{rep}}$,
 \end{equation}
 The control input is then obtained as the negative gradient of the potential,
 \begin{equation}
-    \mathbf{u_i} = - \nabla_{\gls{q_i}} U_i(\gls{q_i}),
+    \mathbf{u}_i = - \nabla_{\gls{q_i}} U_i(\gls{q_i}),
 \end{equation}
 which drives the agent toward lower potential energy.
 
@@ -53,7 +53,7 @@ A common choice for the attractive potential toward a desired reference
 where $\gls{apf_att_gain} > 0$ is a gain parameter. The corresponding
 attractive force is
 \begin{equation}
-   \mathbf{u_i}^{\mathrm{att}} =
+   \mathbf{u}_i^{\mathrm{att}} =
     - \nabla_{\gls{q_i}} \left( U_i^{\mathrm{att}}(\gls{q_i}) \right) =
     - \gls{apf_att_gain} (\gls{q_i} - \gls{q_i_desired}).
 \end{equation}
@@ -77,7 +77,7 @@ where $\gls{apf_rep_gain} > 0$ is a gain and \gls{d_min} is the influence distan
 beyond which no repulsion is applied.
 The corresponding repulsive force is
 \begin{equation}
-    \mathbf{u_i}^{\mathrm{rep}} =
+    \mathbf{u}_i^{\mathrm{rep}} =
     - \nabla_{\gls{q_i}} \left( U_i^{\mathrm{rep}} \right) =
     \sum_{j \neq i}
     \begin{cases}
@@ -92,7 +92,7 @@ The corresponding repulsive force is
 The resulting control input applied to agent $i$ is the combination of
 attractive and repulsive components,
 \begin{equation}
-    \mathbf{u_i} = \mathbf{u_i}^{\mathrm{att}} + \mathbf{u_i}^{\mathrm{rep}}.
+    \mathbf{u}_i = \mathbf{u}_i^{\mathrm{att}} + \mathbf{u}_i^{\mathrm{rep}}.
 \end{equation}
 \gls{APF} methods are attractive due to their simplicity, decentralization, and low computational cost. However, they suffer from well-known limitations, including the presence of local minima, oscillatory behavior near obstacles, and the lack of formal guarantees on collision avoidance. Despite these limitations, APFs remain a practical and widely adopted solution  \cite{Litimein2021} for real-time multi-agent navigation and are often combined with other techniques to improve robustness and safety.
 
@@ -143,25 +143,20 @@ A generic MPC problem can be written as
         \min_{\mathbf{u},\mathbf{x}}\quad&
         J(\mathbf{x},\mathbf{u})\\
         \text{s.t.}\quad&
-        \mathbf{x}_{k+1}=f(\mathbf{x_k},\mathbf{u_k}),\\
-        & h(\mathbf{x_k})\geq0,\\
-        & \mathbf{x_k}\in\mathcal{X}, \mathbf{u_k}\in\mathcal{U},\\
-        & k=0,\ldots,N.
+        \mathbf{x}_{k+1}=f(\mathbf{x}_k,\mathbf{u}_k),\\
+        & h(\mathbf{x}_k)\geq0,\\
+        & \mathbf{x}_k\in\mathcal{X}, \mathbf{u}_k\in\mathcal{U},\\
+        & k=0,\ldots,\gls{Horizon}-1.
     \end{aligned}
 \end{equation}
-For multi-agent trajectory planning, a collision constraint can directly impose a minimum separation between predicted trajectories,
+where $\mathbf{x}_k$ and $\mathbf{u}_k$ are the predicted state and input at step $k$ of a horizon of \gls{Horizon} steps, $\mathcal{X}$ and $\mathcal{U}$ are the admissible state and input sets, and $h(\cdot)\geq0$ collects the safety constraints. For multi-agent trajectory planning, a collision constraint can directly impose a minimum separation between predicted trajectories. As used in this thesis (Equation~\eqref{eq.6:MPC_collision}), the safety envelope is a sphere of radius \gls{safety_radius} around each agent, which gives the constraint
 \begin{equation}
-\|\gls{chaser_i_pos} [k]-\mathbf{p_j}[k]\|
-\geq \gls{d_min},
+\|\gls{p_i_pos_h}[k]-\mathbf{p}_{j,H}[k]\|
+\geq \gls{safety_radius},
+\qquad j\neq i,
+\label{eq.3:spherical_envelope}
 \end{equation}
-or, as used in this thesis, an anisotropic safety envelope will later on be introduced in Equation~\eqref{eq.6:MPC_collision} through a constraint of the form
-\begin{equation*}
-\left\|
-\Theta_{ij}^{-1}
-(\gls{chaser_i_pos} [k]-\mathbf{p_j}[k])
-\right\|
-\geq1.
-\end{equation*}
+where $\gls{p_i_pos_h}[k]$ and $\mathbf{p}_{j,H}[k]$ are the predicted positions of agents $i$ and $j$ at step $k$ of the horizon.
 
 Do note that this formulation differs fundamentally from a \gls{CBF}-\gls{QP}. The \gls{MPC} formulation considers the predicted trajectory over a finite horizon and can simultaneously impose collision, velocity, acceleration, smoothness, and terminal constraints. \gls{CBF}-\gls{QP} methods, in contrast, typically modify a nominal control input through an instantaneous safety constraint derived from the barrier function.
 
@@ -205,7 +200,7 @@ Not used \\
 Thesis MPC &
 Predicted positions + dynamic constraints &
 Finite horizon &
-QP &
+QP (ADMM with projections) &
 Constraint based&
 Ch.~\ref{cha:Generalized Development} \\
 
@@ -259,31 +254,79 @@ The importance of this approach extends beyond minimum-snap optimization itself.
 
 An alternative to the conventional power-basis polynomial representation is to describe the trajectory using Bernstein polynomials. This representation is particularly useful in trajectory optimization because it provides a direct relationship between the polynomial coefficients and the geometric properties of the resulting trajectory. In particular, the convex-hull property of Bernstein polynomials allows bounds on the trajectory to be related to bounds on its control points, while derivatives of the trajectory can be represented using corresponding derivative control points. These properties are advantageous when position, velocity, and acceleration constraints must be enforced within an optimization problem.
 
-A degree-\(n\) trajectory can be written in Bernstein form as
+A trajectory of degree \gls{bern_degree} can be written in Bernstein form as
 \begin{equation}
-p(\tau)
+\mathbf{p}(\tau)
 =
-\sum_{i=0}^{n} b_{i,n}(\tau)c_i,
+\sum_{l=0}^{\gls{bern_degree}} b_{l,\gls{bern_degree}}(\tau)\,\boldsymbol{\zeta}_l,
+\label{eq.3:bernstein_curve}
 \end{equation}
-where \(c_i\) are the control points and
+where $\boldsymbol{\zeta}_l\in\mathbb{R}^3$, $l=0,\ldots,\gls{bern_degree}$, are the control points (the rows of the control-point matrix \gls{bern_coefs}), $\tau\in[0,1]$ is the normalized time, and
 \begin{equation}
-b_{i,n}(\tau)
+b_{l,\gls{bern_degree}}(\tau)
 =
-\binom{n}{i}
-(1-\tau)^{n-i}\tau^i,
-\qquad i=0,\ldots,n.
+\binom{\gls{bern_degree}}{l}
+(1-\tau)^{\gls{bern_degree}-l}\tau^l,
+\qquad l=0,\ldots,\gls{bern_degree}.
 \end{equation}
 For \(\tau\in[0,1]\), the Bernstein basis functions are non-negative and satisfy
 \begin{equation}
-\sum_{i=0}^{n} b_{i,n}(\tau)=1.
+\sum_{l=0}^{\gls{bern_degree}} b_{l,\gls{bern_degree}}(\tau)=1.
 \end{equation}
 Consequently, the trajectory is contained within the convex hull of its control points.
 
 This convex-hull property provides a convenient mechanism for converting certain trajectory-level geometric requirements into constraints on the polynomial control points. For example, spatial bounds can be imposed by constraining the control points to an appropriate feasible region, providing a sufficient condition for the entire trajectory to remain within that region.
 
-Another useful property is that differentiation preserves the Bernstein representation. For a degree-\(n\) trajectory, the first derivative control points are proportional to the differences between consecutive position control points. Similarly, higher-order derivatives can be represented in terms of higher-order finite differences of the original control points. Thus, velocity and acceleration constraints can be formulated directly in terms of the corresponding derivative control points.
+Another useful property is that differentiation preserves the Bernstein representation~\cite{farin2002,farouki1988}. For a trajectory of degree \gls{bern_degree}, the first derivative control points are proportional to the differences between consecutive position control points. Similarly, higher-order derivatives can be represented in terms of higher-order finite differences of the original control points. Thus, velocity and acceleration constraints can be formulated directly in terms of the corresponding derivative control points.
 
-These properties are particularly relevant to the trajectory  planning problem considered in this work. Position, velocity, and acceleration limits can be incorporated through constraints on the control points and their derivatives, while the convex-hull structure provides a convenient geometric representation of the resulting feasible trajectory. Moreover, the same representation can be used to formulate collision-avoidance constraints between multiple UAV trajectories.
+These properties are particularly relevant to the trajectory  planning problem considered in this work. Position, velocity, and acceleration limits can be incorporated through constraints on the control points and their derivatives, while the convex-hull structure provides a convenient geometric representation of the resulting feasible trajectory. Moreover, the same representation can be used to formulate collision-avoidance constraints between multiple UAV trajectories, which is why Bernstein parametrizations are common in optimal and multi-vehicle trajectory planning~\cite{cichella2018,kielasjensen2022,luis2020}.
+
+\section{Projections and the alternating direction method of multipliers} \label{sec.3:ADMM}
+
+The trajectory planner of Chapter~\ref{cha:Generalized Development} enforces all of its constraints through Euclidean projections inside an \gls{ADMM} iteration. The two ingredients are summarized here.
+
+\subsection{Euclidean projection}
+
+Given a closed set $\mathcal{C}\subset\mathbb{R}^n$, the Euclidean projection of a point $\mathbf{x}$ onto $\mathcal{C}$ is the closest point of $\mathcal{C}$,
+\begin{equation}
+    \gls{proj}(\mathbf{x}) = \operatorname*{arg\,min}_{\mathbf{y}\in\mathcal{C}} \|\mathbf{y}-\mathbf{x}\|.
+    \label{eq.3:projection}
+\end{equation}
+If $\mathcal{C}$ is convex the minimizer is unique; if it is not, the projection may be set-valued and any minimizer is selected. Many of the sets used in this thesis have closed-form projections. For the ball $\mathcal{C}=\{\mathbf{y}:\|\mathbf{y}\|\le \bar{\kappa}\}$ and for the complement of an open ball, $\mathcal{C}=\{\mathbf{y}:\|\mathbf{y}\|\ge \bar{\kappa}\}$,
+\begin{equation}
+    \gls{proj}(\mathbf{x}) = \min\left(\|\mathbf{x}\|,\bar{\kappa}\right)\frac{\mathbf{x}}{\|\mathbf{x}\|},
+    \qquad
+    \gls{proj}(\mathbf{x}) = \max\left(\|\mathbf{x}\|,\bar{\kappa}\right)\frac{\mathbf{x}}{\|\mathbf{x}\|},
+    \label{eq.3:ball_projections}
+\end{equation}
+respectively. The projection onto a sphere of radius $r$ centered at $\mathbf{p}$, $\Pi^{r,\mathbf{p}}(\cdot)$, used in Chapter~\ref{cha:Centralized Development}, is a further example.
+
+Both expressions in Equation~\eqref{eq.3:ball_projections} keep the direction of $\mathbf{x}$ and only change its magnitude. This is the idea behind the \emph{polar form} of norm constraints used in \cite{10161063}: a vector $\mathbf{y}$ subject to $\|\mathbf{y}\|\le\bar{\kappa}$ (or $\ge\bar{\kappa}$) is written as $\mathbf{y}=\gls{kappa}\,\gls{nu_dir}$, with a magnitude $\gls{kappa}\le\bar{\kappa}$ (or $\ge\bar{\kappa}$) and a unit direction $\|\gls{nu_dir}\|=1$. For a fixed magnitude and direction, the constraint is an affine equality in $\mathbf{y}$, and the optimal magnitude and direction for a given $\mathbf{y}$ are exactly those of its projection.
+
+\subsection{Augmented Lagrangian and ADMM}
+
+Consider the problem
+\begin{equation}
+    \min_{\mathbf{z},\,\mathbf{b}}\ f(\mathbf{z})
+    \quad\text{s.t.}\quad
+    \mathbf{A}\mathbf{z} = \mathbf{b},\quad \mathbf{b}\in\mathcal{C},
+    \label{eq.3:admm_problem}
+\end{equation}
+where $f$ is a quadratic cost, $\mathbf{A}$ a matrix and $\mathcal{C}$ a set that is easy to project onto. The auxiliary variable $\mathbf{b}$ separates the cost from the constraint set. The augmented Lagrangian of Equation~\eqref{eq.3:admm_problem}, with multiplier $\boldsymbol{\lambda}$ and penalty parameter $\rho>0$, is
+\begin{equation}
+    \gls{lagrangian}_\rho(\mathbf{z},\mathbf{b},\boldsymbol{\lambda})
+    =
+    f(\mathbf{z}) + \boldsymbol{\lambda}^{\mathsf T}(\mathbf{A}\mathbf{z}-\mathbf{b}) + \frac{\rho}{2}\|\mathbf{A}\mathbf{z}-\mathbf{b}\|^2 .
+\end{equation}
+\gls{ADMM} minimizes it alternately over $\mathbf{z}$ and $\mathbf{b}$ and then updates the multiplier~\cite{boydDistributedOptimizationStatistical2011}. Completing the square, the iterations can be written in the \emph{scaled form}
+\begin{align}
+    \mathbf{z}^{+} &= \operatorname*{arg\,min}_{\mathbf{z}}\ f(\mathbf{z}) + \frac{\rho}{2}\left\|\mathbf{A}\mathbf{z}-\mathbf{b}+\frac{\boldsymbol{\lambda}}{\rho}\right\|^2, \label{eq.3:admm_z}\\
+    \mathbf{b}^{+} &= \Pi_{\mathcal{C}}\!\left(\mathbf{A}\mathbf{z}^{+}+\frac{\boldsymbol{\lambda}}{\rho}\right), \label{eq.3:admm_b}\\
+    \boldsymbol{\lambda}^{+} &= \boldsymbol{\lambda} + \rho\left(\mathbf{A}\mathbf{z}^{+}-\mathbf{b}^{+}\right), \label{eq.3:admm_lambda}
+\end{align}
+where $(\cdot)^{+}$ denotes the value at the next iteration. For a quadratic $f$, Equation~\eqref{eq.3:admm_z} is a linear system whose matrix depends only on $f$, $\mathbf{A}$ and $\rho$, so it can be factorized once and reused at every iteration. The $\mathbf{b}$-update is a projection, which is where the constraints enter, and the multiplier accumulates the constraint violation $\mathbf{A}\mathbf{z}^{+}-\mathbf{b}^{+}$. The term $\boldsymbol{\lambda}/\rho$ inside the projection is essential: at a fixed point, $\mathbf{A}\mathbf{z}=\mathbf{b}$ and $\boldsymbol{\lambda}$ no longer changes, and if the constraint is inactive, i.e., $\mathbf{A}\mathbf{z}^{+}+\boldsymbol{\lambda}/\rho$ already lies in $\mathcal{C}$, the projection leaves its argument unchanged and Equation~\eqref{eq.3:admm_lambda} returns $\boldsymbol{\lambda}^{+}=\mathbf{0}$. The iterations are typically stopped when the primal residual $\|\mathbf{A}\mathbf{z}^{+}-\mathbf{b}^{+}\|$ and the dual residual $\rho\|\mathbf{A}^{\mathsf T}(\mathbf{b}^{+}-\mathbf{b})\|$ fall below a tolerance, or after a maximum number of iterations.
+
+For convex $f$ and $\mathcal{C}$, \gls{ADMM} converges to a solution under mild conditions~\cite{boydDistributedOptimizationStatistical2011}. When $\mathcal{C}$ is not convex, as for collision-avoidance constraints, the iterations are a heuristic without a general convergence guarantee, but they are widely used in trajectory planning because every step stays cheap~\cite{10161063}.
 
 \section{Vehicle model and nonlinear control}
 \label{sec.3:Vehicle model and noninear control}
@@ -324,7 +367,7 @@ Equation~\eqref{eq.3:rotation_matrix} and Equation~\eqref{eq.3:jacobian_matrix}
 respectively, where for simplicity $c=\cos(\cdot)$, $s=\sin(\cdot)$, $t=\tan(\cdot)$.
 
 \begin{equation}
-\mathbf{R_{IB}}(\Phi) =
+\mathbf{R}_{IB}(\Phi) =
 \begin{bmatrix}
 c_\theta c_\psi &
 c_\theta s_\psi &
@@ -402,7 +445,7 @@ Consider a nonlinear dynamical system of the form
 \begin{equation}
     \dot{\mathbf{x}} = f(\mathbf{x}),
 \end{equation}
-where $\mathbf{x} \in \mathcal{R}^n$ denotes the system state. An equilibrium point $\mathbf{x}_e$ satisfies $f(\mathbf{x}_e) = 0$ and can be shifted to the origin via an appropriate change of variables.
+where $\mathbf{x} \in \mathbb{R}^n$ denotes the system state. An equilibrium point $\mathbf{x}_e$ satisfies $f(\mathbf{x}_e) = 0$ and can be shifted to the origin via an appropriate change of variables.
 
 Let $V : \mathbb{R}^n \rightarrow \mathbb{R}$ be a continuously differentiable, positive-definite $V(\mathbf{x}) \geq 0$ function with $V(0) = 0$ if and only if $\mathbf{x} = 0$. If its time derivative along system trajectories satisfies $\dot{V}(x) \le 0, \;  \forall x$ and $\dot{V}(\mathbf{x}) < 0$ for all $x \neq 0$, then the equilibrium is asymptotically stable.
 
@@ -410,17 +453,17 @@ Let $V : \mathbb{R}^n \rightarrow \mathbb{R}$ be a continuously differentiable, 
 
 Lloyd's algorithm is an iterative optimization method commonly used to compute \gls{CVT} \cite{duCentroidalVoronoiTessellations1999}, which can produce approximately uniform point distributions over a domain. The method alternates between constructing a Voronoi partition according to the current set of sites and relocating each site toward the centroid of its corresponding region. The precise implementation of these two operations depends on the geometry of the domain and on the metric used to measure distances.
 
-A Voronoi diagram partitions a metric space into regions according to the proximity of points to a set of sites. Let $\mathcal{X}$ be a metric space with distance function $d(\cdot)$, and let $K$ be an index set. Given a collection of sites $\gls{ith_voronoi_site}$, $i\in \gls{n_D}$, the $i$-th Voronoi region $\gls{ith_voronoi_region}$ is defined as
+A Voronoi diagram partitions a metric space into regions according to the proximity of points to a set of sites. Let $\mathcal{X}$ be a metric space with distance function $d(\cdot,\cdot)$. Given a collection of sites $\gls{ith_voronoi_site}$, $i\in \gls{nodes_set}=\{1,\ldots,\gls{n_D}\}$, the $i$-th Voronoi region $\gls{ith_voronoi_region}$ is defined as
 
 \begin{equation}
     \gls{ith_voronoi_region}
     =
     \left\{
-        x \in X
+        \mathbf{x} \in \mathcal{X}
         \mid
-        d(x,\gls{ith_voronoi_site})
+        d(\mathbf{x},\gls{ith_voronoi_site})
         \leq
-        d(x,\mathbf{s_j})
+        d(\mathbf{x},\mathbf{s}_j)
         \text{ for all } j \neq i
     \right\}.
 \end{equation}
@@ -432,18 +475,18 @@ In Lloyd's algorithm, whose pseudocode available at Algorithm~\ref{alg.3:lloyds_
 \caption{Lloyd's algorithm}
 \label{alg.3:lloyds_algorithm}
 \begin{algorithmic}[1]
-\Require Domain $X$, initial sites $\{\mathbf{c}_i\}_{i \in \gls{n_D}}$, convergence tolerance $\varepsilon$
-\Ensure Updated sites $\{\mathbf{c}_i\}_{i \in \gls{n_D}}$ approximating a centroidal Voronoi tessellation
-\State $\delta \gets \infty$
-\While{$\delta > \varepsilon$}
-    \State Construct the Voronoi regions $\{\gls{ith_voronoi_region}\}_{i \in \gls{n_D}}$ of $\mathcal{X}$ with respect to $\{\mathbf{c}_i\}_{i \in \gls{n_D}}$ 
-    \For{each $i \in \gls{n_D}$}
-        \State $\mathbf{c}_i^{\text{new}} \gets \text{centroid}(V_i)$
+\Require Domain $\mathcal{X}$, initial sites $\{\mathbf{s}_i\}_{i \in \gls{nodes_set}}$, convergence tolerance $\varepsilon$
+\Ensure Updated sites $\{\mathbf{s}_i\}_{i \in \gls{nodes_set}}$ approximating a centroidal Voronoi tessellation
+\State $\Delta_s \gets \infty$
+\While{$\Delta_s > \varepsilon$}
+    \State Construct the Voronoi regions $\{\gls{ith_voronoi_region}\}_{i \in \gls{nodes_set}}$ of $\mathcal{X}$ with respect to $\{\mathbf{s}_i\}_{i \in \gls{nodes_set}}$ 
+    \For{each $i \in \gls{nodes_set}$}
+        \State $\gls{ith_voronoi_centroid} \gets \text{centroid}(\gls{ith_voronoi_region})$
     \EndFor
-    \State $\delta \gets \max_{i \in \gls{n_D}} d(\mathbf{c}_i, \mathbf{c}_i^{\text{new}})$
-    \State $\mathbf{c}_i \gets \mathbf{c}_i^{\text{new}}$ for all $i \in \gls{n_D}$
+    \State $\Delta_s \gets \max_{i \in \gls{nodes_set}} d(\mathbf{s}_i, \gls{ith_voronoi_centroid})$
+    \State $\mathbf{s}_i \gets \gls{ith_voronoi_centroid}$ for all $i \in \gls{nodes_set}$
 \EndWhile
-\State \Return $\{\mathbf{c}_i\}_{i \in \gls{n_D}}$
+\State \Return $\{\mathbf{s}_i\}_{i \in \gls{nodes_set}}$
 \end{algorithmic}
 \end{algorithm}
 
@@ -455,6 +498,8 @@ In Figure~\ref{fig.5:voronoi_centralized_vs_decentralized}, the evolution of eig
 \caption{Evolution of sites using Lloyd's algorithm.}
 \label{fig.5:voronoi_centralized_vs_decentralized}
 \end{figure}
+
+On a curved surface the Euclidean distance must be replaced by the geodesic distance, the length of the shortest path on the surface. When the surface is a triangulated mesh, the geodesic distance can be approximated by the shortest-path distance on the graph formed by the mesh vertices and edges, computed with Dijkstra's algorithm, and the Voronoi regions become sets of mesh vertices and faces~\cite{mengEfficientAlgorithmApproximate2023}. The centroid of a region is then approximated by the area-weighted mean of the centroids of its triangular faces. This discrete, geodesic version of Lloyd's algorithm is the one used for arbitrary formation meshes in Chapter~\ref{cha:Generalized Development}. If the edge lengths are multiplied by positive weights, the metric becomes non-uniform: regions where the weights are large are ``longer'' and therefore contain smaller Voronoi regions, which concentrates the sites there.
 
 \section{Network topologies} \label{sec.3:Network topologies}
 
@@ -477,21 +522,21 @@ Let the communication network be represented by a graph
 \begin{equation}
     \gls{graph_set} = (\gls{nodes_set}, \gls{edges_set}),
 \end{equation}
-where $\gls{nodes_set} = \{1,2,\dots,N\}$ is the set of nodes (agents) and $\gls{edges_set} \subseteq \gls{nodes_set} \times \gls{nodes_set}$ is the set of edges representing information exchange.
+where $\gls{nodes_set} = \{1,2,\dots,\gls{n_D}\}$ is the set of nodes (agents) and $\gls{edges_set} \subseteq \gls{nodes_set} \times \gls{nodes_set}$ is the set of edges representing information exchange.
 
 If information flow between agents is bidirectional, the graph is undirected; otherwise, directed.
 The connectivity properties of $\gls{graph_set}$ play a crucial role in determining whether consensus can be achieved.
 
-The \textit{adjacency matrix} $\gls{adj_matrix} \in \mathbb{R}^{N \times N}$ characterizes the local interactions among agents.
+The \textit{adjacency matrix} $\gls{adj_matrix} \in \mathbb{R}^{\gls{n_D} \times \gls{n_D}}$ characterizes the local interactions among agents.
 Its elements are defined as
 \begin{equation}
     a_{ij} =
     \begin{cases}
-        w_{ij} > 0, & \text{if agent $j$ sends information to agent $i$}, \\
+        a_{ij} > 0, & \text{if agent $j$ sends information to agent $i$}, \\
         0, & \text{otherwise},
     \end{cases}
 \end{equation}
-where $w_{ij}$ denotes the weight of the communication link.
+where the positive value $a_{ij}$ is the weight of the communication link (in this thesis, $a_{ij}=1$ for every link of the graph).
 For undirected graphs, $\gls{adj_matrix}$ is symmetric.
 
 The adjacency matrix determines which agents influence each other and with what relative strength.
@@ -502,9 +547,9 @@ It is defined as
 \begin{equation}
     \gls{laplacian_matrix} = \gls{degree_matrix} - \gls{adj_matrix},
 \end{equation}
-where $\gls{degree_matrix} = \text{diag}(d^{\mathrm{deg}}_1, \dots, d^{\mathrm{deg}}_N)$ is the degree matrix with
+where $\gls{degree_matrix} = \text{diag}(d^{\mathrm{deg}}_1, \dots, d^{\mathrm{deg}}_{\gls{n_D}})$ is the degree matrix with
 \begin{equation}
-    \gls{ith_degree_term} = \sum_{j=1}^{N} a_{ij}.
+    \gls{ith_degree_term} = \sum_{j=1}^{\gls{n_D}} a_{ij}.
 \end{equation}
 
 The Laplacian matrix plays a central role in consensus analysis.
@@ -519,10 +564,10 @@ For undirected and connected graphs, $\gls{laplacian_matrix}$ has a single zero 
 
 \subsection{Consensus Algorithms}
 
-Consider a group of $N$ agents, each with scalar state $x_i \in \mathbb{R}$.
+Consider a group of \gls{n_D} agents, each with scalar state $x_i \in \mathbb{R}$.
 A standard continuous-time consensus protocol is given by
 \begin{equation}
-    \dot{x}_i = \sum_{j=1}^{N} a_{ij} (x_j - x_i),
+    \dot{x}_i = \sum_{j=1}^{\gls{n_D}} a_{ij} (x_j - x_i),
 \end{equation}
 which can be written in compact form as
 \begin{equation}
@@ -538,13 +583,22 @@ If the communication graph is connected, all states converge to a consensus valu
 For connected undirected graph and equal/unweighted or symmetric weights the consensus value corresponds to the average of the initial states.
 The convergence rate is influenced by the second smallest eigenvalue of the Laplacian, known as the \textit{algebraic connectivity}. An example of a consensus algorithm can be seen in \cite{Jin2018}, where a consensus algorithm is used in order for given a circular topology all agents obtain the same center around which to form a circle. 
 
+In a digital implementation with sampling period \gls{time_step}, the protocol is discretized with the forward Euler method,
+\begin{equation}
+    \mathbf{x}[k+1] = \left(\mathbf{I}_{\gls{n_D}} - \gls{time_step}\,\gls{laplacian_matrix}\right)\mathbf{x}[k],
+    \qquad
+    x_i[k+1] = x_i[k] - \gls{time_step}\sum_{j\in\gls{node_neighbour_set}\cup\{i\}} L_{ij}\,x_j[k],
+    \label{eq.3:discrete_consensus}
+\end{equation}
+where $L_{ij}$ are the entries of \gls{laplacian_matrix} and \gls{node_neighbour_set} is the set of neighbors of agent $i$. Since $L_{ij}=0$ whenever $j\notin\gls{node_neighbour_set}\cup\{i\}$, each agent only needs the states of its neighbors. For a connected undirected graph, the iteration converges to the average of the initial states provided that $\gls{time_step}<2/\lambda_{\max}(\gls{laplacian_matrix})$, where $\lambda_{\max}(\cdot)$ denotes the largest eigenvalue \cite{olfati-saberConsensusCooperationNetworked2007}.
+
 In the proposed implementation, the desired consensus quantity is time-varying. To reduce sensitivity to measurement variations, an \gls{EMA} is applied. The \gls{EMA} is a widely used method in finances \cite{88532096-312a-3df5-a4f1-b38133fb2ba4} that incorporates both past estimates and new observations. It computes a weighted sum between the previous estimate and the new measurement
 
 \begin{equation}
-    \gls{x_EMA}^{[k+1]} = (1 - \gls{alpha_EMA})\, \gls{x_EMA}^{[k]} + \gls{alpha_EMA} \gls{y_EMA}^{[k]} 
+    \gls{x_EMA}[k] = (1 - \gls{alpha_EMA})\, \gls{x_EMA}[k-1] + \gls{alpha_EMA}\, \gls{y_EMA}[k]
     \label{eq:exponential moving avereaga}
 \end{equation}
-where $\gls{alpha_EMA} \in (0,1)$ is the smoothing factor that determines the relative importance of the new measurement compared to the previous estimate, $\gls{y_EMA}^{[k+1]}$ is the new measurement and $\gls{x_EMA}^{[k]}$ is the current estimate. This will prove useful in order to have an updating average between agents on the consensus of the target location.
+where $\gls{alpha_EMA} \in (0,1]$ is the smoothing factor that determines the relative importance of the new measurement compared to the previous estimate, $\gls{y_EMA}[k]$ is the new measurement and $\gls{x_EMA}[k-1]$ is the previous estimate. This will prove useful in order to have an updating average between agents on the consensus of the target location: each agent first filters its own measurements with Equation~\eqref{eq:exponential moving avereaga} and then performs one consensus step, Equation~\eqref{eq.3:discrete_consensus}, with the filtered estimates of its neighbors (Section~\ref{sec.6:estimation}).
 
 \section{Centralized and decentralized systems} \label{sec.2:Centralized and decentralized systems}
 

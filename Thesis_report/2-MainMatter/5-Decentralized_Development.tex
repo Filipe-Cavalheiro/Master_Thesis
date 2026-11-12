@@ -132,7 +132,7 @@ The main idea is to construct each Voronoi region as the intersection of half-sp
 Let \gls{ith_voronoi_site} denote the position of the $i$-th site on the unit sphere and let $\mathbf{s}_j$ denote the position of another site. The boundary between these two sites is the set of points on the sphere that are equidistant from them in the geodesic metric. This boundary is a great-circle arc. The geodesic midpoint can be expressed as
 
 \begin{equation}
-\mathbf{m_{ij}} =
+\mathbf{m}_{ij} =
 \frac{
 \sin((1-\frac{1}{2})\theta)\gls{ith_voronoi_site}
 +
@@ -144,17 +144,17 @@ Let \gls{ith_voronoi_site} denote the position of the $i$-th site on the unit sp
 \end{equation}
 and the normal vector to the plane containing both sites is
 \begin{equation}
-\mathbf{n_{ij}} =
+\mathbf{n}_{ij} =
 \frac{S(\gls{ith_voronoi_site}) \mathbf{s}_j}
 {\|S(\gls{ith_voronoi_site}) \mathbf{s}_j\|}.
 \end{equation}
 amd the normal direction to the bisector at $m_{ij}$ is then given by
 \begin{equation}
-\mathbf{t_{ij}} =
-\frac{S(\mathbf{n_{ij}}) \mathbf{m_{ij}}}
-{\|S(\mathbf{n_{ij}}) \mathbf{m_{ij}}\|}.
+\mathbf{t}_{ij} =
+\frac{S(\mathbf{n}_{ij}) \mathbf{m}_{ij}}
+{\|S(\mathbf{n}_{ij}) \mathbf{m}_{ij}\|}.
 \end{equation}
-The corresponding bisecting plane passes through $\mathbf{m_{ij}}$ and has normal vector $\mathbf{t_{ij}}$. The Voronoi region of site $i$ is obtained by intersecting the sphere with the appropriate half-planes surrounding it. In the global formulation, this can be written as
+The corresponding bisecting plane passes through $\mathbf{m}_{ij}$ and has normal vector $\mathbf{t}_{ij}$. The Voronoi region of site $i$ is obtained by intersecting the sphere with the appropriate half-planes surrounding it. In the global formulation, this can be written as
 \begin{equation}
 \gls{ith_voronoi_region}
 =
@@ -173,7 +173,7 @@ In practice, the spherical surface is discretized into a finite set of points $x
 
 For the decentralized implementation, however, the agent does not have access to all sites. Instead, the constraint set is restricted to the agents contained in its communication or sensing neighborhood, denoted by \gls{node_neighbour_set}:
 \begin{equation}
-\gls{node_neighbour_set}^{local}
+\gls{ith_voronoi_region}^{\mathrm{loc}}
 =
 \Omega
 \bigcap_{j \in \gls{node_neighbour_set}}
@@ -183,7 +183,7 @@ x\in\mathbb{R}^3
 \mathbf{(x-m_{ij})\cdot t_{ij}} < 0
 \right\}.
 \end{equation}
-This distinction is important: $\gls{node_neighbour_set}^{local}$ coincides with the corresponding cell of the global Voronoi diagram only when the neighborhood contains all sites whose bisectors contribute to the boundary of agent $i$'s Voronoi cell. Thus, the local construction is an approximation of the global Voronoi partition whose accuracy depends on the interaction topology.
+This distinction is important: $\gls{ith_voronoi_region}^{\mathrm{loc}}$ coincides with the corresponding cell of the global Voronoi diagram only when the neighborhood contains all sites whose bisectors contribute to the boundary of agent $i$'s Voronoi cell. Thus, the local construction is an approximation of the global Voronoi partition whose accuracy depends on the interaction topology.
 
 The centroid of the region \gls{ith_voronoi_centroid} is computed numerically by triangulating the valid surface elements of the discretized sphere and the centroid is approximated as an area-weighted combination of the centroids of these triangles,
 
@@ -335,7 +335,7 @@ The same four scenarios are presented in the same order but this time using the 
     \label{fig.5:multiple_results_joined_12_agents_static_half_plane}
 \end{figure}
 
-Figure~\ref{fig.5:multiple_results_joined_12_agents_static_half_plane} shows the static target without formation variation. All agents reach the desired radius $r^\star = 2$~m in approximately 12 seconds, less than half the time required by the convex-hull implementation, and remain on the sphere afterwards. The inter-agent distance settles with a minimum of approximately \SI{2}{\meter}, a mean of about \SI{2.9}{\meter} and a maximum of about \SI{4}{\meter}, which corresponds to the sphere diameter: a pair of agents ends up on opposite sides of the target. The separation metrics of $\mathbf{q}^\star$ show an almost perfectly uniform distribution. After the first second $d_{NN}$ is approximately 2.1~m for every agent, the ratio $d_{NN,min}/d_{NN,mean}$ is close to 1 and $CV(d_{NN})$ is close to zero. This value agrees with the edge length of a regular icosahedron inscribed in a sphere of radius 2~m ($\approx 2.10$~m), the optimal arrangement of 12 points, so the local Lloyd iteration converges to it. The tracking error peaks at about 1~m at the start, for the agent that begins farthest from the target, and decays to roughly 0.03~m within 10 seconds.
+Figure~\ref{fig.5:multiple_results_joined_12_agents_static_half_plane} shows the static target without formation variation. All agents reach the desired radius $\gls{r_desired} = 2$~m in approximately 12 seconds, less than half the time required by the convex-hull implementation, and remain on the sphere afterwards. The inter-agent distance settles with a minimum of approximately \SI{2}{\meter}, a mean of about \SI{2.9}{\meter} and a maximum of about \SI{4}{\meter}, which corresponds to the sphere diameter: a pair of agents ends up on opposite sides of the target. The separation metrics of $\mathbf{q}^\star$ show an almost perfectly uniform distribution. After the first second $d_{NN}$ is approximately 2.1~m for every agent, the ratio $d_{NN,min}/d_{NN,mean}$ is close to 1 and $CV(d_{NN})$ is close to zero. This value agrees with the edge length of a regular icosahedron inscribed in a sphere of radius 2~m ($\approx 2.10$~m), the optimal arrangement of 12 points, so the local Lloyd iteration converges to it. The tracking error peaks at about 1~m at the start, for the agent that begins farthest from the target, and decays to roughly 0.03~m within 10 seconds.
 
 \begin{figure}[htbp]
     \centering
@@ -352,7 +352,7 @@ Figure~\ref{fig.5:multiple_results_joined_12_agents_static_half_plane} shows the
     \label{fig.5:multiple_results_joined_12_agents_static_loss_half_plane}
 \end{figure}
 
-Figure~\ref{fig.5:multiple_results_joined_12_agents_static_loss_half_plane} shows the static target with the loss of 4 agents at 10 seconds. The radial distance of the remaining agents shows a brief excursion of up to about 3 m and returns to $r^\star$ within roughly 3 seconds. The minimum inter-agent distance dips to about 0.8~m at the moment of the loss and then settles at about 2.2~m, while the maximum settles at about 3.8 m. As expected, $d_{NN}$ increases from about 2.1 m to about 2.3 m because fewer points are spread over the same sphere. The homogeneity of $\mathbf{q}^\star$ dips only momentarily: $CV(d_{NN})$ peaks at about 0.08 and recovers within one second. Unlike in the convex-hull case, the tracking error is visibly affected by the loss. The desired points are reassigned abruptly, so the mean error rises to about 0.6~m (up to 1~m for individual agents) before returning to about 0.05~m after approximately 5 seconds. This is the intended effect of the increased geometric-controller gains, which let the references move quickly to their new positions. The half-plane construction also keeps the agents well separated after the loss, whereas in the convex-hull case the minimum inter-agent distance drifts below 1~m.
+Figure~\ref{fig.5:multiple_results_joined_12_agents_static_loss_half_plane} shows the static target with the loss of 4 agents at 10 seconds. The radial distance of the remaining agents shows a brief excursion of up to about 3 m and returns to $\gls{r_desired}$ within roughly 3 seconds. The minimum inter-agent distance dips to about 0.8~m at the moment of the loss and then settles at about 2.2~m, while the maximum settles at about 3.8 m. As expected, $d_{NN}$ increases from about 2.1 m to about 2.3 m because fewer points are spread over the same sphere. The homogeneity of $\mathbf{q}^\star$ dips only momentarily: $CV(d_{NN})$ peaks at about 0.08 and recovers within one second. Unlike in the convex-hull case, the tracking error is visibly affected by the loss. The desired points are reassigned abruptly, so the mean error rises to about 0.6~m (up to 1~m for individual agents) before returning to about 0.05~m after approximately 5 seconds. This is the intended effect of the increased geometric-controller gains, which let the references move quickly to their new positions. The half-plane construction also keeps the agents well separated after the loss, whereas in the convex-hull case the minimum inter-agent distance drifts below 1~m.
 
 \begin{figure}[htbp]
     \centering
