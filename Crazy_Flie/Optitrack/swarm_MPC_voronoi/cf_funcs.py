@@ -1,3 +1,4 @@
+import json
 import time
 import math
 import threading
@@ -12,7 +13,7 @@ from cflib.crazyflie.syncLogger import SyncLogger
 
 from Structs import *
 import ctrl_c
-from mpc import SwarmMPC
+from mpc import SwarmMPC, mpc_settings
 from formation import target_reference
 
 CACHE_DIR = str(Path(__file__).resolve().parent / "cache")
@@ -59,6 +60,80 @@ def set_onboard_controller(scf: SyncCrazyflie):
     if ONBOARD_CONTROLLER is not None:
         scf.cf.param.set_value('stabilizer.controller', str(ONBOARD_CONTROLLER))
     time.sleep(0.1)
+
+# Firmware parameters read back after the setup and saved in <log>_meta.json
+# (the values the drone flew with; None if the firmware lacks one)
+LOGGED_FIRMWARE_PARAMS = [
+    "stabilizer.controller", "stabilizer.estimator",
+    "ctrlMel.mass", "ctrlMel.massThrust",
+    "ctrlMel.kp_xy", "ctrlMel.kd_xy", "ctrlMel.ki_xy", "ctrlMel.i_range_xy",
+    "ctrlMel.kp_z", "ctrlMel.kd_z", "ctrlMel.ki_z", "ctrlMel.i_range_z",
+    "ctrlMel.kR_xy", "ctrlMel.kR_z", "ctrlMel.kw_xy", "ctrlMel.kw_z",
+    "ctrlMel.ki_m_xy", "ctrlMel.ki_m_z", "ctrlMel.kd_omega_rp",
+]
+
+def read_firmware_params(scf: SyncCrazyflie, firmware_params: dict):
+    """
+    The LOGGED_FIRMWARE_PARAMS of this drone, as the firmware has them.
+    Raises (no arming) unless the estimator / controller are those set by
+    set_onboard_controller (a drone left on the complementary estimator
+    ignores OptiTrack and does not take off).
+    """
+    values = {}
+    for name in LOGGED_FIRMWARE_PARAMS:
+        try:
+            v = scf.cf.param.get_value(name)
+            values[name] = float(v) if v is not None else None
+        except Exception:
+            values[name] = None
+    firmware_params[scf.cf.link_uri] = values
+    est, ctrl = values.get("stabilizer.estimator"), values.get("stabilizer.controller")
+    print(f"{scf.cf.link_uri}: estimator {est}, controller {ctrl}, "
+          f"kp_xy {values.get('ctrlMel.kp_xy')}, kd_xy {values.get('ctrlMel.kd_xy')}")
+    if (ONBOARD_ESTIMATOR is not None and est != ONBOARD_ESTIMATOR) or \
+            (ONBOARD_CONTROLLER is not None and ctrl != ONBOARD_CONTROLLER):
+        raise RuntimeError(f"{scf.cf.link_uri}: estimator {est}, controller {ctrl} "
+                           f"(expected {ONBOARD_ESTIMATOR}, {ONBOARD_CONTROLLER}): not arming")
+
+def flight_metadata(param, drone_states: dict, chaser_uris, firmware_params: dict, goals, slots, target_start):
+    """What the simulation of this flight needs (saved in <log>_meta.json)."""
+    drones = {}
+    for uri, st in drone_states.items():
+        role = "target" if uri == TARGET_URI else "chaser"
+        d = {"uri": uri, "role": role,
+             "home": np.asarray(st.local_origin, dtype=float).ravel()[:3].tolist(),
+             "home_yaw_deg": math.degrees(float(np.ravel(st.attitude)[2])),
+             "firmware": firmware_params.get(uri, {})}
+        if role == "chaser":
+            i = chaser_uris.index(uri)
+            d.update(chaser_index=i, formation_goal=np.asarray(goals[i]).tolist(),
+                     slot=np.asarray(slots[i]).tolist())
+        drones[str(RIGID_BODY_IDS[uri])] = d
+    return {
+        "flight_code": "swarm_MPC_voronoi",
+        "start": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "target_mode": TARGET_MODE, "target_traj": TARGET_TRAJ,
+        "target": {"radius": TARGET_TRAJ_RADIUS, "angular_speed": TARGET_ANGULAR_SPEED,
+                   "height": TARGET_HEIGHT, "start": np.asarray(target_start).tolist()},
+        "formation": {"sphere_radius": param.sphere_radius, "mesh_points": MESH_POINTS,
+                      "voronoi_period": VORONOI_PERIOD, "cvt_preconverge_iters": CVT_PRECONVERGE_ITERS,
+                      "formation_time": FORMATION_TIME, "goal_min": GOAL_MIN.tolist(), "goal_max": GOAL_MAX.tolist()},
+        "mpc": mpc_settings(),
+        "timing_s": {"SETPOINT_PERIOD": SETPOINT_PERIOD, "EXT_POS_PERIOD": EXT_POS_PERIOD,
+                     "TAKEOFF_TIME": TAKEOFF_TIME, "LAND_TIME": LAND_TIME, "PLAN_TIMEOUT": PLAN_TIMEOUT},
+        "flight": {"TAKEOFF_HEIGHT": TAKEOFF_HEIGHT, "APPROACH_SPEED": APPROACH_SPEED, "RETURN_SPEED": RETURN_SPEED,
+                   "MIN_SEPARATION": MIN_SEPARATION, "VEL_FILTER_ALPHA": VEL_FILTER_ALPHA,
+                   "SETPOINT_MODE": SETPOINT_MODE, "ONBOARD_CONTROLLER": ONBOARD_CONTROLLER,
+                   "ONBOARD_ESTIMATOR": ONBOARD_ESTIMATOR},
+        "drones": drones,
+    }
+
+def write_meta(log_path, meta):
+    """<log>_meta.json next to the trajectory log."""
+    p = Path(log_path)
+    path = p.with_name(p.stem + "_meta.json")
+    path.write_text(json.dumps(meta, indent=2, default=lambda o: np.asarray(o).tolist()))
+    return path
 
 def check_battery(scf: SyncCrazyflie):
     """Raises if the battery voltage (at rest) is below MIN_BATTERY_VOLTAGE."""

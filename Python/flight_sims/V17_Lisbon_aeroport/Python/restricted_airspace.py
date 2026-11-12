@@ -189,6 +189,7 @@ class RestrictedAirspace:
       ground.
     """
     enabled = True
+    kind = "lisbon"
 
     def __init__(self, sim):
         zones = read_kmz(Path(sim.airspace_kmz))
@@ -336,14 +337,60 @@ class RestrictedAirspace:
         return P
 
 
+class StraightAirspace(RestrictedAirspace):
+    """
+    Straight-boundary scenario (the V16 one; thesis, "Simulation Results:
+    Straight Boundary"), airspace_model = "straight": the drones' wall is the
+    plane x = straight_wall_x facing +x (where the grey band between the wall
+    and the red zone starts), the red zone is x > straight_red_x (a straight
+    border, half-plane), no orange zone / ceiling. The formation morphs as
+    with the plane wall of V16 (circle on the wall -> cone -> sphere as the
+    target crosses it), and no drone enters the red zone (red_margin).
+    Same interface as RestrictedAirspace, in closed form.
+    """
+    kind = "straight"
+    FAR = 1.0e4                     # [m] extent of the red half-plane polygon (plots, signed distance)
+
+    def __init__(self, sim):
+        wx, rx = float(sim.straight_wall_x), float(sim.straight_red_x)
+        if rx <= wx:
+            raise ValueError(f"straight_red_x ({rx}) must be beyond straight_wall_x ({wx})")
+        F = self.FAR
+        red = np.array([[rx, -F], [rx + F, -F], [rx + F, F], [rx, F]])
+        self.red = Polygon2D(red)
+        self.orange = []
+        self.red_zone_name = sim.red_zone_name
+        self.orange_zone_name = sim.orange_zone_name
+        self.zones = [(sim.red_zone_name, [red])]
+        self.wall_x, self.red_x = wx, rx
+        self.wall_offset = rx - wx
+        self.wall_joint_blend = sim.wall_joint_blend
+        self.adjacent_edges = {frozenset((i, (i + 1) % 4)) for i in range(4)}
+        self.red_margin = sim.red_margin
+        self.orange_max_agl = np.inf
+
+    def wall_frame(self, pos):
+        """RestrictedAirspace.wall_frame for the straight border: normal +x."""
+        p = np.asarray(pos, dtype=float).reshape(3)
+        boundary = np.array([self.red_x, p[1], p[2]])
+        return np.array([1.0, 0.0, 0.0]), p[0] - self.wall_x, p[0] - self.red_x, boundary
+
+    def project(self, P):
+        """Out of the red zone by red_margin (no ceiling)."""
+        P = np.array(P, dtype=float, copy=True)
+        P[:, 0] = np.minimum(P[:, 0], self.red_x - self.red_margin)
+        return P
+
+
 class NoAirspace:
     """
-    Empty world (use_airspace = False): no KMZ zones, nothing is projected.
+    Empty world (airspace_model = "none"): no zones, nothing is projected.
     As before the KMZ, the formation reacts to a single plane wall at x = 0
     facing +x (circle on the wall -> cone -> sphere as the target crosses it).
     Same interface as RestrictedAirspace.
     """
     enabled = False
+    kind = "none"
 
     def __init__(self, sim):
         self.red = None

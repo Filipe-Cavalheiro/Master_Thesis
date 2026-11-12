@@ -1,5 +1,5 @@
 """
-Dashboard video of a flight vs its simulation, in the style of the V16
+Dashboard video of a flight vs its simulation, in the style of the V17
 animation_display.py animations (trajectory_animate / velocity_animate:
 trails that grow with time, the current position marked, curves that grow
 with time), composed next to the overlay video of flight_overlay.py.
@@ -72,7 +72,7 @@ class Dashboard:
         cam         CameraTrack (phone rigid body), for the camera path in the 3D view
         K           intrinsics of the video (for the frustum)
         t_range     (t_a, t_b) flight times shown on the time axes
-        trail       trail length [s] in the 3D / top views (None = whole history, as V16)
+        trail       trail length [s] in the 3D / top views (None = whole history, as V17)
         sim_setpoint {id: {"t", "p"}} position setpoint of the sim (dashed), optional
         position_panel "z", "xyz" or "auto" (xyz when the drones move > 0.3 m horizontally)
         """
@@ -146,7 +146,7 @@ class Dashboard:
             apos[0].text(0.5 * (t0 + t1), y, SHORT.get(n, n), transform=apos[0].get_xaxis_transform(),
                          ha="center", va="bottom", fontsize=8 if small_phase else 9)
 
-        # position(t): full curves faint, growing solid curves on top (V16 velocity_animate)
+        # position(t): full curves faint, growing solid curves on top (V17 velocity_animate)
         self.lz = []
         small = len(axes) > 1
         for ax, a in zip(apos, axes):
@@ -197,7 +197,7 @@ class Dashboard:
         self.ax3 = self.fig_r.add_axes([0.0, 0.40, 1.0, 0.60], projection="3d")
         self.axt = self.fig_r.add_axes([0.17, 0.05, 0.78, 0.31])
 
-        # --- 3D: arena floor, camera path, drones (V16 trajectory_animate)
+        # --- 3D: arena floor, camera path, drones (V17 trajectory_animate)
         ax = self.ax3
         m = (cam.t >= self.t_a) & (cam.t <= self.t_b)
         cp = cam.pos[m] if m.any() else cam.pos

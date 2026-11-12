@@ -48,7 +48,7 @@ Before arming and after landing, Ctrl+C just quits. The handler is `ctrl_c.py`, 
 | Script | Use |
 |---|---|
 | `plot_data.py` | plots / animation of a flight log: `python plot_data.py [log.csv] [--animate] [--source est] [--save-figs DIR]` (default: newest log in `Results/`) |
-| `flight_sim.py` | simulates a swarm flight from its log and compares, or a dry run before flying: `python flight_sim.py swarm_MPC_voronoi_sim_target`, `python flight_sim.py swarm_voronoi_sim_target --dry-run --drones 3` |
+| `flight_sim.py` | simulates a swarm flight from its log and compares, or a dry run before flying: `python flight_sim.py swarm_MPC_voronoi`, `python flight_sim.py swarm_voronoi_sim_target --dry-run --drones 3` (the code is in V17, `Python/flight_sims/V17_Lisbon_aeroport/Python/flight_replay.py`; for `swarm_MPC_voronoi` also `python main.py --IRL_log` / `--arena` there) |
 | `camera_logger.py` | logs the phone rigid body from the flight's NatNet frames (used by `8traj.py`) |
 | `natnet_test.py` | checks the connection to Motive |
 

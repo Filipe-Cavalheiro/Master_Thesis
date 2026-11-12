@@ -17,6 +17,11 @@ CANDIDATE_URIS = [BASE_URI + f"{i}" for i in range(1, 5)]   # 01 -> 04
 RIGID_BODY_IDS = {uri: int(uri[-2:]) for uri in CANDIDATE_URIS}
 ID_TO_URI = {rb_id: uri for uri, rb_id in RIGID_BODY_IDS.items()}
 
+# Rigid-body ID in Motive of the filming camera (phone), logged to
+# <log>_camera.csv next to the trajectory log, for the video overlay
+# (Python/demos_and_helpers/video_overlay/flight_overlay.py); None = not logged.
+CAMERA_RIGID_BODY_ID = 0
+
 MOTIVE_IP = "192.168.50.210"
 LOCAL_IP = "192.168.50.195"
 
@@ -62,7 +67,6 @@ if TARGET_MODE not in ("sim", "real"):
     raise ValueError(f"CF_TARGET must be 'sim' or 'real', not {TARGET_MODE!r}")
 TARGET_DRONE_ID = REAL_TARGET_DRONE_ID if TARGET_MODE == "real" else None
 TARGET_URI = ID_TO_URI.get(TARGET_DRONE_ID) if TARGET_DRONE_ID is not None else None
-TARGET_RADIUS_XY = 0.3      # m, MPC envelope around the target drone (sphere radius; cylinder: horizontal radius, half-height MPC_RADIUS_Z)
 TARGET_TRAJ_RADIUS = 1.6    # m (2.2 with lighthouse: with the formation around it, it left the 5 x 5 m arena)
 TARGET_ANGULAR_SPEED = 0.3  # rad/s (0.48 m/s on the circle)
 TARGET_HEIGHT = 1.3         # m
@@ -97,42 +101,41 @@ def clip_to_arena(pts):
         pts[:, :2] += np.maximum(-u, 0.0)[:, None] * n
     return np.clip(pts, GOAL_MIN, GOAL_MAX)
 
-# MPC (Python/obstacle_avoidance_funcs.py, AdmmMPC): Bernstein polynomial
-# horizon to the formation goal, solved with ADMM, with the other drones'
-# horizons, the arena geofence and the velocity/acceleration norms as
-# projection constraints. Same weights as the simulation, limits of the arena
-# experiment (Python/experiment_arena.py).
-MPC_PERIOD = 0.1            # s, replanning period (the setpoints are sampled from the plan every SETPOINT_PERIOD)
-MPC_HORIZON_TIME = 1.0      # s, horizon duration
+# MPC (mpc.py): the distributed Bernstein-polynomial MPC of the thesis
+# (Chapter 6), the code of the Python simulation V17
+# (Python/flight_sims/V17_Lisbon_aeroport/Python/obstacle_avoidance_funcs.py),
+# with the weights of the thesis and the limits / safety radius of the arena.
+# As in the thesis the control (replanning) period is the setpoint period.
+MPC_PERIOD = SETPOINT_PERIOD  # s, replanning period: every control step
+MPC_HORIZON_TIME = 1.0      # s, horizon duration (fixed in V17)
 MPC_HORIZON = 5             # samples of the horizon
 MPC_N_DEGREE = 5            # Bernstein polynomial degree
-MPC_ITERS = 15              # ADMM iterations per replanning
-MPC_RHO_OBS = 5000.0        # obstacle (other drones, geofence) penalty (100 in the simulation: the
-                            # 0.4 m formation stacks the goals, and with 100 the goal cost kept the
-                            # drones stacked; offline, 5000 separates them for 3-5 drones)
+MPC_ITERS = 15              # max ADMM iterations per control step (residual stop 1e-2)
+MPC_RHO_OBS = 100.0         # separation penalty (thesis)
 MPC_RHO_INEQ = 20.0         # vel/acc limit penalty
 MPC_W_GOAL = 1000.0
 MPC_W_SMOOTH = 0.1
 MPC_W_VEL = 300.0           # goal velocity tracking (target velocity)
-MPC_GOAL_REF_TAU = 0.5      # s, exponential approach to the goal over the horizon
-MPC_V_MAX = 0.8             # m/s (0.5 in the arena experiment, with a 0.3 m/s target; this target flies 0.48 m/s)
+MPC_GOAL_REF_TAU = 0.5      # s, min time constant of the exponential approach to the goal
+MPC_V_MAX = 0.8             # m/s (target at 0.48 m/s on the circle)
 MPC_A_MAX = 1.0             # m/s^2
 if TARGET_TRAJ == 5:
     MPC_V_MAX = 3.0 * arena.TRAJ5_SCALE     # m/s, Lisbon 3 m/s scaled (0.48), as the simulation
     MPC_A_MAX = 5.0 * arena.TRAJ5_SCALE     # m/s^2, Lisbon 5 m/s^2 scaled (0.8)
-# Safety envelope around the other drones (and the target drone): "sphere"
-# of radius MPC_RADIUS_XY (the method of the paper, default), or the legacy
-# downwash "cylinder" (radius MPC_RADIUS_XY, half-height 1.2 m) with which
-# the 26 Oct 2026 flights were flown
-MPC_ENVELOPE = "sphere"
-MPC_RADIUS_XY = 0.3         # m, inter-drone radius (sphere radius / cylinder radius)
-MPC_RADIUS_Z = 1.2 if MPC_ENVELOPE == "cylinder" else MPC_RADIUS_XY   # m, cylinder half-height (sphere: = radius)
-MPC_WARM_MULTIPLIERS = False  # carry the ADMM multipliers between replannings (they wind up on real drones)
-MPC_REPLAN_RESET_DIST = 0.2   # m, a drone this far from its plan is replanned from the measured state
+# Safety sphere around the other chasers and the target drone (thesis:
+# inter-agent separation); no downwash term
+MPC_SAFETY_RADIUS = 0.3     # m
+# Setpoint taken from the plan: "t1" (thesis: the second horizon sample,
+# 0.25 s ahead) or "next_step" (the plan one control period ahead, V17
+# mpc_setpoint for drones that track their setpoints tightly)
+MPC_SETPOINT = "t1"
+# Initial state of every plan: "measured" (thesis: OptiTrack position and
+# velocity, zero acceleration) or "plan" (V17 mpc_tight_tracking: the
+# previous plan one control period later while the drone is within
+# MPC_REPLAN_RESET_DIST of it, else the measured state)
+MPC_START = "plan"
+MPC_REPLAN_RESET_DIST = 0.2  # m
 SLOT_SETTLE_TIME = 5.0      # s, MPC run offline (target still) to get the approach slots
-SLOT_MIN_DH = 0.2           # m, min horizontal distance between two slots less than MPC_RADIUS_Z apart vertically
-SLOT_STACK_TOL = 0.05       # m, slots up to this much inside MPC_RADIUS_Z vertically are not stacked (the MPC
-                            # parks stacked drones on the cylinder edge, 1.2 m apart)
 PLAN_TIMEOUT = 0.5          # s, a plan older than this aborts the flight
 VEL_FILTER_ALPHA = 0.3      # EMA of the OptiTrack finite-difference velocity
 # Setpoint sent to the onboard controller: "full_state" (position, velocity

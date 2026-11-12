@@ -45,6 +45,8 @@ from formation import Formation, target_reference
 from mpc import SwarmMPC
 from trajectory_logger import TrajectoryLogger
 import ctrl_c
+import atexit
+from camera_logger import CameraLogger
 
 def main():
     subprocess.run("clear")
@@ -101,6 +103,14 @@ def main():
                               sample_period=0.02,
                               target_fn=formation.get_target)
 
+    # pose of the filming camera (phone), from the same NatNet frames (no second
+    # client), from now on: the sync gestures before the take off are recorded too
+    cam_log = None
+    if CAMERA_RIGID_BODY_ID is not None:
+        cam_log = CameraLogger(logger.output_path, CAMERA_RIGID_BODY_ID)
+        client.on_data_frame_received_event.handlers.append(cam_log.on_frame)
+        atexit.register(cam_log.close)
+
     with client:
         client.request_modeldef()
         client.run_async()
@@ -136,6 +146,11 @@ def main():
 
                 swarm.parallel_safe(check_battery)
 
+                # what the firmware flies with (raises unless Kalman + Mellinger: no arming)
+                firmware_params = {}
+                swarm.parallel_safe(read_firmware_params,
+                    args_dict={uri: (firmware_params,) for uri in active_uris})
+
                 # Chaser i of chaser_uris follows desired position i: slots
                 # assigned from the takeoff points (vertical takeoff), then
                 # moved to where the MPC holds them apart (the goals can be stacked)
@@ -146,6 +161,9 @@ def main():
                     f"  {u}: {np.round(s_, 2)}" for u, s_ in zip(chaser_uris, slots)))
                 if TARGET_URI is not None:
                     print(f"  {TARGET_URI} (target): {np.round(target_start, 2)}")
+                meta_path = write_meta(logger.output_path, flight_metadata(
+                    param, drone_states, chaser_uris, firmware_params, goals, slots, target_start))
+                print(f"Flight setup saved to: {meta_path}")
 
                 print("Lights On")
                 ctrl_c.flying([scf.cf for scf in swarm._cfs.values()])
@@ -157,6 +175,8 @@ def main():
 
                 swarm.parallel_safe(logger.start_logging)
                 logger.begin()
+                if cam_log is not None:
+                    cam_log.mark_flight_start(logger.start_time)
                 logger.mark_state("Take off")
 
                 swarm.parallel_safe(take_off,

@@ -7,7 +7,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # flight_sims/ (root_results)
 import root_results
 
-from Structs_sim import Param, Voronoi, SimulationData
+from Structs_sim import Param, Voronoi, SimulationData, SimulationConfig
 from Structs_agent import DroneState
 from voronoi_mesh_funcs import pre_compute_desired_pos
 from delaunay_triangulation_network import delaunay_triangulation_network
@@ -314,5 +314,45 @@ def main(param: Param | None = None, plant=None):
         sim_data = SimulationData(**data)
         create_figures(sim_data, param)
 
+FLIGHT_CODE = "swarm_MPC_voronoi"      # Crazy_Flie/Optitrack/swarm_MPC_voronoi (the MPC of this simulation)
+
+
+def cli():
+    """
+    python main.py                   the simulation, the settings of Structs_sim.py
+    python main.py --traj K          the simulation on trajectory K; the map follows it (airspace_model
+                                     "auto"): 1-4 the straight wall at x = 0 (red zone beyond
+                                     straight_red_x), 5-6 the Lisbon airport
+    python main.py --arena           real-world simulation without a log: the swarm_MPC_voronoi flight
+                                     code with its current settings (Structs.py of the flight code), the
+                                     Crazyflie plant, the drones starting on its formation slots
+    python main.py --IRL_log [LOG]   real-world simulation of a flight: from the state and settings
+                                     (<log>_meta.json) of the newest swarm_MPC_voronoi run, or of LOG,
+                                     then compared with it
+    Options of the real-world runs: --target sim|real, --traj K (TARGET_TRAJ of the flight code),
+    --drones N (--arena), --no-show, --no-plot.
+    """
+    import argparse
+    ap = argparse.ArgumentParser(description=cli.__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    mode = ap.add_mutually_exclusive_group()
+    mode.add_argument("--IRL_log", nargs="?", const="", metavar="LOG",
+                      help=f"replay a real {FLIGHT_CODE} flight (default: the newest run in Results/)")
+    mode.add_argument("--arena", action="store_true",
+                      help=f"the {FLIGHT_CODE} flight code on the simulated Crazyflies, without a log")
+    import flight_replay
+    flight_replay.add_arguments(ap)
+    args = ap.parse_args()
+    if args.IRL_log is None and not args.arena:
+        sim = SimulationConfig()
+        if args.traj is not None:
+            sim.traj = args.traj
+        main(Param(sim))
+        return
+    args.folder = FLIGHT_CODE
+    args.log = args.IRL_log or None
+    args.dry_run = args.arena
+    flight_replay.run(args)
+
+
 if __name__ == "__main__":
-    main()
+    cli()

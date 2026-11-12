@@ -1,380 +1,214 @@
 """
-MPC of the Python simulation (Python/obstacle_avoidance_funcs.py, AdmmMPC)
-for the Crazyflies.
+MPC of the formation: the distributed Bernstein-polynomial MPC of the thesis
+(Chapter 6, "Distributed Bernstein-Polynomial MPC"), the same code as the
+Python simulation V17 (Python/flight_sims/V17_Lisbon_aeroport/Python/
+obstacle_avoidance_funcs.py: init_obstacle_avoidance, set_goal_cost,
+AdmmMPC). This module only feeds it the OptiTrack states and the formation
+goals, and runs it in a thread for the Crazyflies.
 
-Every drone plans a MPC_HORIZON_TIME horizon to its formation goal: a
-Bernstein polynomial (position, velocity, acceleration), smoothness + goal +
-goal velocity cost, starting at the drone's current state (equality
-constraint). The other drones' horizons (sphere of radius MPC_RADIUS_XY,
-or the legacy cylinder MPC_RADIUS_XY / MPC_RADIUS_Z, see MPC_ENVELOPE), the arena geofence and the velocity/acceleration norms are
-projection constraints solved with ADMM. The KKT matrix is constant (the
-number of drones does not change), so it is factorized once.
+As in the thesis, at every control step (MPC_PERIOD) every chaser plans a
+1 s horizon (Bernstein degree MPC_N_DEGREE, MPC_HORIZON samples) from its
+current state to its formation goal:
+  - cost: tracking of the exponential approach to the goal moving with the
+    goal velocity (w_g, w_v, tau_r0) + smoothness (w_s);
+  - constraints, all projections solved with scaled ADMM (rho_obs, rho_ineq):
+    |v| <= v_max, |a| <= a_max, a sphere of radius MPC_SAFETY_RADIUS around
+    the other chasers' horizons (and around the constant-velocity prediction
+    of a target drone), no airspace (free space: the arena has no geofence
+    in the MPC);
+  - multipliers warm-started from the previous control step, up to MPC_ITERS
+    iterations with the 1e-2 residual stop, drones updated in turn
+    (Gauss-Seidel);
+  - setpoint: the plan at the second horizon sample t_1 (position, velocity,
+    acceleration), sent as a full-state setpoint until the next control step.
 
-Differences from the simulation, for real drones that track their setpoints
-tightly:
-  - the plan starts from the previous plan (at the current time) as long as
-    the drone is within MPC_REPLAN_RESET_DIST of it, else from the measured
-    state (velocity clipped to 0.95 v_max, acceleration of the previous plan);
-  - scaled ADMM projection, b = Proj(A x + lambda / rho), and the
-    multipliers reset every replanning (MPC_WARM_MULTIPLIERS);
-  - the first horizon sample (fixed by the equality constraint) is left out
-    of the obstacle constraints;
-  - MPC_ENVELOPE = "cylinder" (legacy, flown on 26 Oct 2026) replaces the
-    sphere around the other drones by a downwash cylinder (see project_others);
-  - the setpoints are sampled from the plan at the current time, every
-    SETPOINT_PERIOD, with the feedforward clipped to 1.2 v_max / 1.5 a_max.
+Initial state of every plan: the OptiTrack position and velocity, zero
+acceleration, as the V17 code (its agent.acceleration stays zero). Feeding
+back the acceleration of the setpoint sent last instead (the Crazyflies do
+not measure it) made the closed loop diverge in the dry run: the plan's
+acceleration at t_1 becomes the next plan's initial acceleration.
 """
 import time
 import threading
+from types import SimpleNamespace
+
 import numpy as np
-from math import comb
-from scipy.linalg import lu_factor, lu_solve
 
-from Structs import *
+import Structs as S                                    # also puts the V17 simulation on sys.path
+from Structs_sim import SimulationConfig               # V17
+from Structs_agent import DroneState as MpcAgent       # V17
+from obstacle_avoidance_funcs import (                 # V17
+    init_obstacle_avoidance, solve_unconstrained_motion, set_goal_cost, AdmmMPC, bernstein_eval)
 
-def bernstein_basis_matrix(t, n_degree):
-    t = np.asarray(t)
+if S.MPC_HORIZON_TIME != 1.0:
+    raise ValueError("The V17 MPC plans a 1 s horizon (MPC_HORIZON_TIME must be 1.0)")
 
-    M = np.zeros((len(t), n_degree + 1))
 
-    for k in range(n_degree + 1):
-        M[:, k] = comb(n_degree, k) * t**k * (1 - t)**(n_degree - k)
+class FreeSpace:
+    """Airspace without restrictions: the airspace block of the MPC leaves the horizon unchanged."""
+    enabled = False
 
-    return M
+    def project(self, pts):
+        return np.asarray(pts, dtype=float)
 
-def bernstein_bases(t, n_degree, T):
-    """
-    Position, velocity and acceleration bases (W0, W1, W2) at the
-    normalized times t in [0, 1] of a horizon of duration T.
-    """
-    W0 = bernstein_basis_matrix(t, n_degree)
 
-    B = bernstein_basis_matrix(t, n_degree-1)
-    D1 = np.zeros((n_degree, n_degree+1))
-    for i in range(n_degree):
-        D1[i,i]   = -1
-        D1[i,i+1] = 1
-    W1 = n_degree * (B @ D1) / T
+def mpc_param(nD: int, with_target: bool):
+    """param of the V17 MPC with the MPC_* settings of Structs.py (read now, so a replay can override them)."""
+    sim = SimulationConfig()
+    sim.nD = nD
+    sim.dTi = S.MPC_PERIOD
+    sim.n_degree = S.MPC_N_DEGREE
+    sim.horizon = S.MPC_HORIZON
+    sim.mpc_iters = S.MPC_ITERS
+    sim.rho_obs = S.MPC_RHO_OBS
+    sim.rho_ineq = S.MPC_RHO_INEQ
+    sim.w_goal = S.MPC_W_GOAL
+    sim.w_vel = S.MPC_W_VEL
+    sim.w_smooth = S.MPC_W_SMOOTH
+    sim.goal_ref_tau = S.MPC_GOAL_REF_TAU
+    sim.v_max = S.MPC_V_MAX
+    sim.a_max = S.MPC_A_MAX
+    sim.obstacle_avoidance_dim = S.MPC_SAFETY_RADIUS
+    sim.target_is_drone = with_target
+    sim.mpc_tight_tracking = S.MPC_START == "plan"   # V17: start from the previous plan (Crazyflies)
+    sim.replan_reset_dist = S.MPC_REPLAN_RESET_DIST
+    sim.admm_warm_multipliers = True        # thesis: warm start
+    sim.env_clearance = 0.0
+    return SimpleNamespace(sim=sim, airspace=FreeSpace())
 
-    B = bernstein_basis_matrix(t, n_degree-2)
-    D2 = np.zeros((n_degree-1, n_degree+1))
-    for i in range(n_degree-1):
-        D2[i,i]   = 1
-        D2[i,i+1] = -2
-        D2[i,i+2] = 1
-    W2 = n_degree * (n_degree-1) * (B @ D2) / T**2
 
-    return W0, W1, W2
+def mpc_settings():
+    """The MPC settings in use (saved in <log>_meta.json)."""
+    return {k: getattr(S, k) for k in (
+        "MPC_PERIOD", "MPC_HORIZON_TIME", "MPC_HORIZON", "MPC_N_DEGREE", "MPC_ITERS",
+        "MPC_RHO_OBS", "MPC_RHO_INEQ", "MPC_W_GOAL", "MPC_W_VEL", "MPC_W_SMOOTH",
+        "MPC_GOAL_REF_TAU", "MPC_V_MAX", "MPC_A_MAX", "MPC_SAFETY_RADIUS", "MPC_SETPOINT", "MPC_START",
+        "MPC_REPLAN_RESET_DIST")}
 
-def clip_norm(v, r):
-    """Rows of v with their norm clipped to r."""
-    v = np.atleast_2d(v)
-    d = np.linalg.norm(v, axis=1, keepdims=True)
-    return v * np.minimum(1.0, r / np.maximum(d, 1e-12))
 
-def project_vel_acc(Gx, H):
-    """
-    Projection of the stacked samples [v(3H); a(3H)] onto the balls
-    ||v[k]|| <= MPC_V_MAX and ||a[k]|| <= MPC_A_MAX.
-    """
-    va = Gx.reshape(2, 3, H)                                  # [vel/acc, axis, k]
-    d = np.linalg.norm(va, axis=1, keepdims=True)             # (2, 1, H)
-    r = np.array([MPC_V_MAX, MPC_A_MAX]).reshape(2, 1, 1)
-    scale = np.minimum(1.0, r / np.maximum(d, 1e-12))
-    return (va * scale).reshape(-1, 1)
-
-def project_others(pts, others, side, r_xy=MPC_RADIUS_XY):
-    """
-    Points projected out of the safety envelopes around the other drones:
-    spheres of radius MPC_RADIUS_XY (MPC_ENVELOPE = "sphere", default), or the
-    legacy cylinders (radius MPC_RADIUS_XY, half-height MPC_RADIUS_Z) with
-    which the 26 Oct 2026 flights were flown. Legacy note: an ellipsoid of
-    vertical radius 1.2 m
-    whose projection pushes two stacked drones vertically (to 1.2 m apart,
-    which the formation cannot give, so the goal cost wins and they stay
-    stacked); the cylinder projection takes the shortest way out, sideways.
-
-    pts    : (n, m, 3) points, one set per other drone
-    others : (n, m, 3) horizons of the other drones
-    side   : (n,) +1/-1, direction along y when exactly above/below (opposite for the other drone)
-    returns: (n*3*m, 1), per obstacle laid out as [x(m), y(m), z(m)]
-    """
-    if MPC_ENVELOPE == "sphere":
-        # sphere of radius r_xy: radial projection (the method of the paper,
-        # as Python/obstacle_avoidance_funcs.py build_b_obs)
-        delta = pts - others
-        d = np.linalg.norm(delta, axis=2, keepdims=True)
-        fallback = np.zeros_like(delta)
-        fallback[..., 1] = side[:, None]
-        u = np.where(d > 1e-9, delta / np.maximum(d, 1e-9), fallback)
-        b = others + r_xy * np.maximum(d / r_xy, 1.0) * u
-        return b.transpose(0, 2, 1).reshape(-1, 1)
-
-    delta = pts - others                                      # (n, m, 3)
-    dh = np.linalg.norm(delta[..., :2], axis=2)               # (n, m)
-    dz = delta[..., 2]
-    inside = (dh < r_xy) & (np.abs(dz) < MPC_RADIUS_Z)
-    horizontal = inside & (r_xy - dh <= MPC_RADIUS_Z - np.abs(dz))
-    vertical = inside & ~horizontal
-
-    fallback = np.zeros_like(delta[..., :2])
-    fallback[..., 1] = side[:, None]
-    hdir = np.where((dh > 1e-6)[..., None], delta[..., :2] / np.maximum(dh, 1e-6)[..., None], fallback)
-
-    b = pts.copy()
-    b[..., :2] = np.where(horizontal[..., None], others[..., :2] + r_xy * hdir, b[..., :2])
-    b[..., 2] = np.where(vertical, others[..., 2] + np.where(dz >= 0, 1.0, -1.0) * MPC_RADIUS_Z, b[..., 2])
-    return b.transpose(0, 2, 1).reshape(-1, 1)
-
-def project_arena(pts):
-    """Points (m, 3) kept inside the geofence (and in front of the wall, trajectory 5); returns (3*m, 1) laid out as [x(m), y(m), z(m)]."""
-    return clip_to_arena(pts).T.reshape(-1, 1)
+def col(v):
+    return np.asarray(v, dtype=float).reshape(3, 1)
 
 
 class SwarmMPC:
     """
-    Plans of all the drones (drone i = row i of the positions given to
+    Plans of all the chasers (chaser i = row i of the positions given to
     plan). with_target: the target is a drone, avoided as the others (its
     horizon: constant velocity from its measured state).
     """
 
     def __init__(self, nD: int, with_target: bool = False):
-        n_degree = MPC_N_DEGREE
-        H = MPC_HORIZON
-        T = MPC_HORIZON_TIME
-        n_ctrl = n_degree + 1
-        dim = 3 * n_ctrl
-        Hc = H - 1                     # constrained samples (sample 0 fixed by A_eq)
-
-        self.nD, self.H, self.Hc, self.T = nD, H, Hc, T
-        self.n_target = int(with_target)
-        self.target_horizon = None     # (Hc, 3) predicted target positions of the current replanning
-        self.n_degree, self.n_ctrl, self.dim = n_degree, n_ctrl, dim
-        self.t_h = np.linspace(0, 1, H)
-        W0, W1, W2 = bernstein_bases(self.t_h, n_degree, T)
-        self.W0, self.W1, self.W2 = W0, W1, W2
-
-        # Cost: smoothness + goal + goal velocity (x = [c0x, c0y, c0z, c1x, ...])
-        Q = np.zeros((dim, dim))
-        Qa = MPC_W_SMOOTH * W2.T @ W2 + MPC_W_GOAL * W0.T @ W0 + MPC_W_VEL * W1.T @ W1
-        for axis in range(3):
-            idx = np.arange(axis, dim, 3)
-            Q[np.ix_(idx, idx)] = Qa
-
-        # [p(0), v(0), a(0)] = start
-        A_eq = np.zeros((9, dim))
-        for axis in range(3):
-            cols = np.arange(axis, dim, 3)
-            A_eq[axis, cols]   = W0[0]
-            A_eq[axis+3, cols] = W1[0]
-            A_eq[axis+6, cols] = W2[0]
-
-        # Positions of samples 1..H-1, laid out as [x(Hc), y(Hc), z(Hc)]
-        A_blk = np.zeros((3 * Hc, dim))
-        for axis in range(3):
-            cols = np.arange(axis, dim, 3)
-            A_blk[Hc*axis:Hc*(axis+1), cols] = W0[1:]
-
-        # Velocities and accelerations, laid out as [vx(H), vy(H), vz(H), ax(H), ay(H), az(H)]
-        G = np.zeros((6 * H, dim))
-        for axis in range(3):
-            cols = np.arange(axis, dim, 3)
-            G[np.ix_(np.arange(axis * H, (axis + 1) * H), cols)] = W1
-            G[np.ix_(np.arange((3 + axis) * H, (4 + axis) * H), cols)] = W2
-
-        # One block per other drone (+ the target drone) + one block for the arena
-        A_full = np.tile(A_blk, (nD + self.n_target, 1))
-        A_bar = Q + MPC_RHO_OBS * A_full.T @ A_full + MPC_RHO_INEQ * G.T @ G
-        KKT = np.block([
-            [A_bar, A_eq.T],
-            [A_eq, np.zeros((9, 9))]
-        ])
-
-        self.A_eq, self.A_full, self.A_full_T, self.G, self.GT = A_eq, A_full, A_full.T.copy(), G, G.T.copy()
-        self.lu = lu_factor(KKT)
-        self.others = [np.array([j for j in range(nD) if j != i], dtype=int) for i in range(nD)]
-
-        self.lambda_obs = np.zeros((nD, A_full.shape[0], 1))
-        self.lambda_ineq = np.zeros((nD, G.shape[0], 1))
-
+        self.nD = nD
+        self.param = mpc_param(nD, with_target)
+        self.agents = [MpcAgent(self.param) for _ in range(nD)]
+        self.obs_vars = init_obstacle_avoidance(self.agents, self.param)
+        self.W = (self.obs_vars["W0"], self.obs_vars["W1"], self.obs_vars["W2"])
+        self.active = np.arange(nD)
+        self.mpc = None                 # AdmmMPC, built at the first plan (from the drones' states)
         self.lock = threading.Lock()
-        self.C = None                  # (nD, n_ctrl, 3) plans
-        self.t_plan = None             # time.monotonic() at which the plans start
+        self.setpoints = None           # (nD, 3, 3): p, v, a at t_1 of the latest plans
+        self.t_plan = None              # time at which the latest plans start
 
     # ============================================================
-    # Plan evaluation
+    # Planning
     # ============================================================
-    def _eval(self, C, tau):
-        """Position, velocity, acceleration of the plans C (..., n_ctrl, 3) at the normalized times tau."""
-        W0, W1, W2 = bernstein_bases(np.atleast_1d(tau), self.n_degree, self.T)
-        return W0 @ C, W1 @ C, W2 @ C
+    def _start(self, target_state):
+        """First plan: unconstrained plans from the current states, then the ADMM state (as V17 main)."""
+        G = self.obs_vars["G"]
+        for a in self.agents:
+            set_goal_cost(a, self.obs_vars, self.param)
+            a.constraints.s = np.zeros((G.shape[0], 1))
+            a.constraints.lambda_obs = np.zeros((3 * self.param.sim.horizon, 1))
+            a.constraints.lambda_ineq = np.zeros((G.shape[0], 1))
+            a.constraints.A_obs = self.obs_vars["A_obs_blk"]
+            solve_unconstrained_motion(self.obs_vars, a, self.param)
+        self.mpc = AdmmMPC(self.obs_vars, self.agents, self.param)
+        self.mpc.target_state = target_state or (np.zeros((3, 1)), np.zeros((3, 1)))
+        self.mpc.rebuild(self.active)
 
-    def sample(self, idx, now):
-        """Setpoint (p, v, a) of drone idx at time `now` and the age of its plan, or None before the first plan."""
-        with self.lock:
-            if self.C is None:
-                return None
-            C, t_plan = self.C[idx], self.t_plan
-        tau = np.clip((now - t_plan) / self.T, 0.0, 1.0)
-        p, v, a = self._eval(C, tau)
-        v = clip_norm(v[0], 1.2 * MPC_V_MAX)[0]
-        a = clip_norm(a[0], 1.5 * MPC_A_MAX)[0]
-        return p[0], v, a, now - t_plan
-
-    def _initial_state(self, positions, velocities, now):
-        p0 = positions.copy()
-        v0 = clip_norm(velocities, 0.95 * MPC_V_MAX)
-        a0 = np.zeros((self.nD, 3))
-        if self.C is None:
-            return p0, v0, a0
-
-        tau = np.clip((now - self.t_plan) / self.T, 0.0, 1.0)
-        for i in range(self.nD):
-            p, v, a = (m[0] for m in self._eval(self.C[i], tau))
-            a0[i] = clip_norm(a, 0.95 * MPC_A_MAX)[0]
-            if np.linalg.norm(p - positions[i]) < MPC_REPLAN_RESET_DIST:
-                p0[i] = p
-                v0[i] = clip_norm(v, 0.95 * MPC_V_MAX)[0]
-        return p0, v0, a0
-
-    def _goal_cost(self, p0, goal, goal_vel):
+    def plan(self, positions, velocities, goals, goal_vel, now, target=None, accelerations=None):
         """
-        Linear cost term (Python set_goal_cost): exponential approach to the
-        (moving) goal, never asking for more than v_max.
+        One control step of all the chasers from their state at `now`.
+        positions, velocities, goals: (nD, 3); goal_vel: (3,) goal velocity
+        (shared); target: (position, velocity) of the target drone;
+        accelerations: (nD, 3), default zero (as V17).
         """
-        t = (self.t_h * self.T).reshape(-1, 1)
-        err0 = (p0 - goal).reshape(1, 3)
-        tau = max(MPC_GOAL_REF_TAU, np.linalg.norm(err0) / MPC_V_MAX)
-        decay = np.exp(-t / tau)
-        ref_pos = goal.reshape(1, 3) + t * goal_vel.reshape(1, 3) + decay * err0
-        ref_vel = goal_vel.reshape(1, 3) - decay / tau * err0
-
-        q = np.zeros((self.dim, 1))
-        for axis in range(3):
-            idx = np.arange(axis, self.dim, 3)
-            q[idx] = (-MPC_W_GOAL * self.W0.T @ ref_pos[:, axis:axis+1]
-                      - MPC_W_VEL * self.W1.T @ ref_vel[:, axis:axis+1])
-        return q
-
-    # ============================================================
-    # ADMM
-    # ============================================================
-    def plan(self, positions, velocities, goals, goal_vel, now, target=None):
-        """
-        One replanning of all the drones from their state at `now`.
-        positions, velocities, goals: (nD, 3); goal_vel: (3,) shared goal velocity;
-        target: (position, velocity) of the target drone (with_target).
-        """
-        if self.n_target:
-            tp, tv = (np.asarray(x, dtype=float).ravel() for x in target)
-            self.target_horizon = tp + (self.t_h[1:, None] * self.T) * tv
-        nD, H, Hc = self.nD, self.H, self.Hc
-        A_full, A_full_T, G, GT = self.A_full, self.A_full_T, self.G, self.GT
-        rho_o, rho_i = MPC_RHO_OBS, MPC_RHO_INEQ
-
-        positions = np.asarray(positions, dtype=float)
-        p0, v0, a0 = self._initial_state(positions, np.asarray(velocities, dtype=float), now)
-        goals = clip_to_arena(goals)
-        goal_vel = clip_norm(goal_vel, MPC_V_MAX)[0]
-
-        b_eq = [np.concatenate([p0[i], v0[i], a0[i]]).reshape(-1, 1) for i in range(nD)]
-        q = [self._goal_cost(p0[i], goals[i], goal_vel) for i in range(nD)]
-
-        # Initial guess: previous plans shifted to `now` (or hovering at p0)
-        if self.C is None:
-            horizons = np.repeat(p0[:, None, :], H, axis=1)
-            vel = np.zeros((nD, H, 3))
-            acc = np.zeros((nD, H, 3))
+        if accelerations is None:
+            accelerations = np.zeros((self.nD, 3))
+        for i, a in enumerate(self.agents):
+            a.position = col(positions[i])
+            a.velocity = col(velocities[i])
+            a.acceleration = col(accelerations[i])
+            a.desired.goal = col(goals[i])
+            a.desired.goal_velocity = col(goal_vel)
+        if target is not None:
+            target_state = (col(target[0]), col(target[1]))
         else:
-            tau = np.clip((now - self.t_plan) / self.T + self.t_h, 0.0, 1.0)
-            horizons, vel, acc = self._eval(self.C, tau)
-        horizons = horizons.copy()
+            target_state = None
+        if self.mpc is None:
+            self._start(target_state)
+        if target_state is not None:
+            self.mpc.target_state = target_state
+        for a in self.agents:
+            set_goal_cost(a, self.obs_vars, self.param)
 
-        if not MPC_WARM_MULTIPLIERS:
-            self.lambda_obs[:] = 0.0
-            self.lambda_ineq[:] = 0.0
-        s = [project_vel_acc(np.concatenate([vel[i].T.reshape(-1), acc[i].T.reshape(-1)]), H)
-             for i in range(nD)]
-        b_obs = [self._project(i, self._stack(horizons, i), horizons) for i in range(nD)]
+        self.mpc.solve(self.active)
 
-        C = np.zeros((nD, self.n_ctrl, 3))
-        for _ in range(MPC_ITERS):
-            for i in range(nD):
-                lo, li = self.lambda_obs[i], self.lambda_ineq[i]
-                rhs = (
-                    - q[i]
-                    - A_full_T @ lo
-                    + rho_o * A_full_T @ b_obs[i]
-                    - GT @ li
-                    + rho_i * GT @ s[i]
-                )
-                x = lu_solve(self.lu, np.concatenate([rhs, b_eq[i]]))[:self.dim]
-                C[i] = x.reshape(self.n_ctrl, 3)
-                horizons[i] = self.W0 @ C[i]
-
-                Ax = A_full @ x
-                Gx = G @ x
-                b_obs[i] = self._project(i, Ax + lo / rho_o, horizons)
-                s[i] = project_vel_acc(Gx + li / rho_i, H)
-
-                lo += rho_o * (Ax - b_obs[i])
-                li += rho_i * (Gx - s[i])
-
+        if S.MPC_SETPOINT == "t1":            # thesis: second horizon sample
+            W0, W1, W2 = self.W
+            sp = np.array([[W0[1] @ a.constraints.C, W1[1] @ a.constraints.C, W2[1] @ a.constraints.C]
+                           for a in self.agents])
+        else:                                 # "next_step": the plan one control period ahead (V17 mpc_setpoint)
+            tau = S.MPC_PERIOD / S.MPC_HORIZON_TIME
+            sp = np.array([bernstein_eval(a.constraints.C, tau, self.param.sim.n_degree) for a in self.agents])
         with self.lock:
-            self.C = C
+            self.setpoints = sp
             self.t_plan = now
 
-    def _stack(self, horizons, i):
-        """A_full x of drone i's horizon: samples 1..H-1 once per block."""
-        blk = horizons[i][1:].T.reshape(-1, 1)
-        return np.tile(blk, (self.nD + self.n_target, 1))
+    def sample(self, idx, now):
+        """Setpoint (p, v, a) of chaser idx (the plan at t_1) and the age of its plan, or None before the first plan."""
+        with self.lock:
+            if self.setpoints is None:
+                return None
+            p, v, a = (x.copy() for x in self.setpoints[idx])
+            return p, v, a, now - self.t_plan
 
-    def _project(self, i, v, horizons):
-        """b_obs of drone i: v (= A x + lambda / rho) projected per block [other drones ..., target, arena]."""
-        Hc = self.Hc
-        n_blocks = self.nD + self.n_target
-        blocks = v.reshape(n_blocks, 3, Hc).transpose(0, 2, 1)      # (n_blocks, Hc, 3)
-        parts = []
-        others = self.others[i]
-        if len(others):
-            parts.append(project_others(blocks[:len(others)], horizons[others][:, 1:, :],
-                                        np.where(others > i, 1.0, -1.0)))
-        if self.n_target:
-            parts.append(project_others(blocks[-2:-1], self.target_horizon[None], np.ones(1), TARGET_RADIUS_XY))
-        parts.append(project_arena(blocks[-1]))
-        return np.vstack(parts)
+    def horizon(self, idx):
+        """Planned positions (H, 3) of chaser idx."""
+        return self.W[0] @ self.agents[idx].constraints.C
 
-    def settle(self, positions, goals, duration=SLOT_SETTLE_TIME, target=None):
+    def settle(self, positions, goals, duration=S.SLOT_SETTLE_TIME, target=None):
         """
         Positions the MPC holds around the (still) formation goals: ideal
-        drones following the plans from `positions` for `duration`. The
-        Voronoi goals can be stacked; the drones fly to these slots instead.
-        target: position of the (still) target drone (with_target).
+        drones following their plans from `positions` for `duration` (the
+        Voronoi goals can be closer than the safety sphere). The drones fly
+        to these slots before the Formation phase. target: position of the
+        (still) target drone. The MPC then starts again from scratch.
         """
         p = np.array(positions, dtype=float)
         v = np.zeros_like(p)
         t = 0.0
         target_state = None if target is None else (np.asarray(target, dtype=float), np.zeros(3))
+        n = self.param.sim.n_degree
+        tau = S.MPC_PERIOD / S.MPC_HORIZON_TIME
         while t < duration:
             self.plan(p, v, goals, np.zeros(3), t, target_state)
-            t += MPC_PERIOD
-            samples = [self.sample(i, t) for i in range(self.nD)]
-            p = np.array([sp[0] for sp in samples])
-            v = np.array([sp[1] for sp in samples])
+            for i, ag in enumerate(self.agents):
+                p[i], v[i], _ = bernstein_eval(ag.constraints.C, tau, n)
+            t += S.MPC_PERIOD
 
+        self.mpc = None
         with self.lock:
-            self.C = None
+            self.setpoints = None
             self.t_plan = None
-        self.lambda_obs[:] = 0.0
-        self.lambda_ineq[:] = 0.0
         return p
 
     # ============================================================
     # Planner thread
     # ============================================================
-    def run(self, states: list[DroneState], formation, position_lock: threading.Lock,
+    def run(self, states: list, formation, position_lock: threading.Lock,
             stop_event: threading.Event, abort_event: threading.Event):
-        """Replans every MPC_PERIOD (states[i] is drone i) until stop_event."""
+        """Replans every MPC_PERIOD (states[i] is chaser i) until stop_event."""
         next_time = time.monotonic()
         while not stop_event.is_set():
             try:
@@ -384,7 +218,7 @@ class SwarmMPC:
                 abort_event.set()
                 return
 
-            next_time += MPC_PERIOD
+            next_time += S.MPC_PERIOD
             delay = next_time - time.monotonic()
             if delay > 0:
                 stop_event.wait(delay)
@@ -392,15 +226,15 @@ class SwarmMPC:
                 print(f"MPC overran its period by {-delay * 1000:.0f} ms")
                 next_time = time.monotonic()
 
-    def plan_from(self, states: list[DroneState], formation, position_lock: threading.Lock):
-        """One replanning from the latest OptiTrack states and formation goals."""
+    def plan_from(self, states: list, formation, position_lock: threading.Lock):
+        """One control step from the latest OptiTrack states and formation goals."""
         with position_lock:
             now = time.monotonic()
             positions = np.array([np.ravel(s.position)[:3] for s in states], dtype=float)
             velocities = np.array([np.ravel(s.velocity)[:3] for s in states], dtype=float)
         goals, goal_vel = formation.get_goals()
         self.plan(positions, velocities, goals, goal_vel, now,
-                  formation.get_target_state() if self.n_target else None)
+                  formation.get_target_state() if self.param.sim.target_is_drone else None)
 
     def start_thread(self, states, formation, position_lock, stop_event, abort_event):
         t = threading.Thread(target=self.run, args=(states, formation, position_lock, stop_event, abort_event),
@@ -409,11 +243,10 @@ class SwarmMPC:
         return t
 
 
-def min_stacked_distance(points):
-    """Min horizontal distance between two points less than MPC_RADIUS_Z - SLOT_STACK_TOL apart vertically (inf if none)."""
+def min_distance(points):
+    """Min distance between two of the points (inf for fewer than two)."""
     p = np.asarray(points, dtype=float)
-    iu = np.triu_indices(len(p), k=1)
-    dh = np.linalg.norm(p[:, None, :2] - p[None, :, :2], axis=2)[iu]
-    dz = np.abs(p[:, None, 2] - p[None, :, 2])[iu]
-    close = dz < MPC_RADIUS_Z - SLOT_STACK_TOL
-    return float(dh[close].min()) if np.any(close) else np.inf
+    if len(p) < 2:
+        return np.inf
+    d = np.linalg.norm(p[:, None, :] - p[None, :, :], axis=2)
+    return float(d[np.triu_indices(len(p), k=1)].min())

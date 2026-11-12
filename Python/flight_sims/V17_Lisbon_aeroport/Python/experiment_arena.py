@@ -95,6 +95,7 @@ class ArenaAirspace(RestrictedAirspace):
     so formation goals and MPC horizons stay in the arena. Default: the loop,
     wall at x = WALL_X, red border at x = RED_BORDER_X.
     """
+    kind = "arena"
 
     def __init__(self, sim, n_in=(1.0, 0.0), wall_point=(WALL_X, 0.0)):
         n = np.asarray(n_in, dtype=float) / np.linalg.norm(n_in)
@@ -267,8 +268,6 @@ def configure_arena_experiment(param, dTi=None):
     sim.target_is_drone = getattr(sim, "arena_target_drone", True)   # target Crazyflie, avoided by the MPC
     sim.replan_reset_dist = 0.2           # [m]
     sim.obstacle_avoidance_dim = 0.3      # [m] radius of the spherical inter-drone (and target) envelope
-    sim.obstacle_avoidance_dim_z = None   # sphere (the 26 Oct 2026 flight used the legacy downwash
-    sim.obstacle_shape = "ellipsoid"      # cylinder: radius 0.3 m, half-height 1.2 m, obstacle_shape = "cylinder")
     sim.rho_obs = 5000.0                  # as the flight code (MPC_RHO_OBS): with 100 the goal cost keeps them stacked
 
     if arena_traj == 5:

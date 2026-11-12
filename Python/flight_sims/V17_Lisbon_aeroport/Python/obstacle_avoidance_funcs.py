@@ -583,39 +583,6 @@ def build_b_obs(traj, others, r_vec):
     return b.transpose(0, 2, 1).reshape(-1, 1)
 
 
-def build_b_obs_cylinder(traj, others, r_xy, r_z, side):
-    """
-    Obstacle projection points out of vertical cylinders (radius r_xy,
-    half-height r_z) around the other agents, as the flight code
-    (Crazy_Flies/swarm_MPC_voronoi_sim_target/mpc.py, project_others): the
-    shortest way out, so two stacked drones are pushed sideways (the
-    ellipsoid pushes them vertically, which a formation whose vertical
-    extent is below 2 r_z cannot give, and they stay in each other's
-    downwash).
-
-    traj   : (H, 3)    own horizon
-    others : (n, H, 3) horizons of the other agents
-    side   : (n,) +1/-1, direction along y when exactly above/below
-    returns: (n*3*H, 1), per obstacle laid out as [x(H), y(H), z(H)]
-    """
-    pts = np.broadcast_to(traj, others.shape)
-    delta = pts - others
-    dh = np.linalg.norm(delta[..., :2], axis=2)
-    dz = delta[..., 2]
-    inside = (dh < r_xy) & (np.abs(dz) < r_z)
-    horizontal = inside & (r_xy - dh <= r_z - np.abs(dz))
-    vertical = inside & ~horizontal
-
-    fallback = np.zeros_like(delta[..., :2])
-    fallback[..., 1] = np.asarray(side)[:, None]
-    hdir = np.where((dh > 1e-6)[..., None], delta[..., :2] / np.maximum(dh, 1e-6)[..., None], fallback)
-
-    b = np.array(pts, copy=True)
-    b[..., :2] = np.where(horizontal[..., None], others[..., :2] + r_xy * hdir, b[..., :2])
-    b[..., 2] = np.where(vertical, others[..., 2] + np.where(dz >= 0, 1.0, -1.0) * r_z, b[..., 2])
-    return b.transpose(0, 2, 1).reshape(-1, 1)
-
-
 def build_b_air(traj, airspace, obstacles=None, clearance=0.0):
     """
     Airspace / environment projection points for the own horizon (H, 3): the
@@ -686,22 +653,14 @@ class AdmmMPC:
         else:
             pts = v.reshape(n_blocks, 3, H).transpose(0, 2, 1)   # (n_blocks, H, 3)
         parts = []
-        cylinder = getattr(self.param.sim, "obstacle_shape", "ellipsoid") == "cylinder"
         r = self.obstacle_radius_vec
         for k, j in enumerate(others):
-            if cylinder:
-                parts.append(build_b_obs_cylinder(pts[k], self.horizons[j][None], r[0], r[2],
-                                                  [1.0 if j > iD else -1.0]))
-            else:
-                parts.append(build_b_obs(pts[k], self.horizons[j][None], r))
+            parts.append(build_b_obs(pts[k], self.horizons[j][None], r))
         if self.n_target:
             tp, tv = (np.asarray(x, dtype=float).reshape(1, 3) for x in self.target_state)
             t_h = np.linspace(0, 1, H).reshape(-1, 1)          # the 1 s horizon
             target_h = (tp + t_h * tv)[None]
-            if cylinder:
-                parts.append(build_b_obs_cylinder(pts[-2], target_h, r[0], r[2], [1.0]))
-            else:
-                parts.append(build_b_obs(pts[-2], target_h, r))
+            parts.append(build_b_obs(pts[-2], target_h, r))
         parts.append(build_b_air(pts[-1], self.airspace,
                                  self.chaser_list[iD].perceived_obstacles, self.param.sim.env_clearance))
         return np.vstack(parts)

@@ -43,6 +43,5 @@ param.display.verbose = False
 param.display.store_data = True
 param.display.results_file = out
 print(f"{scen} seed={seed} out={out} envelope r={param.sim.obstacle_avoidance_dim} "
-      f"r_z={param.sim.obstacle_avoidance_dim_z} shape={param.sim.obstacle_shape} "
       f"warm={param.sim.admm_warm_multipliers}", flush=True)
 M.main(param)

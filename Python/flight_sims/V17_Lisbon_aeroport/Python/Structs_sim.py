@@ -5,7 +5,7 @@ import os
 import tomllib
 from dataclasses import dataclass
 
-from restricted_airspace import RestrictedAirspace, NoAirspace
+from restricted_airspace import RestrictedAirspace, StraightAirspace, NoAirspace
 from environment import FlatGround
 
 # CONSTS
@@ -76,12 +76,7 @@ class SimulationConfig:
         self.restricted_vel_acc = True
         self.obstacle_avoidance_dim = 1.00
         # Safety envelope around the other drones (and the target drone): a
-        # sphere of radius obstacle_avoidance_dim (the method of the paper).
-        # The legacy downwash variants (obstacle_avoidance_dim_z != None, an
-        # ellipsoid, or obstacle_shape = "cylinder") are kept only to re-run
-        # old experiments.
-        self.obstacle_avoidance_dim_z = None   # vertical radius (None = obstacle_avoidance_dim: sphere)
-        self.obstacle_shape = "ellipsoid"      # "ellipsoid" (sphere with dim_z = None) or legacy "cylinder"
+        # sphere of radius obstacle_avoidance_dim (thesis, inter-agent separation)
         self.n_degree = 5
         self.horizon = 5           # horizon
         self.rho_obs = 100.0        # Obstacle avoidance penalty
@@ -120,10 +115,17 @@ class SimulationConfig:
         # options: "fibonacci" or "dijkstra" 
         self.distribution = "dijkstra"
 
-        # --- Restricted airspace (KMZ, ENU frame at the LPPT ARP, same as Gazebo) ---
-        # False: empty world without the KMZ zones (trajectories 1-4), the
-        # formation only reacts to a plane wall at x = 0 facing +x
-        self.use_airspace = True
+        # --- Restricted airspace (map) ---
+        #   "auto":     from the trajectory: 1-4 -> "straight", 5-6 -> "lisbon"
+        #   "lisbon":   the KMZ zones (ENU frame at the LPPT ARP, same as Gazebo), needed by trajectories 5, 6
+        #   "straight": the V16 scenario: the wall is the plane x = straight_wall_x facing +x,
+        #               the red zone x > straight_red_x (StraightAirspace)
+        #   "none":     empty world, the formation only reacts to a plane wall at x = 0
+        self.airspace_model = "auto"
+        self.straight_wall_x = 0.0      # [m] straight scenario: the wall (start of the grey band)
+        self.straight_red_x = 20.0      # [m] straight scenario: red border. Trajectory 2 reaches
+                                        # x = 10 m and its 5 m formation x = 15 m, so (with the 1 m
+                                        # margin) the red zone never constrains it, as in V16
         # True: Crazyflie arena experiment (Crazy_Flies/swarm_MPC_voronoi_sim_target):
         # Crazyflie model, the trajectory 5 scenario scaled to the OptiTrack
         # arena (experiment_arena.py); overrides the airspace, path and scale
@@ -289,8 +291,8 @@ class TrajectoryConfig:
             }
 
 
-        elif traj in (5, 6) and not self.airspace.enabled:
-            raise ValueError(f"Trajectory {traj} needs the restricted airspace (use_airspace = True)")
+        elif traj in (5, 6) and self.airspace.kind != "lisbon":
+            raise ValueError(f"Trajectory {traj} needs the Lisbon airspace (airspace_model = \"lisbon\")")
 
         elif traj == 5:
             # Intrusion into the red zone: starts in the orange zone 50 m
@@ -438,7 +440,18 @@ class Param:
             from experiment_arena import configure_arena_experiment
             configure_arena_experiment(self)
         else:
-            self.airspace = RestrictedAirspace(self.sim) if self.sim.use_airspace else NoAirspace(self.sim)
+            model = self.sim.airspace_model
+            if model == "auto":
+                model = "lisbon" if self.sim.traj in (5, 6) else "straight"
+            if model == "lisbon":
+                self.airspace = RestrictedAirspace(self.sim)
+            elif model == "straight":
+                self.airspace = StraightAirspace(self.sim)
+                self.display.trajectory_overview_plot = False   # the Lisbon KMZ map
+            elif model == "none":
+                self.airspace = NoAirspace(self.sim)
+            else:
+                raise ValueError(f"Unknown airspace_model {model!r} (auto, lisbon, straight, none)")
             self.traj = TrajectoryConfig(self.airspace, traj=self.sim.traj)
 
 class Voronoi:

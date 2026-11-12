@@ -13,7 +13,7 @@ end up in the same folder. Files that did not change are not copied.
 Usage (in a sim entry point):
 
     import root_results
-    root_results.mirror_on_exit("V16_generic_mesh", LOCAL_RESULTS, PKL_FILE)
+    root_results.mirror_on_exit("V17_Lisbon_aeroport", LOCAL_RESULTS, PKL_FILE)
 """
 import atexit
 import shutil

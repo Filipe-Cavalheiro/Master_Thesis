@@ -26,7 +26,7 @@ video_overlay/
   stroboscopic.py           motion-through-time composite + real-vs-sim error plot/metrics
   flight_overlay.py         hand-held phone video of swarm_take_off_hover_land vs its simulation
                             (phone rigid body logged by the flight code, phone_align.py calibration)
-  flight_dashboard.py       dashboard.mp4 of flight_overlay.py: overlay + V16-style animated plots
+  flight_dashboard.py       dashboard.mp4 of flight_overlay.py: overlay + V17-style animated plots
   make_synthetic.py         synthetic sessions with ground truth (no footage needed)
   run_synthetic_test.py     end-to-end test on them
   test_output/              test results (see "Validation" below)
@@ -280,7 +280,7 @@ python flight_overlay.py <repo>/Results/swarm_take_off_hover_land_trajectory_X/t
 Outputs in `<run folder>/overlay/`: `overlay.mp4`, `sim_camera.mp4`, `side_by_side.mp4`,
 `dashboard.mp4` (overlay video, 3D scene with the tracked camera and its frustum, zoomed top
 view in cm, z(t) real / sim / setpoint and the real - sim error components with live |e| and
-RMS, trails and curves growing with time as in `V16_generic_mesh/animation_display.py`),
+RMS, trails and curves growing with time as in `V17_Lisbon_aeroport/Python/animation_display.py`),
 `stills/`, `overlay_metrics.csv`, `sync.json`.
 
 * Sync: image motion of the video (phase correlation) vs the image motion predicted from the

@@ -1646,8 +1646,8 @@ def trajectory_overview_plot(data: SimulationData, param: Param):
     from matplotlib.lines import Line2D
 
     airspace = param.airspace
-    if not airspace.enabled:
-        print("trajectory overview plot needs the restricted airspace (use_airspace = True), skipped")
+    if airspace.kind != "lisbon":
+        print("trajectory overview plot needs the Lisbon airspace (airspace_model = \"lisbon\"), skipped")
         return
     fig = plt.figure(figsize=(18, 8))
     ax_map = fig.add_subplot(1, 2, 1)

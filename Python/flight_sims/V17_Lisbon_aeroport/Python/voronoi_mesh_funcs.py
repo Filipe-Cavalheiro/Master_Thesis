@@ -143,14 +143,9 @@ def pre_compute_desired_pos(voronoi: Voronoi, param: Param):
 def outside_envelope(delta, param: Param):
     """
     True for the offsets delta (m, 3) outside the inter-agent safety envelope
-    (ellipsoid or cylinder of radius obstacle_avoidance_dim, vertical radius
-    obstacle_avoidance_dim_z), as in the MPC collision constraint.
+    (sphere of radius obstacle_avoidance_dim), as in the MPC collision constraint.
     """
-    r = param.sim.obstacle_avoidance_dim
-    rz = r if param.sim.obstacle_avoidance_dim_z is None else param.sim.obstacle_avoidance_dim_z
-    if getattr(param.sim, "obstacle_shape", "ellipsoid") == "cylinder":
-        return (np.linalg.norm(delta[:, :2], axis=1) >= r) | (np.abs(delta[:, 2]) >= rz)
-    return np.linalg.norm(delta / np.array([r, r, rz]), axis=1) >= 1.0
+    return np.linalg.norm(delta, axis=1) >= param.sim.obstacle_avoidance_dim
 
 
 def random_safe_sites(vertices, n, param: Param):

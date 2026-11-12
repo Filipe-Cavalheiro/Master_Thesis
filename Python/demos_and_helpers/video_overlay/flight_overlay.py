@@ -28,7 +28,7 @@ the frame time, hand-eye correction T_bc), with the phone intrinsics. Outputs
     overlay.mp4        the real video with the simulated drones drawn over it
                        (orange) and the real OptiTrack positions (green rings)
     side_by_side.mp4   real | simulated camera
-    dashboard.mp4      the overlay next to plots in the style of the V16
+    dashboard.mp4      the overlay next to plots in the style of the V17
                        animation_display.py animations (flight_dashboard.py): 3D
                        scene with the camera, top view, z(t) and real - sim error
     stills/            real / sim / overlay frames at take off, hover, landing (PNG)

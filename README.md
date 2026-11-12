@@ -29,8 +29,7 @@ This README is an overview. Each category is explained in more detail in the REA
 | Folder | What it simulates | Details |
 |---|---|---|
 | `swarm_geometric_Fibonacci_sim_target` | Hierarchical control on the two-sphere: Fibonacci points, Hungarian assignment, APF, adaptive radius (`main.py`); `main.py --IRL_log` replays the matching real flight, for sim-vs-real comparison | [README](Python/flight_sims/swarm_geometric_Fibonacci_sim_target/README.md) |
-| `V16_generic_mesh` | Voronoi formation on a generic mesh, distributed estimation, Delaunay communication network | [README](Python/flight_sims/V16_generic_mesh/README.md) |
-| `V17_Lisbon_aeroport` | Lisbon-airport scenario: morphing formation, distributed Bernstein MPC solved with ADMM, restricted airspace. Also provides the Crazyflie plant used by `Crazy_Flie/Optitrack/flight_sim.py` | [README](Python/flight_sims/V17_Lisbon_aeroport/README.md) |
+| `V17_Lisbon_aeroport` | The thesis simulation: Voronoi formation on a morphing mesh, distributed estimation, Delaunay network, distributed Bernstein MPC solved with ADMM, restricted airspace. The map follows the trajectory: 1-4 the straight wall at x = 0 of V16 (`python main.py --traj 2`; V16 was removed on 12 Nov, it is in the git history), 5-6 the Lisbon airport (`python main.py`, trajectory 6), and the `swarm_MPC_voronoi` Crazyflie flight (`--arena`, `--IRL_log`, which uses this simulation's MPC) | [README](Python/flight_sims/V17_Lisbon_aeroport/README.md) |
 | `8traj`, `swarm_take_off_hover_land` | Simulations of the matching real flights, for sim-vs-real comparison | [8traj](Python/flight_sims/8traj/README.md), [swarm_take_off_hover_land](Python/flight_sims/swarm_take_off_hover_land/README.md) |
 
 ## How to run: simulation, real flight, and the overlay that joins them
@@ -55,15 +54,15 @@ Thesis simulation (Lisbon airport, Voronoi formation + distributed MPC). The set
 cd Python/flight_sims/V17_Lisbon_aeroport/Python && python main.py
 ```
 
-The other simulations in `Python/flight_sims/` (Fibonacci sphere, V16) run the same way, with `python main.py` in their folder. See each folder's README.
+The straight-wall scenario (formerly V16): `python main.py --traj 2`. The other simulations in `Python/flight_sims/` (Fibonacci sphere, 8traj, take off / hover / land) run the same way, with `python main.py` in their folder. See each folder's README.
 
 ### 2. A Crazyflie flight (filmed with the phone)
 
-The overlay needs a flight that also logs the phone's pose. Only two flights do this, `swarm_take_off_hover_land` and `8traj.py`, and both expect the phone to be rigid body **0** in Motive (`CAMERA_RIGID_BODY_ID = 0`).
+The overlay needs a flight that also logs the phone's pose. The flights that do this are `swarm_take_off_hover_land`, `8traj.py`, `swarm_geometric_Fibonacci_sim_target` and `swarm_MPC_voronoi`, and all expect the phone to be rigid body **0** in Motive (`CAMERA_RIGID_BODY_ID = 0`).
 
 1. Switch on the drones and Motive. Place every drone pointing along +X of the tracking frame.
 2. Start recording on the phone. Then **pan and tilt it briskly a few times**: this is what syncs the video with the flight log.
-3. Fly (one of the two, from the repository root):
+3. Fly (for example, from the repository root):
    ```bash
    cd Crazy_Flie/Optitrack/swarm_take_off_hover_land && python main.py   # swarm: take off, hover, land
    cd Crazy_Flie/Optitrack && python 8traj.py                              # one drone: figure 8
