@@ -4,6 +4,7 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment
 
 from Structs import *
+import ctrl_c
 from fiboancci_funcs import *
 from helper_funcs import *
 
@@ -45,6 +46,8 @@ def ramp_to(scf, target_pos, duration, label, state, position_lock, abort_event,
     steps = max(1, int(duration / SETPOINT_PERIOD))
 
     for i in range(steps):
+        if ctrl_c.killed():
+            return False
         if respect_abort and abort_event.is_set():
             return False
         if not safety_check(state, position_lock, abort_event):
@@ -63,10 +66,11 @@ def take_off(scf, state: DroneState, position_lock:threading.Lock, abort_event: 
     return ramp_to(scf, [hx, hy, param.default_height], TAKEOFF_TIME, "takeoff", state, position_lock, abort_event)
 
 def return_origin(scf, state: DroneState, position_lock:threading.Lock, abort_event: threading.Event, param: Param):
-    """Return to a point above home at takeoff height."""
+    """Return to a point above home at takeoff height. Also runs after an abort."""
     uri = scf.cf.link_uri
     hx, hy, _ = state.local_origin
-    return ramp_to(scf, [hx, hy, param.default_height], RETURN_TIME, "return to home", state, position_lock, abort_event)
+    return ramp_to(scf, [hx, hy, param.default_height], RETURN_TIME, "return to home", state, position_lock, abort_event,
+                   respect_abort=False)
 
 def land(scf, state: DroneState, position_lock:threading.Lock, abort_event: threading.Event):
     """Always runs (ignores abort) as long as this drone is still tracked."""
@@ -120,15 +124,18 @@ def controller(
     min_safe_dist, 
     active_uris,
     state: DroneState,
-    param: Param
+    param: Param,
+    abort_event: threading.Event,
 ):
     """
-    Runs continuously on each CF.
+    Runs continuously on each CF (until Tend or an abort).
     """
     cf = scf.cf
     iD = active_uris.index(cf.link_uri)
     end_time = time.time() + param.Tend
     while time.time() < end_time:
+        if abort_event.is_set():   # 1st Ctrl+C / tracking lost: hand over to return + land
+            return False
         with target_lock:
             target_pos = np.array([
                 target.position[0],

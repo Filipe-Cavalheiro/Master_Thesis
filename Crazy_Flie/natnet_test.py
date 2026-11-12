@@ -11,15 +11,12 @@ from natnet import DataDescriptions, DataFrame, NatNetClient
 MOTIVE_IP = "192.168.50.210"
 LOCAL_IP = "192.168.50.195"
 
-
 def on_data_description(desc: DataDescriptions):
     print("Received data descriptions")
-
 
 def on_data_frame(frame: DataFrame):
     print(frame)
     print("\n")
-
 
 client = NatNetClient(
     server_ip_address=MOTIVE_IP,
@@ -34,7 +31,6 @@ client.on_data_description_received_event.handlers.append(
 client.on_data_frame_received_event.handlers.append(
     on_data_frame
 )
-
 
 with client:
     print("Connected to NatNet")

@@ -10,6 +10,8 @@ from cflib.utils import uri_helper
 
 from natnet import DataDescriptions, DataFrame, NatNetClient
 
+import ctrl_c   # 1st Ctrl+C: return home + land, 2nd: motors off
+
 
 # ============================================================
 # CONFIGURATION
@@ -20,7 +22,7 @@ from natnet import DataDescriptions, DataFrame, NatNetClient
 # ------------------------------------------------------------
 
 URI = uri_helper.uri_from_env(
-    default='radio://0/10/2M/E7E7E7E704'
+    default='radio://0/10/2M/E7E7E7E701'
 )
 
 # Desired height ABOVE the OptiTrack home position.
@@ -34,7 +36,7 @@ MOTIVE_IP = "192.168.50.210"
 LOCAL_IP = "192.168.50.195"
 
 # Rigid body ID assigned to the Crazyflie in Motive.
-RIGID_BODY_ID = 4
+RIGID_BODY_ID = 1
 
 # ------------------------------------------------------------
 # Control
@@ -603,11 +605,17 @@ def land(scf):
         LAND_TIME / SETPOINT_PERIOD
     )
 
+    # from the current height (an aborted takeoff is below TARGET_HEIGHT)
+    start_z = min(TARGET_HEIGHT, max(0.0, get_optitrack_position()[2]))
+
     for i in range(steps):
 
         fraction = 1.0 - ((i + 1) / steps)
 
-        target_z = TARGET_HEIGHT * fraction
+        target_z = start_z * fraction
+
+        if ctrl_c.killed():
+            break
 
         # During landing we still want to know whether
         # OptiTrack is functioning.
@@ -632,6 +640,7 @@ def land(scf):
 
         time.sleep(SETPOINT_PERIOD)
 
+    time.sleep(1)
     print("Landing complete.")
 
 # ============================================================
@@ -647,10 +656,10 @@ def stop_flight(scf):
     print("Stopping flight...")
 
     try:
-
         # Tell Crazyflie that position setpoint stream
         # has ended.
         scf.cf.commander.send_stop_setpoint()
+        scf.cf.commander.send_notify_setpoint_stop()
 
     except Exception as e:
 
@@ -661,7 +670,6 @@ def stop_flight(scf):
     time.sleep(0.5)
 
     try:
-
         scf.cf.supervisor.send_arming_request(False)
 
         print("Disarmed.")
@@ -710,6 +718,7 @@ def main():
     # Initialize Crazyflie drivers
     # --------------------------------------------------------
 
+    ctrl_c.install(abort_event)
     cflib.crtp.init_drivers()
 
     # --------------------------------------------------------
@@ -868,6 +877,7 @@ def main():
                 # ------------------------------------------------
                 # Arm
                 # ------------------------------------------------
+                ctrl_c.flying([scf.cf])
                 scf.cf.supervisor.send_arming_request(
                     True
                 )
@@ -880,21 +890,21 @@ def main():
                 # Takeoff
                 # ------------------------------------------------
 
-                if not takeoff(scf):
+                # (an abort / 1st Ctrl+C skips to the landing)
+                takeoff_ok = takeoff(scf)
+                if not takeoff_ok:
                     print(
-                        "Takeoff aborted."
+                        "Takeoff aborted: landing."
                     )
-                    return
 
                 # ------------------------------------------------
                 # Hover
                 # ------------------------------------------------
 
-                if not hover(scf):
+                if takeoff_ok and not hover(scf):
                     print(
-                        "Hover aborted."
+                        "Hover aborted: landing."
                     )
-                    return
 
                 # ------------------------------------------------
                 # Land
@@ -907,6 +917,7 @@ def main():
                 # ------------------------------------------------
 
                 stop_flight(scf)
+                ctrl_c.landed()
 
                 print()
                 print("Flight test completed successfully.")

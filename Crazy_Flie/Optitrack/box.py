@@ -11,6 +11,8 @@ from cflib.positioning.motion_commander import MotionCommander
 
 from natnet import DataDescriptions, DataFrame, NatNetClient
 
+import ctrl_c   # 1st Ctrl+C: return home + land, 2nd: motors off
+
 # ============================================================
 # CONFIGURATION
 # ============================================================
@@ -409,6 +411,9 @@ def move_box_limit(scf):
 
     while time.monotonic() < end_time:
 
+        if abort_event.is_set():   # 1st Ctrl+C / tracking lost: hand over to return + land
+            break
+
         position_estimate = get_optitrack_position()
 
         # X boundary
@@ -465,6 +470,9 @@ def return_origin(scf):
     for _ in range(steps):
         target_z = TARGET_HEIGHT
 
+        if ctrl_c.killed():
+            break
+
         # During landing we still want to know whether
         # OptiTrack is functioning.
         if not tracking_is_valid():
@@ -515,6 +523,9 @@ def land(scf):
         fraction = 1.0 - ((i + 1) / steps)
 
         target_z = TARGET_HEIGHT * fraction
+
+        if ctrl_c.killed():
+            break
 
         # During landing we still want to know whether
         # OptiTrack is functioning.
@@ -597,6 +608,7 @@ def main():
     # Initialize Crazyflie drivers
     # --------------------------------------------------------
 
+    ctrl_c.install(abort_event)
     cflib.crtp.init_drivers()
 
     # --------------------------------------------------------
@@ -745,6 +757,7 @@ def main():
                 # ------------------------------------------------
                 # Arm
                 # ------------------------------------------------
+                ctrl_c.flying([scf.cf])
                 scf.cf.supervisor.send_arming_request(
                     True
                 )
@@ -763,6 +776,7 @@ def main():
 
                 time.sleep(2)
                 stop_flight(scf)
+                ctrl_c.landed()
                 time.sleep(2)
 
                 # ------------------------------------------------

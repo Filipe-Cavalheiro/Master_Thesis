@@ -10,7 +10,7 @@ CSV columns (one row per drone per sample):
     gyro_x_dps, gyro_y_dps, gyro_z_dps # angular rates
 
 Usage:
-    python plot_data.py                         # newest CSV in LOG_DIR
+    python plot_data.py                         # newest flight log in LOG_DIR (any flight code)
     python plot_data.py path/to/log.csv
     python plot_data.py path/to/log.csv --source est     # use estimator pos for 3D/XY/animation
     python plot_data.py path/to/log.csv --animate
@@ -28,8 +28,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-LOG_DIR = Path("Optitrack/logs")
-LOG_GLOB = "*.csv"
+# repository Results folder: one folder per run, Results/<flight code>_trajectory_<date>/trajectory_<date>.csv
+LOG_DIR = Path(__file__).resolve().parents[2] / "Results"
+LOG_GLOB = "*_trajectory_*/trajectory_*.csv"
 
 REQUIRED_COLS = [
     "time_s", "flight_state", "id",
@@ -623,7 +624,9 @@ def animate_flight(
 # ============================================================
 
 def newest_log(log_dir=LOG_DIR):
-    files = sorted(Path(log_dir).glob(LOG_GLOB), key=lambda p: p.stat().st_mtime)
+    # the flight log itself, not the files derived from it (_sim, _camera, ...)
+    files = sorted((p for p in Path(log_dir).glob(LOG_GLOB) if p.parent.name.endswith(p.stem)),
+                   key=lambda p: p.stat().st_mtime)
     if not files:
         raise FileNotFoundError(f"No {LOG_GLOB} files in {log_dir}")
     return files[-1]

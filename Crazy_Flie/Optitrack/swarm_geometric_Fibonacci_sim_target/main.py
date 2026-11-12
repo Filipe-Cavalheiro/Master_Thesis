@@ -16,6 +16,7 @@ from cflib.crazyflie.swarm import Swarm
 from cf_funcs import *
 from natnet_funcs import *
 from trajectory_logger import TrajectoryLogger
+import ctrl_c
 
 def main():
     print("\n==============================================")
@@ -46,6 +47,7 @@ def main():
     stop_event = threading.Event()
     position_lock = threading.Lock()
     abort_event = threading.Event()      # aborts the flight phases
+    ctrl_c.install(abort_event)   # 1st Ctrl+C: return home + land, 2nd: motors off
     extpos_threads = []
 
     client = NatNetClient(
@@ -90,7 +92,6 @@ def main():
     # Logs
     # --------------------------------------------------------
     logger = TrajectoryLogger(drone_states, position_lock,
-                            output_dir="Optitrack/logs",
                             sample_period=0.02)
     
     # --------------------------------------------------------
@@ -139,6 +140,7 @@ def main():
                     return
 
                 print("Lights On")
+                ctrl_c.flying([scf.cf for scf in swarm._cfs.values()])
                 swarm.parallel_safe(arm)
                 armed = True
                 print("Armed.")
@@ -175,24 +177,12 @@ def main():
                                 min_safe_dist, 
                                 active_uris,
                                 state,
-                                param
+                                param,
+                                abort_event,
                             )
                             for uri, state in drone_states.items()
                         }
                     )
-
-                logger.mark_state("Return to (local) origin")
-                swarm.parallel_safe(return_origin,
-                    args_dict={
-                        uri: (
-                            state, 
-                            position_lock, 
-                            abort_event,
-                            param
-                        )
-                        for uri, state in drone_states.items()
-                    }
-                )
 
             except KeyboardInterrupt:
                 print("\nKeyboard interrupt received.")
@@ -201,10 +191,21 @@ def main():
                 print(f"\nERROR DURING FLIGHT: {e}")
                 abort_event.set()
             finally:
-                # Always land (per drone, as long as it is still tracked) and disarm.
+                # Always (also after an abort / 1st Ctrl+C): return above the
+                # local home, land (per drone, as long as it is still tracked), disarm.
                 if armed:
                     time.sleep(0.3)   # let aborted phases exit
                     try:
+                        try:
+                            logger.mark_state("Return to (local) origin")
+                            swarm.parallel_safe(return_origin,
+                                args_dict={
+                                    uri: (state, position_lock, abort_event, param)
+                                    for uri, state in drone_states.items()
+                                }
+                            )
+                        except Exception as e:
+                            print(f"ERROR DURING RETURN: {e}: landing in place.")
                         logger.mark_state("Land")
                         swarm.parallel_safe(land,
                             args_dict={
@@ -224,6 +225,7 @@ def main():
                         print(f"Trajectory saved to: {logger.output_path}")
 
                         swarm.parallel_safe(stop_flight)
+                        ctrl_c.landed()
                         time.sleep(1.0)
 
                 stop_event.set()

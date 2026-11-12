@@ -4,6 +4,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 import csv
+import atexit
 import numpy as np
 
 import cflib.crtp
@@ -14,6 +15,10 @@ from cflib.crazyflie.log import LogConfig
 
 from natnet import DataDescriptions, DataFrame, NatNetClient
 
+import ctrl_c   # 1st Ctrl+C: return home + land, 2nd: motors off
+
+from camera_logger import CameraLogger
+
 # ============================================================
 # CONFIGURATION
 # ============================================================
@@ -23,12 +28,21 @@ from natnet import DataDescriptions, DataFrame, NatNetClient
 # ------------------------------------------------------------
 
 URI = uri_helper.uri_from_env(
-    default='radio://0/10/2M/E7E7E7E704'
+    default='radio://0/10/2M/E7E7E7E701'
 )
-
+    
 # Desired height ABOVE the OptiTrack home position.
 TARGET_HEIGHT = 1.00
 DEFAULT_SPEED = 0.8    # Default speed (m/s)
+
+# Figure 8 (Main Controller): x = TRAJ_A sin(w t), y = TRAJ_B sin(2 w t),
+# w = DEFAULT_SPEED rad/s. Read by Python/flight_sims/8traj/log_sim.py.
+TRAJ_A = 1.5           # m
+TRAJ_B = 1.0           # m
+# Soft start / stop of the figure 8: the phase rate goes linearly 0 -> w over
+# the first TRAJ_EASE_TIME s and w -> 0 over the last ones, so the drone starts
+# from and stops at rest on the curve (0 = the old abrupt start / stop at ~1.5-2 m/s).
+TRAJ_EASE_TIME = 4.0   # s
 
 # Maximum allowed X/Y-axis displacement before reversing direction.
 BOX_LIMIT = 1.0
@@ -41,7 +55,11 @@ MOTIVE_IP = "192.168.50.210"
 LOCAL_IP = "192.168.50.195"
 
 # Rigid body ID assigned to the Crazyflie in Motive.
-RIGID_BODY_ID = 4
+RIGID_BODY_ID = 1
+
+# Rigid-body ID in Motive of the filming camera (phone), logged to
+# <log>_camera.csv for the video overlay; None = not logged.
+CAMERA_RIGID_BODY_ID = 0
 
 # ------------------------------------------------------------
 # Logs
@@ -78,6 +96,12 @@ TAKEOFF_TIME = 3.0
 
 # How long to descend.
 LAND_TIME = 2.0
+
+# Return to the origin after the figure 8: smoothstep ramp from the current
+# position to (0, 0, TARGET_HEIGHT), peak speed RETURN_SPEED, at least LAND_TIME.
+# (The old step to the origin, up to ~1.6 m of position error at once, flipped
+# the drone on 15 and 20 Oct.)
+RETURN_SPEED = 0.5     # m/s
 
 # Safety limit. If estimator reports something wildly wrong,
 # abort the flight.
@@ -121,7 +145,7 @@ class TrajectoryLogger:
     """
 
     COLUMNS = [
-        "time_s", "flight_state",
+        "time_s", "flight_state", "id",
         "opti_x", "opti_y", "opti_z",
         "est_x", "est_y", "est_z",
         "est_vx", "est_vy", "est_vz",
@@ -146,13 +170,19 @@ class TrajectoryLogger:
     }
 
     def __init__(self, position, position_lock,
-                 output_dir="Optitrack/logs", sample_period=SAMPLING_RATE):
+                 output_dir=None, run_name=None, sample_period=SAMPLING_RATE):
         self.position = position
         self.position_lock = position_lock
         self.sample_period = sample_period
 
+        # One folder per run, in the repository Results folder:
+        #   Results/<run_name>_trajectory_<timestamp>/trajectory_<timestamp>.csv
+        # (the files derived from the log, _sim.csv, _camera.csv, ..., go next to it)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.output_path = Path(output_dir) / f"trajectory_{timestamp}.csv"
+        output_dir = Path(output_dir) if output_dir else Path(__file__).resolve().parents[2] / "Results"
+        run_name = run_name or Path(__file__).stem
+        self.run_dir = output_dir / f"{run_name}_trajectory_{timestamp}"
+        self.output_path = self.run_dir / f"trajectory_{timestamp}.csv"
         self.output_path.parent.mkdir(parents=True, exist_ok=True)
 
         self.stop_evt = threading.Event()
@@ -251,6 +281,7 @@ class TrajectoryLogger:
             row = {
                 "time_s": time.monotonic() - self.start_time,
                 "flight_state": self.current_state,
+                "id": RIGID_BODY_ID,
                 "opti_x": ox, "opti_y": oy, "opti_z": oz,
             }
             row.update(est)   # missing keys are written as empty
@@ -545,17 +576,35 @@ def takeoff(scf):
 
     return True
 
+def figure8_phase(t):
+    """
+    Phase of the figure 8 at t s into the Main Controller, with the soft start / stop:
+    rate 0 -> DEFAULT_SPEED over TRAJ_EASE_TIME, constant, then -> 0 at MAIN_CONTROL_TIME.
+    (Same function in Python/flight_sims/8traj/log_sim.py.)
+    """
+    w, T = DEFAULT_SPEED, MAIN_CONTROL_TIME
+    E = min(TRAJ_EASE_TIME, T / 2)
+    if E <= 0:
+        return w * t
+    if t < E:
+        return w * t * t / (2 * E)
+    if t < T - E:
+        return w * (t - E / 2)
+    tau = min(t, T) - (T - E)
+    return w * (T - 1.5 * E + tau - tau * tau / (2 * E))
+
+
 def move_8_traj(scf):
-    A, B = 1.5, 1.0
-    omega = DEFAULT_SPEED          # rad/s
+    A, B = TRAJ_A, TRAJ_B
     start_time = time.monotonic()
 
     while time.monotonic() - start_time < MAIN_CONTROL_TIME:
         if abort_event.is_set() or not safety_check(scf):
             return False
         t = time.monotonic() - start_time
-        x = A * math.sin(omega * t)
-        y = B * math.sin(2 * omega * t)
+        phi = figure8_phase(t)
+        x = A * math.sin(phi)
+        y = B * math.sin(2 * phi)
         send_position_setpoint(scf, x, y, TARGET_HEIGHT, 0.0)
         time.sleep(SETPOINT_PERIOD)
     return True
@@ -563,19 +612,32 @@ def move_8_traj(scf):
 # RETURN HOME
 def return_origin(scf):
     """
-    go to [0,0, current height]
+    Smooth return to [0, 0, TARGET_HEIGHT]: smoothstep ramp from the current
+    OptiTrack position, duration max(1.5 * distance / RETURN_SPEED, LAND_TIME)
+    (smoothstep peak speed = 1.5 x mean speed).
     """
 
     print()
     print("Returning to origin")
     print()
 
-    steps = int(
-        LAND_TIME / SETPOINT_PERIOD
-    )
+    start = np.array(get_optitrack_position(), dtype=float)
+    goal = np.array([0.0, 0.0, TARGET_HEIGHT])
+    distance = float(np.linalg.norm(goal - start))
+    ramp_time = max(1.5 * distance / RETURN_SPEED, LAND_TIME)
 
-    for _ in range(steps):
-        target_z = TARGET_HEIGHT
+    steps = int(
+        ramp_time / SETPOINT_PERIOD
+    )
+    print(f"Return: {distance:.2f} m in {ramp_time:.1f} s")
+
+    for i in range(steps):
+        fraction = (i + 1) / steps
+        fraction = fraction * fraction * (3.0 - 2.0 * fraction)
+        target = start + (goal - start) * fraction
+
+        if ctrl_c.killed():
+            break
 
         # During landing we still want to know whether
         # OptiTrack is functioning.
@@ -587,9 +649,9 @@ def return_origin(scf):
 
         send_position_setpoint(
             scf,
-            0.0,
-            0.0,
-            target_z,
+            target[0],
+            target[1],
+            target[2],
             0.0
         )
 
@@ -628,6 +690,9 @@ def land(scf):
 
         target_z = TARGET_HEIGHT * fraction
 
+        if ctrl_c.killed():
+            break
+
         # During landing we still want to know whether
         # OptiTrack is functioning.
         if not tracking_is_valid():
@@ -662,9 +727,9 @@ def stop_flight(scf):
     print("Stopping flight...")
 
     try:
-
+        scf.cf.commander.send_stop_setpoint()
+        scf.cf.commander.send_notify_setpoint_stop()
         scf.cf.supervisor.send_arming_request(False)
-
         print("Disarmed.")
 
     except Exception as e:
@@ -709,6 +774,7 @@ def main():
     # Initialize Crazyflie drivers
     # --------------------------------------------------------
 
+    ctrl_c.install(abort_event)
     cflib.crtp.init_drivers()
 
     # --------------------------------------------------------
@@ -730,6 +796,21 @@ def main():
     client.on_data_frame_received_event.handlers.append(
         on_data_frame
     )
+
+    # Trajectory log (its run folder now, the Crazyflie log blocks once connected)
+    trajectory_logger = TrajectoryLogger(
+        position=optitrack_position,
+        position_lock=position_lock,
+        sample_period=SAMPLING_RATE,
+    )
+
+    # Pose of the filming camera (phone), from the same NatNet frames, from now on:
+    # the phone gestures before the take off are recorded too (video sync)
+    cam_log = None
+    if CAMERA_RIGID_BODY_ID is not None:
+        cam_log = CameraLogger(trajectory_logger.output_path, CAMERA_RIGID_BODY_ID)
+        client.on_data_frame_received_event.handlers.append(cam_log.on_frame)
+        atexit.register(cam_log.close)
 
     scf = None
     # --------------------------------------------------------
@@ -870,6 +951,7 @@ def main():
                 # ------------------------------------------------
                 # Arm
                 # ------------------------------------------------
+                ctrl_c.flying([scf.cf])
                 scf.cf.supervisor.send_arming_request(
                     True
                 )
@@ -881,13 +963,9 @@ def main():
                 # --------------------------------------------------------
                 # Logs
                 # --------------------------------------------------------
-                trajectory_logger = TrajectoryLogger(
-                    position=optitrack_position,
-                    position_lock=position_lock,
-                    output_dir="Optitrack/logs",
-                    sample_period=SAMPLING_RATE,
-                )
                 trajectory_logger.start(scf.cf)
+                if cam_log is not None:
+                    cam_log.mark_flight_start(trajectory_logger.start_time)
 
                 # ------------------------------------------------
                 # Main 
@@ -904,6 +982,7 @@ def main():
 
                 time.sleep(2)
                 stop_flight(scf)
+                ctrl_c.landed()
                 time.sleep(2)
 
                 # ------------------------------------------------

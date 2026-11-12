@@ -14,6 +14,7 @@ class TrajectoryLogger:
     Logs, at a fixed rate, into a single long-format CSV (one row per drone per sample):
       - OptiTrack position (ground truth, same frame sent to the EKF)
       - Kalman estimate: position, velocity, attitude (deg), gyro (deg/s)
+      - last position setpoint and virtual target (if `target_fn` is given)
     `id` is the OptiTrack rigid-body ID of the drone.
     """
 
@@ -24,6 +25,8 @@ class TrajectoryLogger:
         "est_vx", "est_vy", "est_vz",
         "roll_deg", "pitch_deg", "yaw_deg",
         "gyro_x_dps", "gyro_y_dps", "gyro_z_dps",
+        "sp_x", "sp_y", "sp_z",
+        "target_x", "target_y", "target_z",
     ]
 
     VAR_TO_COL = {
@@ -42,13 +45,20 @@ class TrajectoryLogger:
     }
 
     def __init__(self, drone_states, position_lock,
-                 output_dir="Optitrack/logs", sample_period=0.02):
+                 output_dir=None, run_name=None, sample_period=0.02, target_fn=None):
         self.drone_states = drone_states          # {uri: DroneState}
+        self.target_fn = target_fn                # () -> virtual target position
         self.position_lock = position_lock
         self.sample_period = sample_period
 
+        # One folder per run, in the repository Results folder:
+        #   Results/<run_name>_trajectory_<timestamp>/trajectory_<timestamp>.csv
+        # (the files derived from the log, _sim.csv, _camera.csv, ..., go next to it)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.output_path = Path(output_dir) / f"trajectory_{timestamp}.csv"
+        output_dir = Path(output_dir) if output_dir else Path(__file__).resolve().parents[3] / "Results"
+        run_name = run_name or Path(__file__).resolve().parent.name
+        self.run_dir = output_dir / f"{run_name}_trajectory_{timestamp}"
+        self.output_path = self.run_dir / f"trajectory_{timestamp}.csv"
         self.output_path.parent.mkdir(parents=True, exist_ok=True)
 
         self.stop_evt = threading.Event()
@@ -154,6 +164,9 @@ class TrajectoryLogger:
                     uri: np.asarray(s.position, dtype=float).reshape(-1)[:3].copy()
                     for uri, s in self.drone_states.items()
                 }
+                sps = {uri: np.asarray(s.setpoint, dtype=float).copy()
+                       for uri, s in self.drone_states.items()}
+            target = self.target_fn() if self.target_fn is not None else None
             with self.latest_lock:
                 est = {uri: dict(v) for uri, v in self.latest.items()}
 
@@ -166,6 +179,10 @@ class TrajectoryLogger:
                     "opti_x": ox, "opti_y": oy, "opti_z": oz,
                 }
                 row.update(est[uri])   # missing keys are written as empty
+                if not np.any(np.isnan(sps[uri])):
+                    row.update(sp_x=sps[uri][0], sp_y=sps[uri][1], sp_z=sps[uri][2])
+                if target is not None:
+                    row.update(target_x=target[0], target_y=target[1], target_z=target[2])
                 self.writer.writerow(row)
                 rows_since_flush += 1
 

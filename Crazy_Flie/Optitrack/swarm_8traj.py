@@ -11,6 +11,8 @@ from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
 
 from natnet import DataDescriptions, DataFrame, NatNetClient
 
+import ctrl_c   # 1st Ctrl+C: return home + land, 2nd: motors off
+
 # ============================================================
 # CONFIGURATION
 # ============================================================
@@ -229,6 +231,8 @@ def ramp_to(scf, target, duration, label, respect_abort=True):
     steps = max(1, int(duration / SETPOINT_PERIOD))
 
     for i in range(steps):
+        if ctrl_c.killed():
+            return False
         if respect_abort and abort_event.is_set():
             return False
         if not safety_check(uri):
@@ -273,10 +277,11 @@ def move_8_traj(scf):
 
 
 def return_origin(scf):
-    """Return to a point above home at flight height."""
+    """Return to a point above home at flight height. Also runs after an abort."""
     uri = scf.cf.link_uri
     hx, hy, _ = drone_states[uri].local_origin
-    return ramp_to(scf, [hx, hy, flight_height(uri)], RETURN_TIME, "return to home")
+    return ramp_to(scf, [hx, hy, flight_height(uri)], RETURN_TIME, "return to home",
+                   respect_abort=False)
 
 
 def land(scf):
@@ -307,6 +312,7 @@ def main():
     print(f"  Rigid bodies  : {RIGID_BODY_IDS}")
     print(f"  Motive / local: {MOTIVE_IP} / {LOCAL_IP}\n")
 
+    ctrl_c.install(abort_event)
     cflib.crtp.init_drivers()
     factory = CachedCfFactory(rw_cache='./cache')
 
@@ -345,6 +351,7 @@ def main():
                     print("ERROR: tracking lost during estimator settling.")
                     return
 
+                ctrl_c.flying([scf.cf for scf in swarm._cfs.values()])
                 swarm.parallel_safe(arm)
                 armed = True
                 print("Armed.")
@@ -352,7 +359,6 @@ def main():
                 swarm.parallel_safe(light_check)
                 swarm.parallel_safe(take_off)
                 swarm.parallel_safe(move_8_traj)
-                swarm.parallel_safe(return_origin)
 
             except KeyboardInterrupt:
                 print("\nKeyboard interrupt received.")
@@ -361,14 +367,20 @@ def main():
                 print(f"\nERROR DURING FLIGHT: {e}")
                 abort_event.set()
             finally:
-                # Always land (per drone, as long as it is still tracked) and disarm.
+                # Always (also after an abort / 1st Ctrl+C): return above the
+                # local home, land (per drone, as long as it is still tracked), disarm.
                 if armed:
                     time.sleep(0.3)   # let aborted phases exit
                     try:
+                        try:
+                            swarm.parallel_safe(return_origin)
+                        except Exception as e:
+                            print(f"ERROR DURING RETURN: {e}: landing in place.")
                         swarm.parallel_safe(land)
                         time.sleep(1.0)
                     finally:
                         swarm.parallel_safe(stop_flight)
+                        ctrl_c.landed()
                         time.sleep(1.0)
 
                 stop_event.set()
