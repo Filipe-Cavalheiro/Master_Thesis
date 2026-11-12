@@ -6,6 +6,8 @@
 Random_stuff
 **/.venv/
 Presentation
+moodle_CMIEEC2526
+
 # flight / simulation runs (one folder per run); only the root folder, not the Results/ of the simulations
 /Results/
 

@@ -1,4 +1,5 @@
 import csv
+import json
 import threading
 import time
 from datetime import datetime
@@ -15,7 +16,18 @@ class TrajectoryLogger:
       - OptiTrack position (ground truth, same frame sent to the EKF)
       - Kalman estimate: position, velocity, attitude (deg), gyro (deg/s)
     `id` is the OptiTrack rigid-body ID of the drone.
+
+    Next to it (same time base, time_s):
+      - <log>_setpoints.csv: every position setpoint sent (record_setpoint),
+        with the virtual target, radius and q_ref of the controller
+      - <log>_meta.json: the flight setup (write_meta) and, at close(), the
+        measured setpoint periods per phase and drone
     """
+
+    SETPOINT_COLUMNS = [
+        "time_s", "flight_state", "id", "sp_x", "sp_y", "sp_z",
+        "target_x", "target_y", "target_z", "radius", "q_x", "q_y", "q_z",
+    ]
 
     COLUMNS = [
         "time_s", "flight_state", "id",
@@ -56,6 +68,13 @@ class TrajectoryLogger:
         self.run_dir = output_dir / f"{run_name}_trajectory_{timestamp}"
         self.output_path = self.run_dir / f"trajectory_{timestamp}.csv"
         self.output_path.parent.mkdir(parents=True, exist_ok=True)
+        self.setpoints_path = self.run_dir / f"trajectory_{timestamp}_setpoints.csv"
+        self.meta_path = self.run_dir / f"trajectory_{timestamp}_meta.json"
+        self.meta = {}
+        self.sp_file = None
+        self.sp_writer = None
+        self.sp_lock = threading.Lock()
+        self.sp_times = {}          # {(phase, id): [time_s, ...]}
 
         self.stop_evt = threading.Event()
         self.thread = None
@@ -126,11 +145,58 @@ class TrajectoryLogger:
         self.file = self.output_path.open("w", newline="", encoding="utf-8")
         self.writer = csv.DictWriter(self.file, fieldnames=self.COLUMNS)
         self.writer.writeheader()
+        with self.sp_lock:
+            self.sp_file = self.setpoints_path.open("w", newline="", encoding="utf-8")
+            self.sp_writer = csv.DictWriter(self.sp_file, fieldnames=self.SETPOINT_COLUMNS)
+            self.sp_writer.writeheader()
 
         self.stop_evt.clear()
         self.thread = threading.Thread(target=self._run, daemon=True)
         self.thread.start()
         print(f"Started logging {len(self.drone_states)} drones at {1/self.sample_period:.0f} Hz.")
+
+    def now(self):
+        """Time on the log's time base (time_s), None before begin()."""
+        return None if self.start_time is None else time.monotonic() - self.start_time
+
+    def record_setpoint(self, uri, sp, target=None, radius=None, q_ref=None):
+        """One position setpoint sent to drone `uri` (thread safe; ignored outside begin()..close())."""
+        t = self.now()
+        if t is None:
+            return
+        sp = np.asarray(sp, dtype=float).reshape(-1)
+        row = {"time_s": t, "flight_state": self.current_state, "id": RIGID_BODY_IDS[uri],
+               "sp_x": sp[0], "sp_y": sp[1], "sp_z": sp[2]}
+        if target is not None:
+            tg = np.asarray(target, dtype=float).reshape(-1)
+            row.update(target_x=tg[0], target_y=tg[1], target_z=tg[2])
+        if radius is not None:
+            row["radius"] = float(radius)
+        if q_ref is not None:
+            q = np.asarray(q_ref, dtype=float).reshape(-1)
+            row.update(q_x=q[0], q_y=q[1], q_z=q[2])
+        with self.sp_lock:
+            if self.sp_writer is None:
+                return
+            self.sp_writer.writerow(row)
+            self.sp_times.setdefault((self.current_state, str(RIGID_BODY_IDS[uri])), []).append(t)
+
+    def write_meta(self, meta):
+        """Save the flight setup to <log>_meta.json (merged with what is already there)."""
+        self.meta.update(meta)
+        self.meta_path.write_text(json.dumps(self.meta, indent=2, default=_json_default))
+
+    def _setpoint_periods(self):
+        """Measured period between setpoints, per phase and drone."""
+        out = {}
+        for (phase, rb_id), ts in self.sp_times.items():
+            d = np.diff(ts)
+            if len(d):
+                out.setdefault(phase, {})[rb_id] = {
+                    "n_setpoints": len(ts), "first_s": ts[0], "last_s": ts[-1],
+                    "period_mean_s": float(d.mean()), "period_std_s": float(d.std()),
+                    "period_max_s": float(d.max())}
+        return out
 
     def mark_state(self, state_name):
         self.current_state = state_name
@@ -145,6 +211,11 @@ class TrajectoryLogger:
         if self.file is not None:
             self.file.close()
             self.file = None
+        with self.sp_lock:
+            if self.sp_file is not None:
+                self.sp_file.close()
+                self.sp_file = self.sp_writer = None
+        self.write_meta({"measured_setpoint_periods": self._setpoint_periods()})
         print(f"Log saved to: {self.output_path}")
 
     def _run(self):
@@ -185,3 +256,10 @@ class TrajectoryLogger:
                 self.stop_evt.wait(delay)
             else:
                 next_sample = time.monotonic()
+
+def _json_default(o):
+    if isinstance(o, np.ndarray):
+        return o.tolist()
+    if isinstance(o, (np.floating, np.integer)):
+        return o.item()
+    return str(o)

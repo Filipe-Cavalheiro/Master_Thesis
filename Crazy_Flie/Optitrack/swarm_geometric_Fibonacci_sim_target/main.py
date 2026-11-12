@@ -78,21 +78,16 @@ def main():
                                             np.zeros([3,1]))
     min_safe_dist = get_min_safe_distance(fib_ref_points, param) * 0.5
 
+    # guidance state (q_ref, radius): set by init_guidance once the homes are known
     q_ref_list = []
-    for drone in drone_states.values():
-        q_s = drone.position - target.position
-        norm = np.linalg.norm(q_s)
-        if norm > 1e-6:
-            q_ref_list.append(q_s / norm)
-        else:
-            # choose a fallback direction
-            q_ref_list.append(np.array([[1.0], [0.0], [0.0]]))
+    firmware_params = {}
 
     # --------------------------------------------------------
     # Logs
     # --------------------------------------------------------
     logger = TrajectoryLogger(drone_states, position_lock,
-                            sample_period=0.02)
+                            sample_period=LOG_SAMPLE_PERIOD)
+    set_setpoint_logger(logger)     # every setpoint sent goes to <log>_setpoints.csv
     
     # --------------------------------------------------------
     # Crazyflies
@@ -138,6 +133,18 @@ def main():
                 if not all_tracking_is_valid(drone_states, position_lock) or abort_event.is_set():
                     print("ERROR: tracking lost during estimator settling.")
                     return
+
+                # Onboard Mellinger controller, then read back what the firmware has
+                swarm.parallel_safe(set_mellinger)
+                swarm.parallel_safe(read_firmware_params,
+                    args_dict={uri: (firmware_params,) for uri in active_uris})
+
+                # Guidance state from the takeoff points (not from the
+                # positions before the OptiTrack stream started)
+                q_ref_list[:] = init_guidance(drone_states, active_uris, param)
+                logger.write_meta(flight_metadata(param, active_uris, drone_states, firmware_params,
+                                                  fib_ref_points, min_safe_dist, q_ref_list))
+                print(f"Flight setup saved to: {logger.meta_path}")
 
                 print("Lights On")
                 ctrl_c.flying([scf.cf for scf in swarm._cfs.values()])

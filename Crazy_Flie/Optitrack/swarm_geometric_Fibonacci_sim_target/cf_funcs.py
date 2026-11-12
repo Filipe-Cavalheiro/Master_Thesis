@@ -36,8 +36,104 @@ def warning_lights(scf: SyncCrazyflie):
     time.sleep(2)
     scf.cf.param.set_value('led.bitmask', 0)
 
-def send_position_setpoint(scf, x, y, z, yaw=0.0):
+def set_mellinger(scf: SyncCrazyflie):
+    """Onboard controller: Mellinger, with the gains of MELLINGER_PARAMS (as 8traj.py)."""
+    scf.cf.param.set_value("stabilizer.controller", str(ONBOARD_CONTROLLER))
+    for name, value in MELLINGER_PARAMS.items():
+        scf.cf.param.set_value(name, str(value))
+    time.sleep(0.2)
+
+def read_firmware_params(scf: SyncCrazyflie, firmware_params: dict):
+    """The LOGGED_FIRMWARE_PARAMS of this drone, as the firmware has them (None if it lacks one)."""
+    values = {}
+    for name in LOGGED_FIRMWARE_PARAMS:
+        try:
+            v = scf.cf.param.get_value(name)
+            values[name] = float(v) if v is not None else None
+        except Exception:
+            values[name] = None
+    firmware_params[scf.cf.link_uri] = values
+    print(f"{scf.cf.link_uri}: controller {values.get('stabilizer.controller')}, "
+          f"kp_xy {values.get('ctrlMel.kp_xy')}, kd_xy {values.get('ctrlMel.kd_xy')}")
+
+def init_guidance(drone_states: dict[str, DroneState], active_uris, param: Param):
+    """
+    Initial guidance state of every drone (call after capture_home): q_ref is
+    the direction from the target's start position to the drone's takeoff
+    point (home x, home y, default_height), and the radius state its distance,
+    so the first controller setpoint is where the takeoff left the drone.
+    Returns q_ref_list in active_uris order.
+    """
+    target0 = np.asarray(param.initial_target_pos, dtype=float).reshape(3, 1)
+    q_ref_list = []
+    for uri in active_uris:
+        state = drone_states[uri]
+        hx, hy, _ = np.asarray(state.local_origin, dtype=float).reshape(-1)[:3]
+        q_s = np.array([[hx], [hy], [param.default_height]]) - target0
+        norm = float(np.linalg.norm(q_s))
+        if norm > 1e-6:
+            q_ref_list.append(q_s / norm)
+        else:   # takeoff point on the target: choose a fallback direction
+            q_ref_list.append(np.array([[1.0], [0.0], [0.0]]))
+        state.desired.radii_to_target = norm
+    return q_ref_list
+
+def flight_metadata(param: Param, active_uris, drone_states: dict[str, DroneState], firmware_params: dict,
+                    fib_ref_points, min_safe_dist, q_ref_list):
+    """What the simulation of this flight needs (saved in <log>_meta.json)."""
+    drones = {}
+    for iD, uri in enumerate(active_uris):
+        st = drone_states[uri]
+        drones[str(RIGID_BODY_IDS[uri])] = {
+            "uri": uri,
+            "guidance_index": iD,                      # iD in controller(): its Fibonacci point
+            "home": np.asarray(st.local_origin, dtype=float).reshape(-1)[:3],
+            "home_yaw_deg": math.degrees(float(np.asarray(st.attitude).reshape(-1)[2])),
+            "fibonacci_point": np.asarray(fib_ref_points[iD], dtype=float).reshape(-1),
+            "q_ref0": np.asarray(q_ref_list[iD], dtype=float).reshape(-1),
+            "radius0": float(st.desired.radii_to_target),
+            "firmware": firmware_params.get(uri, {}),
+        }
+    return {
+        "flight_code": "swarm_geometric_Fibonacci_sim_target",
+        "start": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "onboard_controller": ONBOARD_CONTROLLER,
+        "mellinger_params_set": MELLINGER_PARAMS,
+        "timing_s": {
+            "SETPOINT_PERIOD": SETPOINT_PERIOD, "EXT_POS_PERIOD": EXT_POS_PERIOD,
+            "TAKEOFF_TIME": TAKEOFF_TIME, "RETURN_TIME": RETURN_TIME, "LAND_TIME": LAND_TIME,
+            "ESTIMATOR_SETTLE_TIME": ESTIMATOR_SETTLE_TIME, "TRACKING_TIMEOUT": TRACKING_TIMEOUT,
+            "LOG_SAMPLE_PERIOD": LOG_SAMPLE_PERIOD,
+            "controller_period_nominal": param.dTi,     # controller(): sleep(param.dTi) per tick
+            "target_period_nominal": param.dTi,         # update_virtual_target(): sleep(param.dTi)
+            "Tend": param.Tend,
+        },
+        "guidance": {
+            "nD": param.nD, "dTi": param.dTi, "sphere_radius": param.sphere_radius,
+            "k_geometric": param.k_geometric, "k_rad": param.k_rad, "k_apf": param.k_apf,
+            "min_safe_dist": float(min_safe_dist),
+            "q_ref_init": "direction from the target start to (home x, home y, default_height); radius0 = its distance",
+        },
+        "target": {
+            "traj": param.traj, "target_traj_radius": param.target_traj_radius,
+            "default_speed": param.default_speed, "default_height": param.default_height,
+            "initial_position": np.asarray(param.initial_target_pos, dtype=float).reshape(-1),
+        },
+        "max_height": MAX_HEIGHT,
+        "drones": drones,
+    }
+
+# Flight log of the setpoints (TrajectoryLogger.record_setpoint), set by main.py
+SETPOINT_LOG = None
+
+def set_setpoint_logger(logger):
+    global SETPOINT_LOG
+    SETPOINT_LOG = logger
+
+def send_position_setpoint(scf, x, y, z, yaw=0.0, target=None, radius=None, q_ref=None):
     scf.cf.commander.send_position_setpoint(float(x), float(y), float(z), float(yaw))
+    if SETPOINT_LOG is not None:
+        SETPOINT_LOG.record_setpoint(scf.cf.link_uri, (x, y, z), target, radius, q_ref)
 
 def ramp_to(scf, target_pos, duration, label, state, position_lock, abort_event, respect_abort=True):
     """Smoothly move from the current measured position to `target_pos`."""
@@ -175,12 +271,10 @@ def controller(
 
         # ---------- Enforce S² constraint (local) ----------
         goal = state.desired.radii_to_target * q_hat + target_pos
-        cf.commander.send_position_setpoint(
-            float(goal[0, 0]),
-            float(goal[1, 0]),
-            float(goal[2, 0]),
-            0.0
-        )
+        send_position_setpoint(scf, goal[0, 0], goal[1, 0], goal[2, 0], 0.0,
+                               target=target_pos.ravel(),
+                               radius=state.desired.radii_to_target,
+                               q_ref=q_hat.ravel())
 
         time.sleep(param.dTi)
   

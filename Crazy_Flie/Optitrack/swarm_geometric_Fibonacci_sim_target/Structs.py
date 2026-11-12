@@ -29,6 +29,29 @@ TARGET_PERIOD = 0.01                              # s, virtual target update
 EXT_POS_PERIOD = 0.01     # 100 Hz
 SETPOINT_PERIOD = 0.05    # 20 Hz
 
+LOG_SAMPLE_PERIOD = 0.02  # s, trajectory log (50 Hz)
+
+# Onboard controller: Mellinger (stabilizer.controller = 2), with the position
+# gains of 8traj.py (kp = diag(1.1448), kv = diag(0.34344)): the ones of the
+# Crazyflie plant of the simulation (Python/flight_sims/<name>/Structs.py ControllerConfig).
+ONBOARD_CONTROLLER = 2
+MELLINGER_PARAMS = {
+    "ctrlMel.mass": 0.032,
+    "ctrlMel.kp_xy": 1.1448, "ctrlMel.kp_z": 1.1448,
+    "ctrlMel.kd_xy": 0.34344, "ctrlMel.kd_z": 0.34344,
+}
+# Firmware parameters read back after the setup and saved in <log>_meta.json
+# (the values the drone actually flew with; a name the firmware lacks is saved as null)
+LOGGED_FIRMWARE_PARAMS = [
+    "stabilizer.controller", "stabilizer.estimator",
+    "ctrlMel.mass", "ctrlMel.massThrust",
+    "ctrlMel.kp_xy", "ctrlMel.kd_xy", "ctrlMel.ki_xy", "ctrlMel.i_range_xy",
+    "ctrlMel.kp_z", "ctrlMel.kd_z", "ctrlMel.ki_z", "ctrlMel.i_range_z",
+    "ctrlMel.kR_xy", "ctrlMel.kR_z", "ctrlMel.kw_xy", "ctrlMel.kw_z",
+    "ctrlMel.ki_m_xy", "ctrlMel.ki_m_z", "ctrlMel.kd_omega_rp",
+    "ctrlMel.i_range_m_xy", "ctrlMel.i_range_m_z",
+]
+
 TRACKING_TIMEOUT = 0.25
 ESTIMATOR_SETTLE_TIME = 3.0
 TAKEOFF_TIME = 3.0
@@ -120,6 +143,7 @@ class Param:
         self.a_max = 50          # max acceleration constraint 
 
         # Trajectory
+        self.traj = traj
         self.ref_target_traj = self._make_traj(traj)
         self.initial_target_pos = self.ref_target_traj["pos"](0)
         

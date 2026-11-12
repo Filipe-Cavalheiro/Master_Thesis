@@ -61,3 +61,28 @@ def agent_motion(agent: DroneState, param: Param):
     agent.velocity = v_new
     agent.attitude = R_new.reshape(-1, 1)
     agent.ang_vel = om_new
+
+def passive_motion(agent: DroneState, param: Param):
+    """Motors stopped (stop_flight): the dynamics with no thrust and no torque, one timestep."""
+    def deriv(p_, v_, R_, om_):
+        return drone_3dfull_dyn(v_, R_, om_, 0.0, np.zeros((3, 1)), param)
+
+    p_new, v_new, R_new, om_new = rk4_step_rigid_body(
+        deriv, agent.position, agent.velocity, agent.attitude.reshape(3, 3), agent.ang_vel, param.sim.dTi)
+    agent.position = p_new
+    agent.velocity = v_new
+    agent.attitude = R_new.reshape(-1, 1)
+    agent.ang_vel = om_new
+
+
+def ground_contact(agent: DroneState, z_floor):
+    """Drone resting on the floor: no penetration, no sliding, level (yaw kept). True if in contact."""
+    if agent.position[2, 0] < z_floor or (agent.position[2, 0] <= z_floor + 1e-9 and agent.velocity[2, 0] < 0):
+        agent.position[2, 0] = z_floor
+        agent.velocity[:] = 0.0
+        R = agent.attitude.reshape(3, 3)
+        yaw = np.arctan2(R[1, 0], R[0, 0])
+        agent.attitude = Euler2R([0.0, 0.0, yaw]).reshape(-1, 1)
+        agent.ang_vel[:] = 0.0
+        return True
+    return False

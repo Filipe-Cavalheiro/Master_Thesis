@@ -37,7 +37,7 @@ class DroneState:
         self.desired: DesiredState = DesiredState()
     
 class SimulationConfig:
-    def __init__(self, config_path="8traj/drone_models.toml", drone_name="cf2x_P250"):
+    def __init__(self, config_path=Path(__file__).resolve().parent / "drone_models.toml", drone_name="cf2x_P250"):
 
         # Simulation settings
         self.Tend = 30

@@ -28,7 +28,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-LOG_DIR = Path("8traj/real_flights")
+LOG_DIR = Path(__file__).resolve().parent / "real_flights"
 LOG_GLOB = "*.csv"
 
 REQUIRED_COLS = [

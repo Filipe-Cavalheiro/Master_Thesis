@@ -665,21 +665,30 @@ def animate_simulation(data, param):
     plt.show()
 
 if __name__ == "__main__":
+    # Figures / animations from the stored simulation (simulation_results.pkl,
+    # written by main.py / legacy_main.py), without re-simulating.
     param = Param()
     import sys
     from pathlib import Path
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # flight_sims/ (root_results)
     import root_results
-    root_results.mirror_on_exit("8traj", Path(__file__).resolve().parent / param.display.save_location,
-                                dest=Path(param.sim.real_trajectory_csv).parent / "python_sim")
-    param.display.save_to_mp4 = False # we are assuming that the user as 
-    # previously saved the plots
-    
+
     current_folder = os.path.dirname(os.path.abspath(__file__))
     file_path = os.path.join(current_folder, "simulation_results.pkl")
     with open(file_path, "rb") as f:
         data = pickle.load(f)
 
+    # param.sim / display flags of the stored run (main.py saves them: its flight log, steps): the plots use them
+    for key, value in data.pop("sim", {}).items():
+        setattr(param.sim, key, value)
+    for key, value in data.pop("display", {}).items():
+        setattr(param.display, key, value)
     sim_data = SimulationData(**data)
+
+    if param.sim.real_trajectory_csv is not None:     # a replay of a real flight: mirror next to its log
+        root_results.mirror_on_exit("8traj", Path(__file__).resolve().parent / param.display.save_location,
+                                    dest=Path(param.sim.real_trajectory_csv).parent / "python_sim")
+    param.display.save_to_mp4 = False # we are assuming that the user as 
+    # previously saved the plots
 
     create_figures(sim_data, param)

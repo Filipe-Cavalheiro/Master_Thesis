@@ -4,6 +4,7 @@ import os
 from matplotlib.animation import FuncAnimation
 
 from Structs import Param, SimulationData
+from flight_code_funcs import PHASE_COLORS, PHASES
 
 def create_figures(data: SimulationData, param: Param):
     if param.display.composed is True:
@@ -58,6 +59,17 @@ def create_figures(data: SimulationData, param: Param):
     plt.close("all")
 
     print("Exited on q")
+
+def shade_flight_phases(ax, data: SimulationData):
+    """Background color of every flight phase (Take off, Main Controller, ...), when the run has them (main.py)."""
+    if not data.phases:
+        return
+    order = [p for p in PHASES if p in data.phases]
+    for k, ph in enumerate(order):
+        t1 = data.phases[order[k + 1]] if k + 1 < len(order) else data.phases.get("EOF")
+        if t1 is None:
+            continue
+        ax.axvspan(data.phases[ph], t1, color=PHASE_COLORS[ph], alpha=0.6, lw=0, zorder=0, label=ph)
 
 def composed_fig(data: SimulationData, param: Param):
     fig = plt.figure()
@@ -208,6 +220,7 @@ def radial_hist_plot(data: SimulationData, param: Param):
     ax.yaxis.label.set_fontsize(16)
 
     t = np.arange(param.sim.Nsim) * param.sim.dTi
+    shade_flight_phases(ax, data)
 
     for iD in range(param.sim.nD):
         ax.plot(
@@ -258,6 +271,7 @@ def radial_hist_animation(data: SimulationData, param: Param):
     fig, ax = plt.subplots(figsize=(8, 5))
 
     t = np.arange(param.sim.Nsim) * param.sim.dTi
+    shade_flight_phases(ax, data)
 
     # Create an empty line for each agent
     lines = []
@@ -439,6 +453,7 @@ def tracking_error_plot(data: SimulationData, param: Param):
     pos_error_norm = np.linalg.norm(pos_error, axis=1)  # Euclidean norm per agent, per timestep -> [nD, Nsim]
 
     fig, ax = plt.subplots(figsize=(9, 5))
+    shade_flight_phases(ax, data)
     for iD in range(param.sim.nD):
         ax.plot(time_vec, pos_error_norm[iD, :],
                  label=f"Drone {iD}", color=data.colors[iD], linewidth=1.2)
@@ -474,6 +489,7 @@ def interagent_geodesic_distance_plot(data: SimulationData, param: Param):
     time_vec = np.arange(param.sim.Nsim) * param.sim.dTi
 
     fig, ax = plt.subplots(figsize=(9, 5))
+    shade_flight_phases(ax, data)
     for p_idx, (i, j) in enumerate(agent_pairs):
         ax.plot(time_vec, inter_agent_dist_hist[p_idx, :],
                 label=f"Drone {i}-{j}", linewidth=1.2)
@@ -856,3 +872,38 @@ def animate_simulation(data, param):
         )
 
     plt.show()
+
+
+if __name__ == "__main__":
+    # Figures / animations from the stored simulation (simulation_results.pkl,
+    # written by main.py when param.display.store_data is True), without
+    # re-simulating. Which figures: the GraphicalDisplay flags in Structs.py.
+    import pickle
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # flight_sims/ (root_results)
+    import root_results
+
+    param = Param()
+    root_results.mirror_on_exit("swarm_geometric_Fibonacci_sim_target", param.display.save_location)
+    param.display.save_to_mp4 = False   # we are assuming that the user has previously saved the mp4s
+
+    file_path = Path(__file__).resolve().parent / "simulation_results.pkl"
+    if not file_path.exists():
+        raise SystemExit(f"No {file_path.name}: run main.py first (with param.display.store_data = True)")
+    with open(file_path, "rb") as f:
+        data = pickle.load(f)
+
+    # param.sim of the stored run (main.py saves it): the plots index the histories with it
+    for key, value in data.pop("sim", {}).items():
+        setattr(param.sim, key, value)
+    sim_data = SimulationData(**data)
+
+    nD, _, Nsim = sim_data.position_history.shape
+    if (nD, Nsim) != (param.sim.nD, param.sim.Nsim):
+        raise SystemExit(f"{file_path.name} has {nD} drones x {Nsim} steps, Structs.py now "
+                         f"{param.sim.nD} x {param.sim.Nsim}: set nD / Tend / dTi as in that run, or re-run the simulation")
+
+    os.makedirs(param.display.save_location, exist_ok=True)
+
+    create_figures(sim_data, param)

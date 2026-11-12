@@ -75,7 +75,7 @@ class SimulationConfig:
         self.load_experimental_state = True
 
         # Drones
-        self.nD = 3 
+        self.nD = 9 
         self.sphere_radius = 2.0
 
         # Drop parameters
@@ -122,11 +122,6 @@ class SimulationConfig:
         # 2: position + velocity
         self.measurable_states = 1
 
-        # Formation/distribution
-        # options: fibonacci, dijkstra 
-        self.distribution = "dijkstra"
-
-
 class TrajectoryConfig:
     def __init__(
         self,
@@ -135,12 +130,10 @@ class TrajectoryConfig:
         speed=0.5,
         height=1.3
     ):
-
         self.target_traj_radius = radius
         self.default_speed = speed
         self.default_height = height
 
-        traj = 1
         self.ref_target_traj = self.make_traj(traj)
 
         self.initial_target_pos = (
@@ -256,6 +249,7 @@ class SimulationData:
     radial_history: NDArray[np.float64]
     inter_agent_dist_hist: NDArray[np.float64]
     agent_pairs: list 
+    phases: Optional[dict] = None   # flight phase start times [s] (main.py); shaded in the time plots
 
     def __post_init__(self):
         assert self.position_history.ndim == 3

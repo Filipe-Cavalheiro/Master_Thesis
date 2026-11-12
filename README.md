@@ -27,7 +27,7 @@ This README is an overview. Each category is explained in more detail in the REA
 
 | Folder | What it simulates | Details |
 |---|---|---|
-| `swarm_geometric_Fibonacci_sim_target` | Hierarchical control on the two-sphere: Fibonacci points, Hungarian assignment, APF, adaptive radius | [README](Python/flight_sims/swarm_geometric_Fibonacci_sim_target/README.md) |
+| `swarm_geometric_Fibonacci_sim_target` | Hierarchical control on the two-sphere: Fibonacci points, Hungarian assignment, APF, adaptive radius (`main.py`); `main.py --IRL_log` replays the matching real flight, for sim-vs-real comparison | [README](Python/flight_sims/swarm_geometric_Fibonacci_sim_target/README.md) |
 | `V16_generic_mesh` | Voronoi formation on a generic mesh, distributed estimation, Delaunay communication network | [README](Python/flight_sims/V16_generic_mesh/README.md) |
 | `V17_Lisbon_aeroport` | Lisbon-airport scenario: morphing formation, distributed Bernstein MPC solved with ADMM, restricted airspace. Also provides the Crazyflie plant used by `Crazy_Flie/Optitrack/flight_sim.py` | [README](Python/flight_sims/V17_Lisbon_aeroport/README.md) |
 | `8traj`, `swarm_take_off_hover_land` | Simulations of the matching real flights, for sim-vs-real comparison | [8traj](Python/flight_sims/8traj/README.md), [swarm_take_off_hover_land](Python/flight_sims/swarm_take_off_hover_land/README.md) |
@@ -78,9 +78,10 @@ This replays the real flight's setpoints on the simulated Crazyflie, starting fr
 ```bash
 python Python/flight_sims/swarm_take_off_hover_land/main.py --IRL_log Results/swarm_take_off_hover_land_trajectory_<date>/trajectory_<date>.csv --no-show
 python Python/flight_sims/8traj/main.py --IRL_log Results/8traj_trajectory_<date>/trajectory_<date>.csv --no-show
+python Python/flight_sims/swarm_geometric_Fibonacci_sim_target/main.py --IRL_log Results/swarm_geometric_Fibonacci_sim_target_trajectory_<date>/trajectory_<date>.csv --no-show
 ```
 
-With `--IRL_log` and no path, the newest run of that flight is used. Without `--IRL_log`, `main.py` simulates the nominal flight only (simulated initial values, simulation figures only).
+With `--IRL_log` and no path, the newest run of that flight is used. The Fibonacci flight does not log the phone pose, so it stops here (no overlay). Without `--IRL_log`, `main.py` runs the simulation alone: only the Main Controller, every value from the `Structs.py` of that folder, nothing from a real run.
 
 ### 4. Overlay: the real video with the simulated drones
 

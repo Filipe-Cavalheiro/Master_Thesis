@@ -1,43 +1,33 @@
 """
-Real vs simulated take off / hover / return / land flight: metrics and figures.
+Real vs simulated take off / hover / return / land flight: metrics and figures
+(called by main.py --IRL_log, or on its own):
 
-    python swarm_take_off_hover_land/compare.py                  # newest run in Results/ and its _sim.csv
-    python swarm_take_off_hover_land/compare.py --log LOG.csv [--sim SIM.csv] [--no-show]
+    python swarm_take_off_hover_land/compare_real.py                 # newest run in Results/ and its _sim.csv
+    python swarm_take_off_hover_land/compare_real.py --log LOG.csv [--sim SIM.csv] [--no-show]
 
-SIM defaults to <log>_sim.csv (log_sim.py). The real setpoints are rebuilt with
-the flight code's ramps from the real measured positions (the log of this
-flight code has no setpoint columns), the simulated ones are logged by the
-simulation.
-
-Metrics (per drone; also saved to <run folder of the log>/comparison/metrics.json):
+Metrics (per drone; saved to <run folder of the log>/comparison/metrics.json):
   * position difference sim - real: RMS per axis, 3D RMS and max, per phase
   * take off: lift-off time (z > floor + 2 cm), time to 90 % of the climb,
     overshoot above the hover height
   * hover (last 5 s before the return): mean height, height error to the setpoint (bias),
     horizontal and vertical jitter (std), horizontal drift from home
-  * landing: touchdown time (z < LAND_HEIGHT + 1 cm: the drones settle on the
-    landing setpoint, motors on), horizontal offset at touchdown, slide on the
-    floor after it
+  * landing: touchdown time (z < LAND_HEIGHT + 1 cm), horizontal offset at
+    touchdown, slide on the floor after it
   * setpoint tracking error |p - sp| of the real and the simulated drone
-Figures (PDF + PNG): position.pdf, difference.pdf, takeoff_landing.pdf, summary.pdf
+The real setpoints are rebuilt with the flight code's ramps from the real
+measured positions (the log of this flight code has no setpoint columns).
+Figures (PDF + PNG): position, difference, takeoff_landing, summary.
 """
 
 import argparse
 import json
-import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE))
-
-from log_sim import (FLIGHT_CODE, LAND_HEIGHT, PAUSE_BEFORE_RETURN, PHASES, RETURN,  # noqa: E402
-                     TAKEOFF_HEIGHT, load_log, newest_log, real_setpoints, setpoint_schedule)
-
-PHASE_COLORS = {"Take off": "#cfe8ff", "Hover": "#d9f2d0", RETURN: "#f3e1f7", "Land": "#ffe0c7"}
-SHORT = {"Take off": "Take off", "Hover": "Hover", RETURN: "Return", "Land": "Land"}
+from flight_code_funcs import (LAND_HEIGHT, PAUSE_BEFORE_RETURN, PHASE_COLORS, PHASES, RETURN, SHORT,
+                               TAKEOFF_HEIGHT, load_log, newest_log, real_setpoints, setpoint_schedule)
 
 
 def interp_rows(t_src, X, t):
@@ -118,7 +108,7 @@ def shade(ax, phases):
         ax.axvspan(phases[ph], t1, color=PHASE_COLORS[ph], alpha=0.6, lw=0, label=SHORT[ph])
 
 
-def compare(log_path, sim_path=None, show=True, out_dir=None):
+def compare(log_path, sim_path=None, out_dir=None):
     log_path = Path(log_path)
     sim_path = Path(sim_path) if sim_path else log_path.with_name(log_path.stem + "_sim.csv")
     ids, real, phases, t_end = load_log(log_path)
@@ -157,7 +147,7 @@ def compare(log_path, sim_path=None, show=True, out_dir=None):
 
     (out_dir / "metrics.json").write_text(json.dumps(res, indent=2, default=float))
     print_report(res)
-    plot(ids, data, phases, res, out_dir, log_path.stem, show)
+    plot(ids, data, phases, res, out_dir, log_path.stem)
     print(f"Metrics and figures saved to {out_dir}")
     return res
 
@@ -195,10 +185,7 @@ def print_report(res):
         print(row)
 
 
-def plot(ids, data, phases, res, out_dir, title, show):
-    import matplotlib
-    if not show:
-        matplotlib.use("Agg")
+def plot(ids, data, phases, res, out_dir, title):
     import matplotlib.pyplot as plt
 
     colors = plt.get_cmap("tab10")
@@ -281,19 +268,21 @@ def plot(ids, data, phases, res, out_dir, title, show):
     for name, f in figs.items():
         for ext in ("pdf", "png"):
             f.savefig(out_dir / f"{name}.{ext}", bbox_inches="tight", dpi=150)
-    if show:
-        plt.show()
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--log", help=f"flight log (default: newest {FLIGHT_CODE} run in Results/)")
-    ap.add_argument("--sim", help="simulated flight (default: <log>_sim.csv)")
+    ap.add_argument("--log", help="flight log (default: the newest run in Results/)")
+    ap.add_argument("--sim", help="simulated flight (default: <log>_sim.csv, written by main.py --IRL_log)")
     ap.add_argument("--no-show", action="store_true", help="save the figures without opening them")
     args = ap.parse_args()
-    log_path = Path(args.log).resolve() if args.log else newest_log()
-    print(f"Log: {log_path}")
-    compare(log_path, args.sim, show=not args.no_show)
+    import matplotlib
+    if args.no_show:
+        matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    compare(Path(args.log).resolve() if args.log else newest_log(), args.sim)
+    if not args.no_show:
+        plt.show()
 
 
 if __name__ == "__main__":
