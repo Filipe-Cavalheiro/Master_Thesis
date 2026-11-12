@@ -422,3 +422,5 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+# over GitHub's 100 MB file limit
+/Assets/terrain.stl
