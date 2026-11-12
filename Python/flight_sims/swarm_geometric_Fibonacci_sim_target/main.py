@@ -1,6 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from itertools import combinations
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # flight_sims/ (root_results)
+import root_results
 
 # Project Capture
 # Bruno Guerreiro
@@ -16,6 +20,8 @@ from fiboancci_funcs import *
 # Simulation initialization
 # =============================================================================
 param = Param()
+# also copy the results of this run into <repo>/Results/<sim>_<date>/
+root_results.mirror_on_exit("swarm_geometric_Fibonacci_sim_target", param.display.save_location)
 fib_ref_points = get_fibonacci_points(param.sim.nD, 
                                           param.sim.sphere_radius, 
                                           np.zeros([3,1]))

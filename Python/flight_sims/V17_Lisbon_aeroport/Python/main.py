@@ -2,6 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 import os
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # flight_sims/ (root_results)
+import root_results
 
 from Structs_sim import Param, Voronoi, SimulationData
 from Structs_agent import DroneState
@@ -28,6 +32,9 @@ def main(param: Param | None = None, plant=None):
     # =========================================================================
     if param is None:
         param = Param()
+    # also copy the results of this run (figures, .pkl, replay log) into
+    # <repo>/Results/V17_Lisbon_aeroport_<date>/
+    root_results.mirror_on_exit("V17_Lisbon_aeroport", Path(__file__).resolve().parent / "Results")
     if plant is None:
         plant = CrazyfliePlant(param) if param.sim.arena_experiment else PythonPlant(param)
     voronoi = Voronoi(param)

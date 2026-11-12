@@ -2,6 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 import os
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # flight_sims/ (root_results)
+import root_results
 
 from Structs import Param, SimulationData
 from Animation_display import create_figures
@@ -22,6 +26,10 @@ FALLBACK_TRAJ_OFFSET = -0.5      # s, used if AUTO_ALIGN is off or no real data 
 # Simulation initialization
 # =============================================================================
 param = Param()
+# also copy the figures / .pkl of this run into <flight run>/python_sim/ in the root Results/
+root_results.mirror_on_exit("8traj", Path(__file__).resolve().parent / param.display.save_location,
+                            Path(__file__).resolve().parent / "simulation_results.pkl",
+                            dest=Path(param.sim.real_trajectory_csv).parent / "python_sim")
 
 (position, velocity, attitude, ang_vel,
  real_world_time_offset) = get_initial_real_offset(param)

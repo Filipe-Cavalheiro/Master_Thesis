@@ -2,6 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 import os
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # flight_sims/ (root_results)
+import root_results
 from scipy.linalg import lu_factor, lu_solve
 
 from Structs_sim import Param, Voronoi, SimulationData
@@ -20,6 +24,9 @@ from obstacle_avoidance_funcs import *
 # Simulation initialization
 # =============================================================================
 param = Param()
+# also copy the results of this run into <repo>/Results/<sim>_<date>/
+root_results.mirror_on_exit("V16_generic_mesh", str(Path(__file__).resolve().parent) + param.display.save_location,
+                            Path(__file__).resolve().parent / "simulation_results.pkl")
 voronoi = Voronoi(param)
 
 origin_p_d, swarm_center, voronoi = pre_compute_desired_pos(voronoi, param)

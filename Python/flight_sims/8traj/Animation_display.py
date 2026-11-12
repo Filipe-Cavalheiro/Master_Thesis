@@ -666,6 +666,12 @@ def animate_simulation(data, param):
 
 if __name__ == "__main__":
     param = Param()
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # flight_sims/ (root_results)
+    import root_results
+    root_results.mirror_on_exit("8traj", Path(__file__).resolve().parent / param.display.save_location,
+                                dest=Path(param.sim.real_trajectory_csv).parent / "python_sim")
     param.display.save_to_mp4 = False # we are assuming that the user as 
     # previously saved the plots
     

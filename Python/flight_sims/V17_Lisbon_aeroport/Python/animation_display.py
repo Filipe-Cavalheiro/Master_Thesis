@@ -1922,6 +1922,11 @@ def trajectory_animate(data: SimulationData, param: Param):
 
 if __name__ == "__main__":
     param = Param()
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # flight_sims/ (root_results)
+    import root_results
+    root_results.mirror_on_exit("V17_Lisbon_aeroport", Path(__file__).resolve().parent / "Results")
     param.display.results_file = "Results/python/simulation_results_traj_5.pkl" 
     current_folder = os.path.dirname(os.path.abspath(__file__))
     file_path = os.path.join(current_folder, param.display.results_file)
