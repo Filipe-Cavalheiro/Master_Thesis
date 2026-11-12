@@ -5,6 +5,9 @@
 
 Random_stuff
 **/.venv/
+Presentation
+# flight / simulation runs (one folder per run); only the root folder, not the Results/ of the simulations
+/Results/
 
 # User-specific files
 *.rsuser
