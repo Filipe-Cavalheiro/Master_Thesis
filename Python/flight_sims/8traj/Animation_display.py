@@ -665,7 +665,7 @@ def animate_simulation(data, param):
     plt.show()
 
 if __name__ == "__main__":
-    # Figures / animations from the stored simulation (simulation_results.pkl,
+    # Figures / animations from the stored simulation (Results/simulation_results.pkl,
     # written by main.py / legacy_main.py), without re-simulating.
     param = Param()
     import sys
@@ -674,7 +674,7 @@ if __name__ == "__main__":
     import root_results
 
     current_folder = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(current_folder, "simulation_results.pkl")
+    file_path = os.path.join(current_folder, "Results", "simulation_results.pkl")
     with open(file_path, "rb") as f:
         data = pickle.load(f)
 

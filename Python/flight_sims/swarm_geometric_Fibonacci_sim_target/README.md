@@ -48,7 +48,7 @@ python Python/flight_sims/swarm_geometric_Fibonacci_sim_target/main.py --IRL_log
 | `--no-show` | save the figures without opening them |
 
 Outputs:
-- **Both**: `simulation_results.pkl` in this folder (`python Animation_display.py` redraws the figures / animations from it).
+- **Both**: `Results/simulation_results.pkl` in this folder (`python Animation_display.py` redraws the figures / animations from it).
 - **No flags**: `Results/swarm_geometric_Fibonacci_sim_target_<date>/`: `sim.csv` (positions, setpoints and target of every drone) and `simulation/` (figures and a copy of the `.pkl`).
 - **`--IRL_log`**, in the run folder of the log:
   - `trajectory_<date>_sim.csv`: same columns as the log, plus the setpoints `sp_*` and the virtual target `target_*`.
@@ -178,10 +178,10 @@ source <repo>/.venv/bin/activate     # the repository's root environment
 python main.py
 ```
 
-To redo the figures / animations of the last run without re-simulating (as in `V16_generic_mesh`): `main.py` saves the simulation data to `simulation_results.pkl` when `param.display.store_data` is `True` (default), and
+To redo the figures / animations of the last run without re-simulating (as in `V16_generic_mesh`): `main.py` saves the simulation data to `Results/simulation_results.pkl` when `param.display.store_data` is `True` (default), and
 
 ```bash
-python Animation_display.py     # loads simulation_results.pkl, draws what the GraphicalDisplay flags select
+python Animation_display.py     # loads Results/simulation_results.pkl, draws what the GraphicalDisplay flags select
 ```
 
 Set the flags in `Structs.py` first (e.g. `trajectory_animate = True`). The pkl stores the `param.sim` values of its run (`nD`, `Tend`, `dTi`, `Nsim`, `sphere_radius`), so it is redrawn as it was simulated. `save_to_mp4` is forced off.

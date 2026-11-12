@@ -20,7 +20,8 @@ This README is an overview. Each category is explained in more detail in the REA
 | `Gazebo/` | Lisbon restricted-airspace world (Gazebo Harmonic, PX4 X500 models) with Gazebo as the drone plant of the Python simulation | [`Gazebo/README.md`](Gazebo/README.md) |
 | `Crazy_Flie/` | Real flights with Crazyflie drones: `Optitrack/` (current) and `Lighthouse/` (older, Lighthouse positioning) | [`Crazy_Flie/README.md`](Crazy_Flie/README.md), [`Optitrack/README.md`](Crazy_Flie/Optitrack/README.md) |
 | `Results/` | One folder per real flight / dry run: `<flight code>_trajectory_<date>_<time>/` (CSV log, camera pose, figures) | [`Results/README.md`](Results/README.md) |
-| `burocracy/`, `moodle_CMIEEC2526/` | Thesis proposal, work plan, defence request, course pages | — |
+| `burocracy/` | Thesis proposal, work plan, defence request | — |
+| `moodle_CMIEEC2526/` | Backup of the course Moodle pages (local only, git-ignored) | — |
 | `Random_stuff/` | Access forms, drone-regulation files, the phone-holder model for OptiTrack | [phone holder](Random_stuff/Phone_optitrack_holder/freecad/README.md) |
 
 ### Python simulations (`Python/flight_sims/`)

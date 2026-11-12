@@ -24,7 +24,7 @@ to the log (what video_overlay/flight_overlay.py draws over the phone video),
 the figures in <run folder>/simulation/, and the comparison real vs sim over
 the whole flight (compare_real.py) in <run folder>/comparison/.
 
-Both save simulation_results.pkl (python Animation_display.py redraws the
+Both save Results/simulation_results.pkl (python Animation_display.py redraws the
 figures / animations from it) and draw the figures of
 Animation_display.create_figures (GraphicalDisplay flags in Structs.py;
 real_sim_comparison_* compare the Main Controller section, --IRL_log only).
@@ -63,7 +63,7 @@ from flight_code_funcs import *  # noqa: E402,F401,F403
 from compare_real import compare  # noqa: E402
 
 DT = 0.01                       # s, plant step of the replay (as param.sim.dTi of Structs.py)
-PKL_FILE = HERE / "simulation_results.pkl"
+PKL_FILE = HERE / "Results" / "simulation_results.pkl"   # the local Results folder
 CSV_COLS = ["time_s", "flight_state", "id", *POS_COLS, "est_vx", "est_vy", "est_vz",
             "roll_deg", "pitch_deg", "yaw_deg", "sp_x", "sp_y", "sp_z"]
 
@@ -100,6 +100,7 @@ def main():
     data["colors"] = plt.cm.tab10(np.linspace(0, 1, param.sim.nD))
     if param.display.store_data == True:
         print("Saving simulation data (.pkl)")
+        PKL_FILE.parent.mkdir(parents=True, exist_ok=True)
         with open(PKL_FILE, "wb") as f:
             pickle.dump({**data, "sim": {"nD": param.sim.nD, "dTi": param.sim.dTi, "Nsim": param.sim.Nsim,
                                          "Tend": param.sim.Tend, "real_trajectory_csv": param.sim.real_trajectory_csv},

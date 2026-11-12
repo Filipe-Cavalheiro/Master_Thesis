@@ -3,7 +3,7 @@ Figures and animations of the simulation (as Animation_display.py of
 ../swarm_geometric_Fibonacci_sim_target/ and ../8traj/). Which ones: the
 GraphicalDisplay flags in Structs.py.
 
-    python Animation_display.py     # redraw them from simulation_results.pkl (written by main.py)
+    python Animation_display.py     # redraw them from Results/simulation_results.pkl (written by main.py)
 """
 
 import os
@@ -180,14 +180,14 @@ def animate_simulation(data: SimulationData, param: Param):
 
 
 if __name__ == "__main__":
-    # Figures / animations from the stored simulation (simulation_results.pkl,
+    # Figures / animations from the stored simulation (Results/simulation_results.pkl,
     # written by main.py when param.display.store_data is True), without re-simulating.
     from pathlib import Path
 
     param = Param()
     param.display.save_to_mp4 = False   # we are assuming that the user has previously saved the mp4s
 
-    file_path = Path(__file__).resolve().parent / "simulation_results.pkl"
+    file_path = Path(__file__).resolve().parent / "Results" / "simulation_results.pkl"
     if not file_path.exists():
         raise SystemExit(f"No {file_path.name}: run main.py first (with param.display.store_data = True)")
     with open(file_path, "rb") as f:

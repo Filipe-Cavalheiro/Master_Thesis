@@ -30,7 +30,7 @@ guidance state (q_ref = (1, 0, 0) for every drone, radius 0). Writes
 <log>_sim.csv next to the log, the figures in <run folder>/simulation/ and the
 comparison real vs sim (compare_real.py) in <run folder>/comparison/.
 
-Both save simulation_results.pkl (python Animation_display.py redraws the
+Both save Results/simulation_results.pkl (python Animation_display.py redraws the
 figures / animations from it) and draw the figures of
 Animation_display.create_figures (GraphicalDisplay flags in Structs.py).
 
@@ -72,7 +72,7 @@ from flight_code_funcs import *  # noqa: E402,F401,F403
 from compare_real import compare  # noqa: E402
 
 DT = 0.01                       # s, plant step of the replay (as param.sim.dTi of Structs.py)
-PKL_FILE = HERE / "simulation_results.pkl"
+PKL_FILE = HERE / "Results" / "simulation_results.pkl"   # the local Results folder
 
 
 def main():
@@ -103,6 +103,7 @@ def main():
     data["colors"] = plt.cm.tab10(np.linspace(0, 1, param.sim.nD))
     if param.display.store_data == True:
         print("Saving simulation data (.pkl)")
+        PKL_FILE.parent.mkdir(parents=True, exist_ok=True)
         with open(PKL_FILE, "wb") as f:
             pickle.dump({**data, "sim": sim_config(param)}, f)
         shutil.copy2(PKL_FILE, Path(param.display.save_location) / PKL_FILE.name)   # kept with the run
@@ -481,7 +482,6 @@ def simulate_flight(args):
         "phases": phases,
     }
     return data, param
-
 
 def sim_config(param):
     """param.sim values the figures need, stored in the .pkl (Animation_display.py restores them)."""

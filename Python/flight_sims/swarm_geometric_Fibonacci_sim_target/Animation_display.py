@@ -875,7 +875,7 @@ def animate_simulation(data, param):
 
 
 if __name__ == "__main__":
-    # Figures / animations from the stored simulation (simulation_results.pkl,
+    # Figures / animations from the stored simulation (Results/simulation_results.pkl,
     # written by main.py when param.display.store_data is True), without
     # re-simulating. Which figures: the GraphicalDisplay flags in Structs.py.
     import pickle
@@ -888,7 +888,7 @@ if __name__ == "__main__":
     root_results.mirror_on_exit("swarm_geometric_Fibonacci_sim_target", param.display.save_location)
     param.display.save_to_mp4 = False   # we are assuming that the user has previously saved the mp4s
 
-    file_path = Path(__file__).resolve().parent / "simulation_results.pkl"
+    file_path = Path(__file__).resolve().parent / "Results" / "simulation_results.pkl"
     if not file_path.exists():
         raise SystemExit(f"No {file_path.name}: run main.py first (with param.display.store_data = True)")
     with open(file_path, "rb") as f:

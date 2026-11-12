@@ -79,7 +79,7 @@ class GraphicalDisplay:
         self.trajectory_plot = True     # 3D paths
         self.trajectory_animate = False # 3D animation
 
-        self.store_data = True          # simulation_results.pkl (python Animation_display.py redraws from it)
+        self.store_data = True          # Results/simulation_results.pkl (python Animation_display.py redraws from it)
         self.save_to_mp4 = False
         self.mp4_fps = 30
 

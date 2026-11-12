@@ -1,6 +1,6 @@
 # Simulation of a figure-8 flight
 
-One script, `main.py`, for two runs, as in `../swarm_take_off_hover_land/` and `../swarm_geometric_Fibonacci_sim_target/`. Both save `simulation_results.pkl` and draw the `Animation_display.py` figures.
+One script, `main.py`, for two runs, as in `../swarm_take_off_hover_land/` and `../swarm_geometric_Fibonacci_sim_target/`. Both save `Results/simulation_results.pkl` and draw the `Animation_display.py` figures.
 
 | Mode | Initial values | Figures |
 |---|---|---|
@@ -33,7 +33,7 @@ python Python/flight_sims/8traj/main.py --IRL_log Results/8traj_trajectory_<date
 | `--ease S` | with `--IRL_log`: `TRAJ_EASE_TIME` of the flight (default: detected from the log; use 0 for flights before 10 Nov) |
 
 Outputs:
-- **Both**: `simulation_results.pkl` in this folder (`python Animation_display.py` redraws the figures from it). It holds the Main Controller section and the `param.sim` values of the run (flight log, steps).
+- **Both**: `Results/simulation_results.pkl` in this folder (`python Animation_display.py` redraws the figures from it). It holds the Main Controller section and the `param.sim` values of the run (flight log, steps).
 - **No flags**: `Results/8traj_<date>/`: `sim.csv` and `simulation/` (`trajectory_plot`; the real-vs-sim figures are off: nothing real to compare with).
 - **`--IRL_log`**, in the run folder of the log:
   - `trajectory_<date>_sim.csv`: same columns as the log, plus the setpoints `sp_x`, `sp_y`, `sp_z`. This is what `video_overlay/flight_overlay.py` draws over the phone video.
@@ -48,14 +48,8 @@ Outputs:
 | `compare_real.py` | real vs sim over the whole flight: metrics and figures |
 | `drone_models.toml` | drone parameters (`cf2x_P250`) |
 
-## `legacy_main.py`: the older simulation
+## `real_flights/`
 
-The first sim-vs-real comparison of the figure 8 (October flights), on the same modules as `main.py`, plus `time_alignment.py`. It starts from the real drone state and automatically finds the time offset between the reference trajectory and the flight (`time_alignment.py`). Results go to `simulation_results.pkl` and the figures to `8traj/Results/` (`real_sim_trajectory.pdf`, `real_sim_difference.pdf`, ...).
-
-```bash
-python Python/flight_sims/8traj/legacy_main.py
-```
-
-`real_flights/` holds the October flight logs it uses (`Param()` takes the newest one as `param.sim.real_trajectory_csv`; `main.py` replaces it with its `--IRL_log`).
+`real_flights/` holds the October flight logs (`Param()` takes the newest one as `param.sim.real_trajectory_csv`; `main.py` replaces it with its `--IRL_log`).
 
 Python environment: the repository's root `.venv` (`source .venv/bin/activate` from the repository root; see the root README).

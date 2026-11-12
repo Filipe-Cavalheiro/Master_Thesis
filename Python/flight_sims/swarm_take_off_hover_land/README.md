@@ -11,7 +11,7 @@ Two runs:
 | Return | ramp to the assigned take-off point (Hungarian assignment) |
 | Land | ramp down to 5 cm in 4 s, motors off at the end of the log |
 
-One script, `main.py`, for both modes. Same structure as `../swarm_geometric_Fibonacci_sim_target/` and `../8traj/`: the thesis simulation (V8) split in modules, the flight code in `flight_code_funcs.py`, the comparison in `compare_real.py`, and a `simulation_results.pkl` that `Animation_display.py` redraws from.
+One script, `main.py`, for both modes. Same structure as `../swarm_geometric_Fibonacci_sim_target/` and `../8traj/`: the thesis simulation (V8) split in modules, the flight code in `flight_code_funcs.py`, the comparison in `compare_real.py`, and a `Results/simulation_results.pkl` that `Animation_display.py` redraws from.
 
 | File | Content |
 |---|---|
@@ -19,7 +19,7 @@ One script, `main.py`, for both modes. Same structure as `../swarm_geometric_Fib
 | `Structs.py` | `Param` (drone model `cf2x_P250`, Mellinger gains, `HoverConfig` of the simulation alone, `GraphicalDisplay` flags), `DroneState`, `SimulationData` |
 | `drone_motion.py` | inner loop: Mellinger controller (`drone_mellinger_ctrl.py`) + full nonlinear dynamics (`drone_3dfull_dyn.py`), RK4 on SO(3); `passive_motion` (motors off), `ground_contact` |
 | `helper_funcs.py` | rotations, RK4, `get_initial_real_offset` (initial state from the log) |
-| `Animation_display.py` | figures (`position`, `top_view`, `trajectory_<n>_agents`) and the 3D animation; `python Animation_display.py` redraws them from `simulation_results.pkl` |
+| `Animation_display.py` | figures (`position`, `top_view`, `trajectory_<n>_agents`) and the 3D animation; `python Animation_display.py` redraws them from `Results/simulation_results.pkl` |
 | `flight_code_funcs.py` | the flight code: its constants (read from its `Structs.py` / `main.py`), log, setpoint schedule and ramps (with the Hungarian return assignment) |
 | `compare_real.py` | real vs sim: metrics and figures. Also runs on its own: `python compare_real.py [--log LOG] [--sim SIM]` |
 | `drone_models.toml` | drone parameters (`cf2x_P250`) |
@@ -41,7 +41,7 @@ python Python/flight_sims/swarm_take_off_hover_land/main.py --IRL_log Results/sw
 `--no-show` saves the figures without opening them.
 
 Outputs:
-- **Both**: `simulation_results.pkl` in this folder (`python Animation_display.py` redraws the figures / animations from it; it stores the `param.sim` values of its run).
+- **Both**: `Results/simulation_results.pkl` in this folder (`python Animation_display.py` redraws the figures / animations from it; it stores the `param.sim` values of its run).
 - **No flags**: `Results/swarm_take_off_hover_land_<date>/`: `sim.csv` and `simulation/`.
 - **`--IRL_log`**, in the run folder of the log:
   - `trajectory_<date>_sim.csv`: same columns as the log, plus the setpoints.
