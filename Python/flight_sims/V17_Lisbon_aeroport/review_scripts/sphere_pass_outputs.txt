@@ -1,0 +1,103 @@
+### make_figures.py metrics
+trajectory 5: target crosses the wall at 13.86 s, the red border at 34.05 s, chasers lost at 25.0 s
+simulation_results_traj_5_12drop4.pkl {'n': 12.0, 'n_end': 8.0, 'duration': 40.0, 'min_sep': 1.43, 'min_sep_after': 1.43, 'e_med': 0.2223, 'e_max': 3.0802, 'v_max': 3.0887, 'est_med': 0.066}
+simulation_results_traj_6.pkl {'n': 5.0, 'n_end': 5.0, 'duration': 40.0, 'min_sep': 2.2779, 'min_sep_after': 4.2623, 'e_med': 0.0902, 'e_max': 3.6526, 'v_max': 3.0804, 'est_med': 0.0889}
+arena5_3.pkl {'n': 3.0, 'n_end': 3.0, 'duration': 19.25, 'min_sep': 0.8883, 'min_sep_after': 0.8883, 'e_med': 0.1231, 'e_max': 0.5757, 'v_max': 0.4008, 'est_med': 0.0266}
+arena5_4.pkl {'n': 4.0, 'n_end': 4.0, 'duration': 19.25, 'min_sep': 0.853, 'min_sep_after': 0.853, 'e_med': 0.1348, 'e_max': 0.5586, 'v_max': 0.461, 'est_med': 0.0264}
+flight drone_target {'duration': 19.7, 'min_sep': 1.1263, 'min_target': 0.5434, 'r_med': 0.8147, 'e_med': 0.0556, 'e_p95': 0.1719, 'e_max': 0.2726}
+### lisbon_claims_sphere.py
+===== trajectory 5
+wall crossing 13.86 s, red crossing 34.05 s
+before wall (t<13.9): chaser s range 28.74-30.00; chaser-target distance at t=0: 20.1-21.2, at wall crossing median 5.34
+speed before wall: median 0.49 m/s (after 2 s)
+max goal error 3.08 at t=17.29
+18-25 s distance median 4.92 (p5-p95 4.74-5.07) | speed median 1.69 (p5-p95 1.43-2.72) | target speed 1.56
+ lost 0: reaches z<=0.05 m after 1.87 s, min dist to active 5.65
+ lost 1: reaches z<=0.05 m after 1.74 s, min dist to active 3.47
+ lost 4: reaches z<=0.05 m after 2.21 s, min dist to active 1.60
+ lost 7: reaches z<=0.05 m after 1.87 s, min dist to active 3.82
+goal jump at loss: max 0.99
+all goal errors < 0.5 m from 0.61 s after the loss (first instant)
+28-33 s median goal error 0.319
+25-31 s distance median 4.96 (p5-p95 4.74-5.03)
+closest approach after 30 s: chaser 9, 1.76 m at 33.67 s; below 1 m for 0.00 s
+ t=33.0: min goal distance to target path (3D, path at fixed height) 1.39
+ t=33.4: min goal distance to target path (3D, path at fixed height) 1.46
+ t=34.0: min goal distance to target path (3D, path at fixed height) 1.62
+at 40 s: target sd -8.90; active chasers s: [1.   1.   1.   1.   1.   1.   1.   1.01] goal s: [1. 1. 1. 1. 1. 1. 1. 1.]
+min sep: start 1.62; 5-13.9 s (barrier) median 3.02; 18-25 s range 2.86-3.79; 25-31 s min 2.18; overall 1.43 at 35.62 s; after 2 s 1.43
+min sep after 30 s 1.43 at 35.62 s
+peak speed 3.089; fraction of active samples above v_max 0.20%
+median estimate error 0.0660
+===== trajectory 6
+from 15 s distance median 4.90 (p5-p95 4.46-5.07)
+closest approach: chaser 1 4.26 m at 25.39 s
+ its goal distance to target around then: min 4.44 in [12,16] s
+min sep 2.28, after 2 s 4.26; median goal error 0.090
+target speed 2.12; wall crossing 14.17 s; red crossing 0.00 s
+### lisbon_extras_sphere.py traj5 (seed 1 = paper, seeds 2-5 repetitions)
+Results/python/simulation_results_traj_5_12drop4.pkl: min d_ij 1.43 (t=35.62) after 2 s 1.43 | min d_iT(t>2 s) 1.52 at 13.97 s (chaser 9) | median e_g 0.222 max 3.08 | peak speed 3.09
+   target R/2 from wall at 12.17 s; chaser s before then 29.9993-30.0003 (t>2 s); min s between 12.2 s and wall crossing 28.74
+   final s of active chasers 1.000-1.005; min d_iT after 30 s 1.76; time any chaser <1 m from target 0.00 s; min sep 25-31 s 2.18; min sep after 30 s 1.43 at 35.62
+   goal error 28-33 s median 0.319, p95 0.788; max goal error after 30 s 2.22 at 35.75 s
+   goal error 36-40 s median 0.299; max speed after 2 s before wall 1.46; peak speed time 20.29; frac>vmax 0.20%
+Results/python/sphere_runs/rep/traj5_s2.pkl: min d_ij 1.06 (t=0.00) after 2 s 2.22 | min d_iT(t>2 s) 1.38 at 33.46 s (chaser 1) | median e_g 0.168 max 2.73 | peak speed 3.11
+   target R/2 from wall at 12.17 s; chaser s before then 29.9994-30.0004 (t>2 s); min s between 12.2 s and wall crossing 28.73
+   final s of active chasers 1.000-1.003; min d_iT after 30 s 1.38; time any chaser <1 m from target 0.00 s; min sep 25-31 s 3.03; min sep after 30 s 2.65 at 36.00
+   goal error 28-33 s median 0.073, p95 0.536; max goal error after 30 s 2.16 at 34.99 s
+   goal error 36-40 s median 0.205; max speed after 2 s before wall 1.36; peak speed time 20.28; frac>vmax 0.25%
+Results/python/sphere_runs/rep/traj5_s3.pkl: min d_ij 1.26 (t=0.00) after 2 s 1.96 | min d_iT(t>2 s) 2.06 at 33.36 s (chaser 10) | median e_g 0.181 max 3.25 | peak speed 3.11
+   target R/2 from wall at 12.17 s; chaser s before then 29.9992-30.0005 (t>2 s); min s between 12.2 s and wall crossing 28.80
+   final s of active chasers 1.000-1.003; min d_iT after 30 s 2.06; time any chaser <1 m from target 0.00 s; min sep 25-31 s 3.45; min sep after 30 s 1.96 at 33.91
+   goal error 28-33 s median 0.109, p95 0.582; max goal error after 30 s 1.77 at 34.00 s
+   goal error 36-40 s median 0.157; max speed after 2 s before wall 1.27; peak speed time 18.28; frac>vmax 0.18%
+Results/python/sphere_runs/rep/traj5_s4.pkl: min d_ij 1.68 (t=0.00) after 2 s 2.10 | min d_iT(t>2 s) 1.71 at 33.23 s (chaser 1) | median e_g 0.176 max 3.76 | peak speed 3.10
+   target R/2 from wall at 12.17 s; chaser s before then 29.9993-30.0007 (t>2 s); min s between 12.2 s and wall crossing 28.78
+   final s of active chasers 1.000-1.004; min d_iT after 30 s 1.71; time any chaser <1 m from target 0.00 s; min sep 25-31 s 2.89; min sep after 30 s 2.10 at 33.72
+   goal error 28-33 s median 0.055, p95 0.499; max goal error after 30 s 2.06 at 33.01 s
+   goal error 36-40 s median 0.192; max speed after 2 s before wall 1.28; peak speed time 18.32; frac>vmax 0.18%
+Results/python/sphere_runs/rep/traj5_s5.pkl: min d_ij 1.01 (t=0.00) after 2 s 2.31 | min d_iT(t>2 s) 1.78 at 33.10 s (chaser 4) | median e_g 0.176 max 2.72 | peak speed 3.10
+   target R/2 from wall at 12.17 s; chaser s before then 29.9999-30.0007 (t>2 s); min s between 12.2 s and wall crossing 28.76
+   final s of active chasers 1.000-1.003; min d_iT after 30 s 1.78; time any chaser <1 m from target 0.00 s; min sep 25-31 s 2.44; min sep after 30 s 2.31 at 33.11
+   goal error 28-33 s median 0.059, p95 0.471; max goal error after 30 s 1.70 at 35.13 s
+   goal error 36-40 s median 0.247; max speed after 2 s before wall 1.31; peak speed time 25.33; frac>vmax 0.24%
+### traj6
+Results/python/simulation_results_traj_6.pkl: min d_ij 2.28 (t=0.00) after 2 s 4.26 | min d_iT(t>2 s) 4.26 at 25.39 s (chaser 1) | median e_g 0.090 max 3.65 | peak speed 3.08
+Results/python/sphere_runs/rep/traj6_s2.pkl: min d_ij 1.38 (t=0.00) after 2 s 3.74 | min d_iT(t>2 s) 4.33 at 25.36 s (chaser 2) | median e_g 0.141 max 2.82 | peak speed 3.06
+Results/python/sphere_runs/rep/traj6_s3.pkl: min d_ij 5.00 (t=36.52) after 2 s 5.00 | min d_iT(t>2 s) 4.26 at 14.18 s (chaser 4) | median e_g 0.092 max 2.52 | peak speed 3.05
+Results/python/sphere_runs/rep/traj6_s4.pkl: min d_ij 1.83 (t=0.00) after 2 s 4.01 | min d_iT(t>2 s) 4.31 at 25.37 s (chaser 0) | median e_g 0.128 max 2.94 | peak speed 3.06
+Results/python/sphere_runs/rep/traj6_s5.pkl: min d_ij 1.97 (t=0.04) after 2 s 3.55 | min d_iT(t>2 s) 1.89 at 14.30 s (chaser 2) | median e_g 0.129 max 2.31 | peak speed 3.04
+### warm vs reset multipliers (seed 1)
+Results/python/sphere_runs/traj5_s1_warm.pkl: min d_ij 1.43 (t=35.62) after 2 s 1.43 | min d_iT(t>2 s) 1.52 at 13.97 s (chaser 9) | median e_g 0.222 max 3.08 | peak speed 3.09
+   target R/2 from wall at 12.17 s; chaser s before then 29.9993-30.0003 (t>2 s); min s between 12.2 s and wall crossing 28.74
+   final s of active chasers 1.000-1.005; min d_iT after 30 s 1.76; time any chaser <1 m from target 0.00 s; min sep 25-31 s 2.18; min sep after 30 s 1.43 at 35.62
+   goal error 28-33 s median 0.319, p95 0.788; max goal error after 30 s 2.22 at 35.75 s
+   goal error 36-40 s median 0.299; max speed after 2 s before wall 1.46; peak speed time 20.29; frac>vmax 0.20%
+Results/python/sphere_runs/traj5_s1_reset.pkl: min d_ij 1.46 (t=35.64) after 2 s 1.46 | min d_iT(t>2 s) 1.52 at 13.97 s (chaser 9) | median e_g 0.232 max 3.08 | peak speed 3.54
+   target R/2 from wall at 12.17 s; chaser s before then 29.9993-30.0003 (t>2 s); min s between 12.2 s and wall crossing 28.74
+   final s of active chasers 1.000-1.005; min d_iT after 30 s 1.65; time any chaser <1 m from target 0.00 s; min sep 25-31 s 2.27; min sep after 30 s 1.46 at 35.64
+   goal error 28-33 s median 0.379, p95 0.792; max goal error after 30 s 2.22 at 35.75 s
+   goal error 36-40 s median 0.298; max speed after 2 s before wall 1.46; peak speed time 18.31; frac>vmax 0.48%
+### arena
+Results/python/arena5_3.pkl n=3 dur=19.25 s
+  min d_ij 0.888 (t=15.17) | after 2 s 0.888 | time below 0.3 m: 0.00 s
+  d_iT min 0.577 (t=2.40) median 0.764 p5-p95 0.627-0.849 | time any chaser < 0.3 m from target 0.00 s
+  per-chaser median d_iT [0.815 0.766 0.746]
+  goal error median 0.123 max 0.576 | peak speed 0.401, 0.00% samples above v_max
+  est error median 0.0266
+  min horizontal chaser-chaser distance 0.002; time with a pair < 0.3 m horizontally: 1.35 s
+  pair 1-3 within 0.3 m horizontally for 1.35 s, vertical separation 1.13-1.15 m
+  chaser under the target within 0.3 m horizontally: 4.08 s (chaser-time), min dz below 0.662
+  min chaser height 0.537
+Results/python/arena5_4.pkl n=4 dur=19.25 s
+  min d_ij 0.853 (t=15.14) | after 2 s 0.853 | time below 0.3 m: 0.00 s
+  d_iT min 0.603 (t=2.30) median 0.768 p5-p95 0.660-0.854 | time any chaser < 0.3 m from target 0.00 s
+  per-chaser median d_iT [0.794 0.764 0.721 0.773]
+  goal error median 0.135 max 0.559 | peak speed 0.461, 0.00% samples above v_max
+  est error median 0.0264
+  min horizontal chaser-chaser distance 0.023; time with a pair < 0.3 m horizontally: 16.26 s
+  pair 1-3 within 0.3 m horizontally for 5.52 s, vertical separation 0.90-1.05 m
+  pair 2-3 within 0.3 m horizontally for 10.74 s, vertical separation 0.83-1.50 m
+  pair 2-4 within 0.3 m horizontally for 5.10 s, vertical separation 0.85-1.01 m
+  chaser under the target within 0.3 m horizontally: 3.88 s (chaser-time), min dz below 0.656
+  min chaser height 0.467

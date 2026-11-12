@@ -1,0 +1,4 @@
+test_output/synthetic/
+sessions/
+__pycache__/
+*.tmp.mp4

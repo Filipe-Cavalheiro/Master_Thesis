@@ -1,0 +1,126 @@
+{
+  "intrinsics": {
+    "rms_px": 0.14203005813355127,
+    "fx_fy_cx_cy_abs_err_px": [
+      1.534,
+      1.572,
+      1.091,
+      0.169
+    ],
+    "dist_est": [
+      -0.1111,
+      0.0665,
+      0.0008,
+      -0.0007,
+      -0.003
+    ],
+    "dist_true": [
+      -0.11,
+      0.06,
+      0.0008,
+      -0.0006,
+      0.0
+    ]
+  },
+  "moving": {
+    "sync": {
+      "offset_err_ms": 1.6127261495344491,
+      "scale_err_ppm": -16.397317142979873,
+      "n_matched": 4,
+      "residuals_ms": [
+        -0.42,
+        -0.82,
+        1.3,
+        -0.06
+      ],
+      "time_err_mid_video_ms": 1.202793220958398
+    },
+    "n_clicks": 16,
+    "extrinsics": {
+      "after_clicks_err_deg_mm": [
+        0.06491824131907564,
+        5.604853193509153
+      ],
+      "final_err_deg_mm": [
+        0.0898044042053586,
+        6.597200049754629
+      ],
+      "rms_px": 1.0104493345630612,
+      "n_correspondences": 236
+    },
+    "overlay_pixel_error": {
+      "mean_px": 0.5640890072871572,
+      "p95_px": 0.9417592984749454,
+      "max_px": 1.3119417662534667,
+      "n": 96
+    }
+  },
+  "static": {
+    "sync": {
+      "offset_err_ms": -0.15427114607935444,
+      "scale_err_ppm": 0.3059341502353874,
+      "n_matched": 4,
+      "residuals_ms": [
+        0.06,
+        -0.11,
+        0.04,
+        0.0
+      ],
+      "time_err_mid_video_ms": -0.1466227923252461
+    },
+    "n_clicks": 6,
+    "extrinsics": {
+      "after_clicks_err_deg_mm": [
+        0.11777403480876121,
+        14.13424479886906
+      ],
+      "final_err_deg_mm": [
+        0.09554579698707168,
+        10.335410678351652
+      ],
+      "rms_px": 0.7786769837973531,
+      "n_correspondences": 246
+    },
+    "sync_refine": {
+      "offset_err_ms": 0.3058942777638407,
+      "flash_offset_err_ms": -0.15427114607935444
+    },
+    "sync_motion_only": {
+      "offset_err_ms": 2.222947490570615
+    },
+    "overlay_pixel_error": {
+      "mean_px": 0.590955229325993,
+      "p95_px": 1.3698966875742833,
+      "max_px": 1.9333135588230175,
+      "n": 112
+    }
+  },
+  "strobe": {
+    "camera_motion_cm_deg": [
+      0.12831756350267398,
+      0.19991285120281738
+    ],
+    "real_vs_sim": {
+      "rms_m": 0.09173948337402177,
+      "mean_m": 0.08796905116293188,
+      "max_m": 0.13125670498132136,
+      "p95_m": 0.12186398987648231,
+      "duration_s": 20.67
+    },
+    "strobe_pixel_error": {
+      "mean_px": 18.42604826613314,
+      "max_px": 30.559024421355776
+    }
+  },
+  "checks": {
+    "intrinsics fx/fy/cx/cy within 2 px": true,
+    "intrinsics RMS < 0.5 px": true,
+    "moving: sync error < 1/4 frame (8.3 ms)": true,
+    "moving: T_bc error < 0.5 deg and 10 mm": true,
+    "moving: overlay alignment mean < 2 px": true,
+    "static: sync error < 1/4 frame (8.3 ms)": true,
+    "static: T_bc error < 0.5 deg and 20 mm": true,
+    "static: overlay alignment mean < 2 px": true,
+    "static: motion-only sync within 1 frame (33 ms)": true
+  }
+}
