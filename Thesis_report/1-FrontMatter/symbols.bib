@@ -1,0 +1,1075 @@
+% Encoding: UTF-8
+@symbol{time_step,
+  sort = {time_step},
+  type = {symbols},
+  name = {\ensuremath{\Delta t}},
+  description = {time step}
+}
+
+@symbol{ith_time_step,
+  sort = {ith_time_step},
+  type = {symbols},
+  name = {\ensuremath{\Delta t_i}},
+  description = {ith time step of the simulation}
+}
+
+@symbol{min_dist,
+  sort = {min_dist},
+  type = {symbols},
+  name = {\ensuremath{d_{\mathrm{min}}}},
+  description = {minimal desired (geodesic) distance between agents on the sphere}
+}
+
+@symbol{n_D,
+  sort = {n_D},
+  type = {symbols},
+  name = {\ensuremath{n_D}},
+  description = {number of drones}
+}
+
+@symbol{gravity,
+  sort = {gravity},
+  type = {symbols},
+  name = {\ensuremath{g}},
+  description = {gravity}
+}
+
+@symbol{t_end,
+  sort = {t_end},
+  type = {symbols},
+  name = {\ensuremath{T_{\mathrm{end}}}},
+  description = {Simulation duration}
+}
+
+@symbol{drone_mass,
+  sort = {drone_mass},
+  type = {symbols},
+  name = {\ensuremath{m_D}},
+  description = {drone mass}
+}
+
+@symbol{drone_inertial_matrix,
+  sort = {drone_inertial_matrix},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{I}_D}},
+  description = {drone inertial matrix}
+}
+
+@symbol{drone_body_frame,
+  sort = {drone_body_frame},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{B}_D = \{e_1, e_2, e_3\}}},
+  description = {drone reference frame basis}
+}
+
+@symbol{drone_inertial_frame,
+  sort = {drone_inertial_frame},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{E}_D = \{E_1, E_2, E_3\}}},
+  description = {drone inertial reference frame}
+}
+
+@symbol{p_force,
+  sort = {p_force},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{F}_a}},
+  description = {drone propulsive/actuation force}
+}
+
+@symbol{p_torque,
+  sort = {p_torque},
+  type = {symbols},
+  name = {\ensuremath{\boldsymbol{\tau}_a}},
+  description = {drone torque}
+}
+
+@symbol{p_drag_force,
+  sort = {p_drag_force},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{F}_e}},
+  description = {drone aerodynamic drag force}
+}
+
+@symbol{p_drag_torque,
+  sort = {p_drag_torque},
+  type = {symbols},
+  name = {\ensuremath{\boldsymbol{\tau}_e}},
+  description = {drone aerodynamic drag torque}
+}
+
+@symbol{p_drag_coef,
+  sort = {p_drag_coef},
+  type = {symbols},
+  name = {\ensuremath{d_D}},
+  description = {drone drag coefficient}
+}
+
+@symbol{f_desired,
+  sort = {f_desired},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{f}^\star}},
+  description = {desired force}
+}
+
+@symbol{attitude_torque_desired,
+  sort = {attitude_torque_desired},
+  type = {symbols},
+  name = {\ensuremath{\boldsymbol{\tau}^\star}},
+  description = {desired attitude control torque}
+}
+
+@symbol{chaser_pos,
+  sort = {chaser_pos},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{p}}},
+  description = {drone position}
+}
+
+@symbol{chaser_i_pos,
+  sort = {chaser_i_pos},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{p}_i}},
+  description = {i-th drone position}
+}
+
+@symbol{chaser_vel,
+  sort = {chaser_vel},
+  type = {symbols},
+  name = {\ensuremath{\dot{\mathbf{p}}}},
+  description = {drone velocity}
+}
+
+@symbol{chaser_i_vel,
+  sort = {chaser_i_vel},
+  type = {symbols},
+  name = {\ensuremath{\dot{\mathbf{p}}_i}},
+  description = {i-th drone velocity}
+}
+
+@symbol{chaser_ori,
+  sort = {chaser_ori},
+  type = {symbols},
+  name = {\ensuremath{\boldsymbol{\Phi}_D}},
+  description = {drone orientation}
+}
+
+@symbol{chaser_ang_vel,
+  sort = {chaser_ang_vel},
+  type = {symbols},
+  name = {\ensuremath{\boldsymbol{\omega}_D}},
+  description = {drone angular velocity}
+}
+
+@symbol{chaser_acc,
+  sort = {chaser_acc},
+  type = {symbols},
+  name = {\ensuremath{\ddot{\mathbf{p}}}},
+  description = {drone acceleration}
+}
+
+@symbol{chaser_i_acc,
+  sort = {chaser_i_acc},
+  type = {symbols},
+  name = {\ensuremath{\ddot{\mathbf{p}}_i}},
+  description = {i-th drone acceleration}
+}
+
+@symbol{target_pos,
+  sort = {target_pos},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{p}_T}},
+  description = {target drone position}
+}
+
+@symbol{target_pos_desired,
+  sort = {target_pos_desired},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{p}_T^\star}},
+  description = {target drone desired position}
+}
+
+@symbol{target_vel,
+  sort = {target_vel},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{v}_T}},
+  description = {target drone velocity}
+}
+
+@symbol{target_vel_desired,
+  sort = {target_vel_desired},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{v}_T^\star}},
+  description = {target drone desired velocity}
+}
+
+@symbol{p_desired,
+  sort = {p_desired},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{p}^\star}},
+  description = {desired drone position}
+}
+
+@symbol{p_i_desired,
+  sort = {p_i_desired},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{p}_i^\star}},
+  description = {desired i-th drone position}
+}
+
+@symbol{v_desired,
+  sort = {v_desired},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{v}^\star}},
+  description = {desired drone velocity}
+}
+
+@symbol{a_desired,
+  sort = {a_desired},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{a}^\star}},
+  description = {desired drone acceleration}
+}
+
+@symbol{phi_desired,
+  sort = {phi_desired},
+  type = {symbols},
+  name = {\ensuremath{\psi^\star}},
+  description = {desired yaw angle}
+}
+
+@symbol{K_p,
+  sort = {K_p},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{K}_p}},
+  description = {internal nonlinear controller proportional gain}
+}
+
+@symbol{K_v,
+  sort = {K_v},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{K}_v}},
+  description = {internal nonlinear controller velocity gain}
+}
+
+@symbol{K_i,
+  sort = {K_i},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{K}_i}},
+  description = {internal nonlinear controller integral gain}
+}
+
+@symbol{K_r,
+  sort = {K_r},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{K}_r}},
+  description = {internal nonlinear controller attitude gain}
+}
+
+@symbol{K_Omega,
+  sort = {K_Omega},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{K}_{\Omega}}},
+  description = {internal nonlinear controller angular rate gain}
+}
+
+@symbol{q,
+  sort = {q},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{q}}},
+  description = {position on the two-sphere}
+}
+
+@symbol{q_i,
+  sort = {q_i},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{q}_i}},
+  description = {i-th position on the two-sphere}
+}
+
+@symbol{tilde_q_i,
+  sort = {tilde_q_i},
+  type = {symbols},
+  name = {\ensuremath{\tilde{\mathbf{q}}_i}},
+  description = {i-th position on the two-sphere after safe guard actuation}
+}
+
+@symbol{q_desired,
+  sort = {q_desired},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{q}^\star}},
+  description = {desired position on the two-sphere}
+}
+
+@symbol{q_i_desired,
+  sort = {q_i_desired},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{q}_i^\star}},
+  description = {i-th desired position on the two-sphere}
+}
+
+@symbol{q_omega,
+  sort = {q_omega},
+  type = {symbols},
+  name = {\ensuremath{\boldsymbol{\omega}_q}},
+  description = {geometric point angular velocity}
+}
+
+@symbol{q_i_omega,
+  sort = {q_i_omega},
+  type = {symbols},
+  name = {\ensuremath{\boldsymbol{\omega}_{q_i}}},
+  description = {i-th geometric point angular velocity}
+}
+
+@symbol{q_omega_desired,
+  sort = {q_omega_desired},
+  type = {symbols},
+  name = {\ensuremath{\omega_q^\star}},
+  description = {geometric point desired angular velocity}
+}
+
+@symbol{e_q_i,
+  sort = {e_q_i},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{e}_{q_i}}},
+  description = {i-th geometric controller directional error}
+}
+
+@symbol{e_q,
+  sort = {e_q},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{e}_q}},
+  description = {geometric controller directional error}
+}
+
+@symbol{k_geo,
+  sort = {k_geo},
+  type = {symbols},
+  name = {\ensuremath{k_{\mathrm{geo}}}},
+  description = {directional controller gain}
+}
+
+@symbol{d_pT,
+  sort = {d_pT},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{d}_{iT}}},
+  description = {relative position of agent $i$ with respect to the target}
+}
+
+@symbol{sphere_radius,
+  sort = {sphere_radius},
+  type = {symbols},
+  name = {\ensuremath{r}},
+  description = {current encirclement radius}
+}
+
+@symbol{r_i,
+  sort = {r_i},
+  type = {symbols},
+  name = {\ensuremath{r_i}},
+  description = {i-th drone sphere radius}
+}
+
+@symbol{r_desired,
+  sort = {r_desired},
+  type = {symbols},
+  name = {\ensuremath{R}},
+  description = {desired encirclement (formation mesh) radius}
+}
+
+@symbol{k_radii,
+  sort = {k_radii},
+  type = {symbols},
+  name = {\ensuremath{k_{\mathrm{rad}}}},
+  description = {radii controller gain}
+}
+
+@symbol{e_r_i,
+  sort = {e_r_i},
+  type = {symbols},
+  name = {\ensuremath{e_{r_i}}},
+  description = {i-th radial controller error}
+}
+
+@symbol{e_r,
+  sort = {e_r},
+  type = {symbols},
+  name = {\ensuremath{e_r}},
+  description = {radial controller error}
+}
+
+@symbol{apf_att_gain,
+  sort = {apf_att_gain},
+  type = {symbols},
+  name = {\ensuremath{k_{\mathrm{att}}}},
+  description = {attractive force gain}
+}
+
+@symbol{apf_rep_gain,
+  sort = {apf_rep_gain},
+  type = {symbols},
+  name = {\ensuremath{k_{\mathrm{rep}}}},
+  description = {repulsive force gain}
+}
+
+@symbol{d_min,
+  sort = {d_min},
+  type = {symbols},
+  name = {\ensuremath{d^{\mathrm{rep}}_{\mathrm{min}}}},
+  description = {influence distance of the repulsive potential}
+}
+
+@symbol{d_ij_geo,
+  sort = {d_ij_geo},
+  type = {symbols},
+  name = {\ensuremath{d_{ij}^{\mathrm{geo}}}},
+  description = {geodesic distance between point $i$ and point $j$}
+}
+
+@symbol{alpha_EMA,
+  sort = {alpha_EMA},
+  type = {symbols},
+  name = {\ensuremath{\alpha_{\mathrm{EMA}}}},
+  description = {smoothing factor}
+}
+
+@symbol{x_EMA,
+  sort = {x_EMA},
+  type = {symbols},
+  name = {\ensuremath{\bar{x}}},
+  description = {current \gls{EMA} estimate}
+}
+
+@symbol{y_EMA,
+  sort = {y_EMA},
+  type = {symbols},
+  name = {\ensuremath{y}},
+  description = {new measurement}
+}
+
+@symbol{voronoi_region,
+  sort = {voronoi_region},
+  type = {symbols},
+  name = {\ensuremath{\mathcal{V}}},
+  description = {voronoi region set}
+}
+
+@symbol{ith_voronoi_region,
+  sort = {ith_voronoi_region},
+  type = {symbols},
+  name = {\ensuremath{\mathcal{V}_i}},
+  description = {i-th Voronoi region set}
+}
+
+@symbol{voronoi_centroid,
+  sort = {voronoi_centroid},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{c}}},
+  description = {centroid of a Voronoi region}
+}
+
+@symbol{ith_voronoi_centroid,
+  sort = {ith_voronoi_centroid},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{c}_i}},
+  description = {centroid of the i-th Voronoi region}
+}
+
+@symbol{voronoi_site,
+  sort = {voronoi_site},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{s}}},
+  description = {site of the Voronoi region}
+}
+
+@symbol{ith_voronoi_site,
+  sort = {ith_voronoi_site},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{s}_i}},
+  description = {site of the i-th Voronoi region}
+}
+
+@symbol{voronoi_vertex,
+  sort = {voronoi_vertex},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{v}_j}},
+  description = {$j$-th vertex of the Voronoi region, ordered counter-clockwise}
+}
+
+@symbol{num_voronoi_vertices,
+  sort = {num_voronoi_vertices},
+  type = {symbols},
+  name = {\ensuremath{M}},
+  description = {number of vertices of the Voronoi region (equivalently, its number of edges)}
+}
+
+@symbol{spherical_triangle_area,
+  sort = {spherical_triangle_area},
+  type = {symbols},
+  name = {\ensuremath{A(\mathbf{a},\mathbf{b},\mathbf{c})}},
+  description = {area of the spherical triangle with vertices $\mathbf{a}$, $\mathbf{b}$, $\mathbf{c}$}
+}
+
+@symbol{nodes_set,
+  sort = {nodes_set},
+  type = {symbols},
+  name = {\ensuremath{\mathcal{N}}},
+  description = {set of all nodes}
+}
+
+@symbol{node_neighbour_set,
+  sort = {node_neighbour_set},
+  type = {symbols},
+  name = {\ensuremath{\mathcal{N}_i}},
+  description = {set of neighbor nodes of $i$}
+}
+
+@symbol{edges_set,
+  sort = {edges_set},
+  type = {symbols},
+  name = {\ensuremath{\mathcal{E}}},
+  description = {set of all edges}
+}
+
+@symbol{graph_set,
+  sort = {graph_set},
+  type = {symbols},
+  name = {\ensuremath{\mathcal{G}}},
+  description = {graph set}
+}
+
+@symbol{adj_matrix,
+  sort = {adj_matrix},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{A}_{\mathrm{adj}}}},
+  description = {adjacency matrix}
+}
+
+@symbol{degree_matrix,
+  sort = {degree_matrix},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{D}_{\mathrm{deg}}}},
+  description = {degree matrix}
+}
+
+@symbol{laplacian_matrix,
+  sort = {laplacian_matrix},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{L}}},
+  description = {Laplacian matrix}
+}
+
+@symbol{ith_degree_term,
+  sort = {ith_degree_term},
+  type = {symbols},
+  name = {\ensuremath{d^{\mathrm{deg}}_i}},
+  description = {i-th diagonal entry of the degree matrix \gls{degree_matrix}}
+}
+
+@symbol{P_k,
+  sort = {P_k},
+  type = {symbols},
+  name = {\ensuremath{P_k}},
+  description = {number of tries per poisson point}
+}
+
+@symbol{bern_coefs,
+  sort = {bern_coefs},
+  type = {symbols},
+  name = {\ensuremath{\boldsymbol{\zeta}}},
+  description = {matrix of Bernstein control points}
+}
+
+@symbol{W_0,
+  sort = {W_0},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{W}_0}},
+  description = {bernstein basis matrix}
+}
+
+@symbol{W_1,
+  sort = {W_1},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{W}_1}},
+  description = {first derivative of the Bernstein basis matrix}
+}
+
+@symbol{W_2,
+  sort = {W_2},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{W}_2}},
+  description = {second derivative of the Bernstein basis matrix}
+}
+
+@symbol{d_pT_normal,
+  sort = {d_pT_normal},
+  type = {symbols},
+  name = {\ensuremath{d_{\mathcal{W}}}},
+  description = {signed distance travelled by the target past the wall along $\hat{\mathbf{n}}$ (negative before the wall)}
+}
+
+@symbol{interpolation,
+  sort = {interpolation},
+  type = {symbols},
+  name = {\ensuremath{u}},
+  description = {mesh morphing (interpolation) parameter, with stages $u_1$, $u_2$, $u_3$}
+}
+
+@symbol{Horizon,
+  sort = {Horizon},
+  type = {symbols},
+  name = {\ensuremath{H}},
+  description = {number of samples of the \gls{MPC} horizon}
+}
+
+@symbol{p_i_pos_h,
+  sort = {p_i_pos_h},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{p}_{i,H}}},
+  description = {planned (horizon) position of agent $i$}
+}
+
+@symbol{p_i_vel_h,
+  sort = {p_i_vel_h},
+  type = {symbols},
+  name = {\ensuremath{\dot{\mathbf{p}}_{i,H}}},
+  description = {planned (horizon) velocity of agent $i$}
+}
+
+@symbol{p_i_acc_h,
+  sort = {p_i_acc_h},
+  type = {symbols},
+  name = {\ensuremath{\ddot{\mathbf{p}}_{i,H}}},
+  description = {planned (horizon) acceleration of agent $i$}
+}
+
+@symbol{w_g,
+  sort = {w_g},
+  type = {symbols},
+  name = {\ensuremath{w_g}},
+  description = {goal (position-tracking) weight of the \gls{MPC} cost}
+}
+
+@symbol{w_s,
+  sort = {w_s},
+  type = {symbols},
+  name = {\ensuremath{w_s}},
+  description = {smoothness (acceleration) weight of the \gls{MPC} cost}
+}
+
+
+
+@symbol{iter_opti,
+  sort = {iter_opti},
+  type = {symbols},
+  name = {\ensuremath{n_{\mathrm{ADMM}}}},
+  description = {maximum number of \gls{ADMM} iterations per control step}
+}
+
+@symbol{P,
+  sort = {P},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{P}}},
+  description = {sampled horizon positions}
+}
+
+@symbol{qp_Q,
+  sort = {qp_Q},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{Q}}},
+  description = {Hessian of the quadratic \gls{MPC} cost}
+}
+
+@symbol{qp_q,
+  sort = {qp_q},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{q}_J}},
+  description = {linear term of the quadratic \gls{MPC} cost}
+}
+
+@symbol{A_eq,
+  sort = {A_eq},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{A}_{\mathrm{eq}}}},
+  description = {initial-state constraint matrix}
+}
+
+@symbol{B_eq,
+  sort = {B_eq},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{b}_{\mathrm{eq}}}},
+  description = {initial-state vector (position, velocity, acceleration)}
+}
+
+@symbol{A_obs,
+  sort = {A_obs},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{A}_o}},
+  description = {stacked sampling matrix of the separation and airspace constraints}
+}
+
+@symbol{B_obs,
+  sort = {B_obs},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{b}_o}},
+  description = {projected (feasible) samples of the separation and airspace constraints}
+}
+
+@symbol{G_ineq,
+  sort = {G_ineq},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{G}}},
+  description = {stacked velocity and acceleration sampling matrix}
+}
+
+@symbol{h_ineq,
+  sort = {h_ineq},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{b}_g}},
+  description = {projected (feasible) velocity and acceleration samples}
+}
+
+
+@symbol{lambda_obs,
+  sort = {lambda_obs},
+  type = {symbols},
+  name = {\ensuremath{\boldsymbol{\lambda}_o}},
+  description = {Lagrange multipliers of the separation and airspace constraints}
+}
+
+@symbol{lambda_ineq,
+  sort = {lambda_ineq},
+  type = {symbols},
+  name = {\ensuremath{\boldsymbol{\lambda}_g}},
+  description = {Lagrange multipliers of the velocity and acceleration constraints}
+}
+
+@symbol{rho_obs,
+  sort = {rho_obs},
+  type = {symbols},
+  name = {\ensuremath{\rho_o}},
+  description = {penalty parameter of the separation and airspace constraints}
+}
+
+@symbol{rho_ineq,
+  sort = {rho_ineq},
+  type = {symbols},
+  name = {\ensuremath{\rho_g}},
+  description = {penalty parameter of the velocity and acceleration constraints}
+}
+
+@symbol{lagrangian,
+  sort = {lagrangian},
+  type = {symbols},
+  name = {\ensuremath{\mathcal{L}}},
+  description = {augmented Lagrangian}
+}
+
+@symbol{A_bar,
+  sort = {A_bar},
+  type = {symbols},
+  name = {\ensuremath{\bar{\mathbf{A}}}},
+  description = {augmented (KKT) Hessian of the control-point update}
+}
+
+@symbol{B_bar,
+  sort = {B_bar},
+  type = {symbols},
+  name = {\ensuremath{\bar{\mathbf{b}}}},
+  description = {right-hand side of the control-point update}
+}
+
+@symbol{M_mesh,
+  sort = {M_mesh},
+  type = {symbols},
+  name = {\ensuremath{\mathcal{M}}},
+  description = {formation mesh (set of vertices and triangular faces)}
+}
+
+@symbol{N_M,
+  sort = {N_M},
+  type = {symbols},
+  name = {\ensuremath{N_M}},
+  description = {number of mesh vertices}
+}
+
+@symbol{sigma,
+  sort = {sigma},
+  type = {symbols},
+  name = {\ensuremath{\sigma_w}},
+  description = {width of the velocity-dependent vertex weighting}
+}
+
+
+@symbol{bern_degree,
+  sort = {bern_degree},
+  type = {symbols},
+  name = {\ensuremath{n_b}},
+  description = {degree of the Bernstein polynomial}
+}
+
+@symbol{horizon_time,
+  sort = {horizon_time},
+  type = {symbols},
+  name = {\ensuremath{T_h}},
+  description = {duration of the \gls{MPC} horizon}
+}
+
+@symbol{w_v,
+  sort = {w_v},
+  type = {symbols},
+  name = {\ensuremath{w_v}},
+  description = {velocity-tracking weight of the \gls{MPC} cost}
+}
+
+@symbol{tau_r,
+  sort = {tau_r},
+  type = {symbols},
+  name = {\ensuremath{\tau_r}},
+  description = {time constant of the exponential reference (minimum $\tau_{r,0}$)}
+}
+
+@symbol{p_ref,
+  sort = {p_ref},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{p}_i^{\mathrm{ref}}}},
+  description = {exponential reference trajectory of agent $i$ towards its goal}
+}
+
+@symbol{v_i_desired,
+  sort = {v_i_desired},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{v}_i^\star}},
+  description = {goal velocity of agent $i$}
+}
+
+@symbol{v_max,
+  sort = {v_max},
+  type = {symbols},
+  name = {\ensuremath{v_{\max}}},
+  description = {maximum speed}
+}
+
+@symbol{a_max,
+  sort = {a_max},
+  type = {symbols},
+  name = {\ensuremath{a_{\max}}},
+  description = {maximum acceleration}
+}
+
+@symbol{safety_radius,
+  sort = {safety_radius},
+  type = {symbols},
+  name = {\ensuremath{r_s}},
+  description = {radius of the spherical inter-agent safety envelope}
+}
+
+@symbol{kappa,
+  sort = {kappa},
+  type = {symbols},
+  name = {\ensuremath{\kappa}},
+  description = {magnitude of a constrained vector in polar form}
+}
+
+@symbol{nu_dir,
+  sort = {nu_dir},
+  type = {symbols},
+  name = {\ensuremath{\boldsymbol{\nu}}},
+  description = {unit direction of a constrained vector in polar form}
+}
+
+@symbol{proj,
+  sort = {proj},
+  type = {symbols},
+  name = {\ensuremath{\Pi_{\mathcal{C}}}},
+  description = {Euclidean projection onto the set $\mathcal{C}$}
+}
+
+@symbol{airspace,
+  sort = {airspace},
+  type = {symbols},
+  name = {\ensuremath{\mathcal{A}}},
+  description = {feasible airspace of the chasers}
+}
+
+@symbol{red_zone,
+  sort = {red_zone},
+  type = {symbols},
+  name = {\ensuremath{\mathcal{R}}},
+  description = {prohibited (red) zone}
+}
+
+@symbol{orange_zone,
+  sort = {orange_zone},
+  type = {symbols},
+  name = {\ensuremath{\mathcal{O}_\ell}},
+  description = {altitude-limited (orange) zone $\ell$}
+}
+
+@symbol{wall,
+  sort = {wall},
+  type = {symbols},
+  name = {\ensuremath{\mathcal{W}}},
+  description = {virtual wall outside the prohibited zone}
+}
+
+@symbol{signed_dist,
+  sort = {signed_dist},
+  type = {symbols},
+  name = {\ensuremath{s}},
+  description = {signed horizontal distance to the border of $\mathcal{R}$ (positive outside)}
+}
+
+@symbol{wall_offset,
+  sort = {wall_offset},
+  type = {symbols},
+  name = {\ensuremath{\delta_w}},
+  description = {distance between the wall and the border of the prohibited zone}
+}
+
+@symbol{red_margin,
+  sort = {red_margin},
+  type = {symbols},
+  name = {\ensuremath{m_r}},
+  description = {horizontal margin kept by the chasers to the border of the prohibited zone}
+}
+
+@symbol{h_max,
+  sort = {h_max},
+  type = {symbols},
+  name = {\ensuremath{h_{\max}}},
+  description = {altitude ceiling above ground level in the altitude-limited zones}
+}
+
+@symbol{ground_elev,
+  sort = {ground_elev},
+  type = {symbols},
+  name = {\ensuremath{z_g}},
+  description = {ground elevation}
+}
+
+@symbol{wall_normal,
+  sort = {wall_normal},
+  type = {symbols},
+  name = {\ensuremath{\hat{\mathbf{n}}}},
+  description = {horizontal unit normal of the wall frame, pointing into $\mathcal{R}$}
+}
+
+@symbol{wall_frame,
+  sort = {wall_frame},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{R}_w}},
+  description = {rotation matrix of the wall frame}
+}
+
+@symbol{d_red,
+  sort = {d_red},
+  type = {symbols},
+  name = {\ensuremath{d_{\mathcal{R}}}},
+  description = {signed distance travelled by the target past the border of $\mathcal{R}$ (positive inside)}
+}
+
+@symbol{joint_width,
+  sort = {joint_width},
+  type = {symbols},
+  name = {\ensuremath{\beta}},
+  description = {relative width of the joint transition of the wall frame}
+}
+
+@symbol{joint_length,
+  sort = {joint_length},
+  type = {symbols},
+  name = {\ensuremath{L_0}},
+  description = {minimum length scale of the joint transition of the wall frame}
+}
+
+@symbol{mesh_center,
+  sort = {mesh_center},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{p}_{\mathrm{mesh}}}},
+  description = {centre of the formation mesh}
+}
+
+@symbol{site_index,
+  sort = {site_index},
+  type = {symbols},
+  name = {\ensuremath{a_i}},
+  description = {index of the mesh vertex (site) owned by agent $i$}
+}
+
+@symbol{vertex_weight,
+  sort = {vertex_weight},
+  type = {symbols},
+  name = {\ensuremath{\omega_a}},
+  description = {weight of mesh vertex $a$}
+}
+
+@symbol{edge_length,
+  sort = {edge_length},
+  type = {symbols},
+  name = {\ensuremath{w_{ab}}},
+  description = {weighted length of the mesh edge $(a,b)$}
+}
+
+@symbol{meas,
+  sort = {meas},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{y}_i}},
+  description = {noisy measurement of the target state by agent $i$}
+}
+
+@symbol{meas_std,
+  sort = {meas_std},
+  type = {symbols},
+  name = {\ensuremath{\sigma_y}},
+  description = {standard deviation of the target measurement noise}
+}
+
+@symbol{xi_bar,
+  sort = {xi_bar},
+  type = {symbols},
+  name = {\ensuremath{\bar{\boldsymbol{\xi}}_i}},
+  description = {\gls{EMA}-filtered target state of agent $i$}
+}
+
+@symbol{xi_hat,
+  sort = {xi_hat},
+  type = {symbols},
+  name = {\ensuremath{\hat{\boldsymbol{\xi}}_i}},
+  description = {consensus estimate of the target state by agent $i$}
+}
+
+@symbol{obstacles,
+  sort = {obstacles},
+  type = {symbols},
+  name = {\ensuremath{\mathcal{B}_i}},
+  description = {obstacles sensed by agent $i$, inflated by the clearance $c_e$}
+}
+
+@symbol{clearance,
+  sort = {clearance},
+  type = {symbols},
+  name = {\ensuremath{c_e}},
+  description = {obstacle clearance}
+}
+
+@symbol{sense_range,
+  sort = {sense_range},
+  type = {symbols},
+  name = {\ensuremath{r_{\mathrm{sense}}}},
+  description = {obstacle sensing range of the safety filter}
+}
+
+@symbol{brake_gain,
+  sort = {brake_gain},
+  type = {symbols},
+  name = {\ensuremath{k_b}},
+  description = {braking gain of the safety filter}
+}
+
+@symbol{z_dec,
+  sort = {z_dec},
+  type = {symbols},
+  name = {\ensuremath{\mathbf{z}}},
+  description = {vectorized control points (decision vector of the \gls{MPC})}
+}

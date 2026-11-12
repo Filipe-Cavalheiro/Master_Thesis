@@ -13,5 +13,33 @@
         "Salle's",
         "Simson",
         "Voronoi"
+    ],
+    // NOVAthesis 8.x build for LaTeX Workshop (pdfLaTeX, as used for this thesis).
+    // An explicit outDir avoids a literal "%OUTDIR%" folder being created when
+    // the placeholder is not expanded (that folder was found in the project).
+    // Auxiliary files go to ./AUXDIR (set in ./latexmkrc); the PDF stays here.
+    "latex-workshop.latex.outDir": "%DIR%",
+    "latex-workshop.latex.recipe.default": "first",
+    "latex-workshop.latex.recipes": [
+        {
+            "name": "NOVAthesis 8 (latexmk, pdfLaTeX)",
+            "tools": ["nt-latexmk-pdf"]
+        }
+    ],
+    "latex-workshop.latex.tools": [
+        {
+            "name": "nt-latexmk-pdf",
+            "command": "latexmk",
+            "args": [
+                "-pdf",
+                "-shell-escape",
+                "-synctex=1",
+                "-interaction=nonstopmode",
+                "-file-line-error",
+                "-outdir=%OUTDIR%",
+                "%DOC%"
+            ],
+            "env": {}
+        }
     ]
 }
