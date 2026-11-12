@@ -1,9 +1,10 @@
 """
 Real vs simulated take off / hover / return / land flight: metrics and figures.
 
-    python swarm_take_off_hover_land/compare.py LOG.csv [SIM.csv] [--no-show]
+    python swarm_take_off_hover_land/compare.py                  # newest run in Results/ and its _sim.csv
+    python swarm_take_off_hover_land/compare.py --log LOG.csv [--sim SIM.csv] [--no-show]
 
-SIM defaults to <log>_sim.csv (main.py). The real setpoints are rebuilt with
+SIM defaults to <log>_sim.csv (log_sim.py). The real setpoints are rebuilt with
 the flight code's ramps from the real measured positions (the log of this
 flight code has no setpoint columns), the simulated ones are logged by the
 simulation.
@@ -32,8 +33,8 @@ import pandas as pd
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-from main import (LAND_HEIGHT, PAUSE_BEFORE_RETURN, PHASES, RETURN, TAKEOFF_HEIGHT,  # noqa: E402
-                  load_log, real_setpoints, setpoint_schedule)
+from log_sim import (FLIGHT_CODE, LAND_HEIGHT, PAUSE_BEFORE_RETURN, PHASES, RETURN,  # noqa: E402
+                     TAKEOFF_HEIGHT, load_log, newest_log, real_setpoints, setpoint_schedule)
 
 PHASE_COLORS = {"Take off": "#cfe8ff", "Hover": "#d9f2d0", RETURN: "#f3e1f7", "Land": "#ffe0c7"}
 SHORT = {"Take off": "Take off", "Hover": "Hover", RETURN: "Return", "Land": "Land"}
@@ -286,11 +287,13 @@ def plot(ids, data, phases, res, out_dir, title, show):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("log")
-    ap.add_argument("sim", nargs="?")
-    ap.add_argument("--no-show", action="store_true")
+    ap.add_argument("--log", help=f"flight log (default: newest {FLIGHT_CODE} run in Results/)")
+    ap.add_argument("--sim", help="simulated flight (default: <log>_sim.csv)")
+    ap.add_argument("--no-show", action="store_true", help="save the figures without opening them")
     args = ap.parse_args()
-    compare(args.log, args.sim, show=not args.no_show)
+    log_path = Path(args.log).resolve() if args.log else newest_log()
+    print(f"Log: {log_path}")
+    compare(log_path, args.sim, show=not args.no_show)
 
 
 if __name__ == "__main__":

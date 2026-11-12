@@ -267,7 +267,7 @@ Files in `test_output/`: `overlay_moving.mp4` (handheld, with the arena grid),
 
 The flight code (`Crazy_Flie/Optitrack/swarm_take_off_hover_land`) logs the phone rigid
 body next to the flight log (`_camera.csv/.json`); the simulation is
-`Python/flight_sims/swarm_take_off_hover_land/main.py` (`_sim.csv`). Put the phone video in
+`Python/flight_sims/swarm_take_off_hover_land/main.py --IRL_log` (`_sim.csv`). Put the phone video in
 the run folder as `video.mp4`:
 
 ```bash
@@ -300,11 +300,11 @@ next to it, from the moment NatNet starts: do the pan / tilt sync gestures befor
 and an `id` column. Simulation and overlay:
 
 ```bash
-python <repo>/Python/flight_sims/8traj/log_sim.py --log <repo>/Results/8traj_trajectory_X/trajectory_X.csv --no-show
+python <repo>/Python/flight_sims/8traj/main.py --IRL_log <repo>/Results/8traj_trajectory_X/trajectory_X.csv --no-show
 python flight_overlay.py <repo>/Results/8traj_trajectory_X/trajectory_X.csv
 ```
 
-`log_sim.py` replays the setpoint stream of `8traj.py` (constants read from the script) on the
-V8 model, writes `_sim.csv` and `comparison/` (position, top view, difference, metrics.json).
+`main.py --IRL_log` replays the setpoint stream of `8traj.py` (constants read from the script) on the
+V8 model, writes `_sim.csv`, `simulation/` and `comparison/` (position, top view, difference, metrics.json).
 The dashboard switches to x(t), y(t), z(t) panels and a top view in metres when the drone moves
 more than 0.3 m horizontally. The phases (and the stills, one per phase) are those of the log.

@@ -36,7 +36,7 @@ TARGET_HEIGHT = 1.00
 DEFAULT_SPEED = 0.8    # Default speed (m/s)
 
 # Figure 8 (Main Controller): x = TRAJ_A sin(w t), y = TRAJ_B sin(2 w t),
-# w = DEFAULT_SPEED rad/s. Read by Python/flight_sims/8traj/log_sim.py.
+# w = DEFAULT_SPEED rad/s. Read by Python/flight_sims/8traj/main.py.
 TRAJ_A = 1.5           # m
 TRAJ_B = 1.0           # m
 # Soft start / stop of the figure 8: the phase rate goes linearly 0 -> w over
@@ -580,7 +580,7 @@ def figure8_phase(t):
     """
     Phase of the figure 8 at t s into the Main Controller, with the soft start / stop:
     rate 0 -> DEFAULT_SPEED over TRAJ_EASE_TIME, constant, then -> 0 at MAIN_CONTROL_TIME.
-    (Same function in Python/flight_sims/8traj/log_sim.py.)
+    (Same function in Python/flight_sims/8traj/main.py.)
     """
     w, T = DEFAULT_SPEED, MAIN_CONTROL_TIME
     E = min(TRAJ_EASE_TIME, T / 2)

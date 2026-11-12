@@ -76,11 +76,11 @@ The overlay needs a flight that also logs the phone's pose. Only two flights do 
 This replays the real flight's setpoints on the simulated Crazyflie, starting from the logged state. It writes `trajectory_<date>_sim.csv` and a `comparison/` folder next to the log:
 
 ```bash
-python Python/flight_sims/swarm_take_off_hover_land/main.py --log Results/swarm_take_off_hover_land_trajectory_<date>/trajectory_<date>.csv --no-show
-python Python/flight_sims/8traj/log_sim.py --log Results/8traj_trajectory_<date>/trajectory_<date>.csv --no-show
+python Python/flight_sims/swarm_take_off_hover_land/main.py --IRL_log Results/swarm_take_off_hover_land_trajectory_<date>/trajectory_<date>.csv --no-show
+python Python/flight_sims/8traj/main.py --IRL_log Results/8traj_trajectory_<date>/trajectory_<date>.csv --no-show
 ```
 
-Without `--log`, the newest run of that flight is used.
+With `--IRL_log` and no path, the newest run of that flight is used. Without `--IRL_log`, `main.py` simulates the nominal flight only (simulated initial values, simulation figures only).
 
 ### 4. Overlay: the real video with the simulated drones
 

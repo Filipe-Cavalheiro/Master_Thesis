@@ -1,6 +1,6 @@
 """
 Crazyflie plant of the thesis simulation (V8), self-contained: the parts the
-flight simulations (swarm_take_off_hover_land/main.py, 8traj/log_sim.py) use,
+flight simulations (main.py of swarm_take_off_hover_land/ and 8traj/) use,
 copied unchanged from flight_sims/swarm_geometric_Fibonacci_sim_target
 (Structs.py, drone_motion.py, drone_3dfull_dyn.py, drone_mellinger_ctrl.py,
 helper_funcs.py), without the Fibonacci / MPC / display parts:
@@ -310,12 +310,16 @@ def get_initial_real_offset(param: Param, iD: int | None = None, phase: str = "M
 
     df = pd.read_csv(csv_path)
 
-    required = ["time_s", "flight_state", *EST_COLS]
+    # a complete sample: every value the initial state is built from (the
+    # attitude / gyro of the first samples of a flight can be missing)
+    numeric_cols = list(dict.fromkeys(["time_s", *EST_COLS, "est_vx", "est_vy", "est_vz",
+                                       "roll_deg", "pitch_deg", "yaw_deg",
+                                       "gyro_x_dps", "gyro_y_dps", "gyro_z_dps"]))
+    required = ["flight_state", *numeric_cols]
     missing = [col for col in required if col not in df.columns]
     if missing:
         raise ValueError(f"Missing required CSV columns: {missing}")
 
-    numeric_cols = list(dict.fromkeys(["time_s", *EST_COLS]))
     for col in numeric_cols:
         df[col] = pd.to_numeric(df[col], errors="coerce")
 

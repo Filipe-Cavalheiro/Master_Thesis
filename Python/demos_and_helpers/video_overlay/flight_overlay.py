@@ -6,8 +6,8 @@ swarm_take_off_hover_land, Crazy_Flie/Optitrack/8traj.py):
     LOG.csv            flight log (OptiTrack positions of the real drones, flight_state phases)
     LOG_camera.csv     phone rigid-body poses (same NatNet frames, camera_logger.py)
     LOG_camera.json    time origin of the flight log on the same clock
-    LOG_sim.csv        the simulation of the flight (Python/flight_sims/swarm_take_off_hover_land/main.py,
-                       Python/flight_sims/8traj/log_sim.py)
+    LOG_sim.csv        the simulation of the flight (main.py --IRL_log of Python/flight_sims/swarm_take_off_hover_land/
+                       and Python/flight_sims/8traj/)
     the phone video, and the phone calibration (phone_align.py: phone_intrinsics.json
     + extrinsics.json, default Results/phone_calib)
 All in the run folder of the flight, Results/<flight code>_trajectory_<date>/
