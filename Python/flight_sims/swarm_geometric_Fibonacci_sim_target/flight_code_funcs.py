@@ -45,7 +45,7 @@ def flight_constants(folder=FLIGHT_DIR):
     """
     mod = {"TAKEOFF_TIME": 3.0, "RETURN_TIME": 3.0, "LAND_TIME": 4.0, "SETPOINT_PERIOD": 0.05}
     par = {"Tend": 30.0, "dTi": 0.1, "sphere_radius": 0.8, "target_traj_radius": 1.5,
-           "default_speed": 0.5, "default_height": 1.3, "k_rad": 0.3, "k_geometric": 5.0, "k_apf": 1.0}
+           "default_speed": 0.25, "default_height": 1.3, "k_rad": 0.3, "k_geometric": 0.5, "k_apf": 1.0}
     found = {}
     try:
         tree = ast.parse((folder / "Structs.py").read_text())
@@ -204,12 +204,19 @@ def measured_ctrl_period(meta):
 
 
 def apply_firmware_gains(param, meta, ids):
-    """Position gains of the onboard Mellinger controller (read back from the firmware) in the plant."""
+    """
+    Position gains of the onboard Mellinger controller in the plant: those read
+    back from the firmware, else the ones the flight code set (mellinger_params_set).
+    """
     fw = [meta["drones"][i].get("firmware", {}) for i in ids if i in meta.get("drones", {})]
     keys = ("ctrlMel.kp_xy", "ctrlMel.kp_z", "ctrlMel.kd_xy", "ctrlMel.kd_z")
     fw = [f for f in fw if all(f.get(k) is not None for k in keys)]
     if not fw:
-        return None
+        set_ = meta.get("mellinger_params_set") or {}
+        if not all(set_.get(k) is not None for k in keys):
+            return None
+        print("Note: no firmware read-back in <log>_meta.json, plant gains = mellinger_params_set")
+        fw = [{k: float(set_[k]) for k in keys}]
     g = {k: fw[0][k] for k in keys}
     if any(any(abs(f[k] - g[k]) > 1e-9 for k in keys) for f in fw[1:]):
         print("Note: the drones flew with different Mellinger gains; the plant uses those of the first one")

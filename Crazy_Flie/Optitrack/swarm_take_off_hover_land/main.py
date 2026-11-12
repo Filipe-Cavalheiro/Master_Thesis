@@ -37,7 +37,6 @@ def hover(scf, state: DroneState, position_lock: threading.Lock, abort_event: th
     hx, hy, _ = state.local_origin
     return ramp_to(scf, [hx, hy, TAKEOFF_HEIGHT], HOVER_TIME, "hover", state, position_lock, abort_event)
 
-
 def assign_land_spots(drone_states: dict[str, DroneState], position_lock: threading.Lock):
     """
     Landing spot of every drone: one of the takeoff points (at takeoff
@@ -53,7 +52,6 @@ def assign_land_spots(drone_states: dict[str, DroneState], position_lock: thread
         drone_states[u].land_spot = homes[h]
     dist = np.max(np.linalg.norm(positions - homes[home_of], axis=1))
     return max(1.5 * dist / RETURN_SPEED, 2.0)          # smoothstep peak = 1.5 x mean speed
-
 
 def main():
     print("\n==============================================")

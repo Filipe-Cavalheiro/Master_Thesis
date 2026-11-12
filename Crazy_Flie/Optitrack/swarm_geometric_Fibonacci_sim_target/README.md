@@ -4,7 +4,11 @@ The real-flight version of the thesis Fibonacci-sphere controller (`Python/fligh
 
 Flight: take off to `default_height` above each home → controller for `Tend` (30 s) → return above home → land → disarm.
 
-Onboard controller: Mellinger (`stabilizer.controller = 2`), with the position gains of `8traj.py` (`kp = 1.1448`, `kv = 0.34344`, `MELLINGER_PARAMS` in `Structs.py`), the ones of the simulated Crazyflie plant.
+Estimator: Kalman (`stabilizer.estimator = 2`, `ONBOARD_ESTIMATOR`), set together with the controller before the estimator reset. If a drone reads back another estimator or controller, the script does not arm. Before 12 Nov 14:20 the estimator was never set: drones left on the complementary estimator (`1`) ignored OptiTrack, estimated z ≈ 180 m (barometer) and stayed on the floor.
+
+Onboard controller: Mellinger (`stabilizer.controller = 2`), with the firmware default position gains (`kp_xy 0.4`, `kd_xy 0.2`, `kp_z 1.25`, `kd_z 0.4`, `MELLINGER_PARAMS` in `Structs.py`). The guidance gain is `k_geometric = 0.5` and the target moves at `default_speed = 0.25` rad/s (0.375 m/s on the 1.5 m circle).
+
+Until 12 Nov the gains were `kp = 1.1448`, `kd = 0.34344` (those of `8traj.py`), with `k_geometric = 5` and `default_speed = 0.5`. At the start of the Main Controller phase `q_ref` swung onto the Fibonacci point in about 1 s, so the setpoint moved up to ~7 m/s (about 3.8 m in 1 s), the high gains saturated the attitude, and the drones crashed. The simulation (`--IRL_log`) takes all of these from `<log>_meta.json`: the gains read back from the firmware (or `mellinger_params_set` if the read-back is missing), `k_geometric` and the target speed. So old and new runs are each replayed with the values they flew with.
 
 Guidance initial state (`cf_funcs.init_guidance`, after the homes are captured): `q_ref` is the direction from the target's start position to the drone's takeoff point (home x, home y, `default_height`), and the radius state its distance. So the first controller setpoint is where the takeoff left the drone, and the radius then converges to `sphere_radius`. Before 12 Nov `q_ref` was computed before the OptiTrack stream started (all drones got the fallback (1, 0, 0)) and the radius started at 0, so every drone was first sent to the target itself.
 
@@ -17,7 +21,7 @@ Self-contained: everything it needs is in this folder.
 | `cf_funcs.py` | per-drone commands (take off, `controller`, return, land, disarm), tracking checks, external-position threads |
 | `fiboancci_funcs.py` | Fibonacci points, minimum safe distance, Delaunay network |
 | `helper_funcs.py` | guidance reference, APF safeguard, radius update |
-| `natnet_funcs.py`, `trajectory_logger.py` | OptiTrack frames, flight log |
+| `natnet_funcs.py`, `trajectory_logger.py`, `camera_logger.py` | OptiTrack frames, flight log, phone pose log |
 | `ctrl_c.py` | two-stage Ctrl+C (see below) |
 
 Python environment: the repository's root `.venv` (`source .venv/bin/activate` from the repository root; see the root README).
@@ -34,11 +38,14 @@ Safety: the flight aborts (return home and land) if OptiTrack tracking is lost o
 - **1st Ctrl+C**: return home and land.
 - **2nd Ctrl+C**: motors off at once; the drones fall.
 
-Unlike the other swarm folders, this one has no battery check and does not log the phone pose, so it can't be used with the video overlay.
+Unlike the other swarm folders, this one has no battery check.
+
+The pose of the filming phone (Motive rigid body `CAMERA_RIGID_BODY_ID`, `Structs.py`; `None` to disable) is logged from the same NatNet frames (no second NatNet client) by `camera_logger.py`, from before the take off (so the sync gestures are recorded too), for the video overlay (`Python/demos_and_helpers/video_overlay/flight_overlay.py`).
 
 Logs go to `Results/swarm_geometric_Fibonacci_sim_target_trajectory_<date>/`:
 - `trajectory_<date>.csv`: OptiTrack and Kalman state of every drone at 50 Hz.
 - `trajectory_<date>_setpoints.csv`: every position setpoint sent (time on the same base, phase, drone), with the virtual target, the radius and `q_ref` of the controller.
+- `trajectory_<date>_camera.csv` / `_camera.json`: phone pose at every NatNet frame (`mono_s, valid, x, y, z, qx, qy, qz, qw`, Z-up frame of the flight code); `time_s = mono_s - flight_log_t0_monotonic` (in the `.json`).
 - `trajectory_<date>_meta.json`: what the simulation needs: the firmware parameters read back after the setup (controller, all `ctrlMel.*` gains), timings and the nominal controller / target periods, the guidance gains and `min_safe_dist`, the target trajectory, and per drone its URI, guidance index (Fibonacci point), home, home yaw, `q_ref0` and `radius0`. At the end it also gets the measured setpoint period per phase and drone.
 
  To simulate a flight and compare it with the real one: `python Python/flight_sims/swarm_geometric_Fibonacci_sim_target/main.py --IRL_log` (see its README). Runs from before the folder was renamed are in `Results/swarm_Fibonacci_sim_target_trajectory_*`.

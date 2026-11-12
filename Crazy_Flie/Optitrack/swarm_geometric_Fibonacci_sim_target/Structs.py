@@ -14,6 +14,11 @@ GOLDEN_ANGLE = math.pi * (3 - math.sqrt(5))
 RIGID_BODY_IDS = {uri: int(uri[-2:]) for uri in CANDIDATE_URIS}
 ID_TO_URI = {rb_id: uri for uri, rb_id in RIGID_BODY_IDS.items()}
 
+# Rigid-body ID in Motive of the filming camera (phone), logged to
+# <log>_camera.csv next to the trajectory log, for the video overlay
+# (Python/demos_and_helpers/video_overlay/flight_overlay.py); None = not logged.
+CAMERA_RIGID_BODY_ID = 0
+
 MOTIVE_IP = "192.168.50.210"
 LOCAL_IP = "192.168.50.195"
 
@@ -31,14 +36,25 @@ SETPOINT_PERIOD = 0.05    # 20 Hz
 
 LOG_SAMPLE_PERIOD = 0.02  # s, trajectory log (50 Hz)
 
-# Onboard controller: Mellinger (stabilizer.controller = 2), with the position
-# gains of 8traj.py (kp = diag(1.1448), kv = diag(0.34344)): the ones of the
-# Crazyflie plant of the simulation (Python/flight_sims/<name>/Structs.py ControllerConfig).
+# Onboard controller: Mellinger (stabilizer.controller = 2). Position gains
+# (N/m, N.s/m: thrust = kp*e_p + kd*e_v + m*g, no mass scaling): the firmware
+# defaults, kp_xy 0.4 / kd_xy 0.2 (wn ~3.5 rad/s, zeta ~0.9 at 32 g) and
+# kp_z 1.25 / kd_z 0.4. Until 12 Nov: kp 1.1448 / kd 0.34344 on all axes (the
+# gains of 8traj.py, wn 6 rad/s), which saturated the attitude when the
+# setpoint jumped at the start of the Main Controller phase, and the drones
+# crashed. The simulation (--IRL_log) uses the gains read back from the
+# firmware, saved in <log>_meta.json.
 ONBOARD_CONTROLLER = 2
+# Estimator (stabilizer.estimator), set before the estimator reset: 2 = Kalman,
+# the one that fuses the OptiTrack external position. The firmware default can
+# be 1 (complementary): it ignores extpos, its z is the barometer altitude
+# (~180 m here), and the drone never takes off (12 Nov runs: only the drone
+# that was already on Kalman flew).
+ONBOARD_ESTIMATOR = 2
 MELLINGER_PARAMS = {
     "ctrlMel.mass": 0.032,
-    "ctrlMel.kp_xy": 1.1448, "ctrlMel.kp_z": 1.1448,
-    "ctrlMel.kd_xy": 0.34344, "ctrlMel.kd_z": 0.34344,
+    "ctrlMel.kp_xy": 0.4, "ctrlMel.kp_z": 1.25,
+    "ctrlMel.kd_xy": 0.2, "ctrlMel.kd_z": 0.4,
 }
 # Firmware parameters read back after the setup and saved in <log>_meta.json
 # (the values the drone actually flew with; a name the firmware lacks is saved as null)
@@ -121,13 +137,18 @@ class Param:
         self.sphere_radius = 0.8        # (m)
 
         self.target_traj_radius = 1.5  # (m)
-        self.default_speed = 0.5        # Default speed (m/s)
+        # target angular speed on the circle (rad/s): 0.25 -> 0.375 m/s on 1.5 m,
+        # one lap in 25 s (0.5 until 12 Nov: 0.75 m/s)
+        self.default_speed = 0.25
         self.default_height = 1.3       # Default takeoff altitude (m)
         self.deadline_time = 10
 
         # Fibonacci controller gains
         self.k_rad = 0.3
-        self.k_geometric = 5
+        # q_ref converges to the Fibonacci point with ~1/k_geometric s. 5 until
+        # 12 Nov: the setpoint moved up to ~7 m/s in the first second of the
+        # Main Controller phase; 0.5 -> < ~1 m/s (the take off ramp peaks at 0.6)
+        self.k_geometric = 0.5
         self.k_apf = 1
 
         # constraints

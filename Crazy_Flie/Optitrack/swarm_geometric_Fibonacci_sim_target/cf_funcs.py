@@ -37,7 +37,9 @@ def warning_lights(scf: SyncCrazyflie):
     scf.cf.param.set_value('led.bitmask', 0)
 
 def set_mellinger(scf: SyncCrazyflie):
-    """Onboard controller: Mellinger, with the gains of MELLINGER_PARAMS (as 8traj.py)."""
+    """Kalman estimator and Mellinger controller, with the gains of MELLINGER_PARAMS
+    (call before swarm.reset_estimators)."""
+    scf.cf.param.set_value("stabilizer.estimator", str(ONBOARD_ESTIMATOR))
     scf.cf.param.set_value("stabilizer.controller", str(ONBOARD_CONTROLLER))
     for name, value in MELLINGER_PARAMS.items():
         scf.cf.param.set_value(name, str(value))
@@ -53,6 +55,10 @@ def read_firmware_params(scf: SyncCrazyflie, firmware_params: dict):
         except Exception:
             values[name] = None
     firmware_params[scf.cf.link_uri] = values
+    est, ctrl = values.get("stabilizer.estimator"), values.get("stabilizer.controller")
+    if est != ONBOARD_ESTIMATOR or ctrl != ONBOARD_CONTROLLER:
+        raise RuntimeError(f"{scf.cf.link_uri}: estimator {est}, controller {ctrl} "
+                           f"(expected {ONBOARD_ESTIMATOR}, {ONBOARD_CONTROLLER}): not arming")
     print(f"{scf.cf.link_uri}: controller {values.get('stabilizer.controller')}, "
           f"kp_xy {values.get('ctrlMel.kp_xy')}, kd_xy {values.get('ctrlMel.kd_xy')}")
 

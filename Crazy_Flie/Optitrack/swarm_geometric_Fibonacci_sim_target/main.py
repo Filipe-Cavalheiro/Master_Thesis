@@ -3,6 +3,8 @@ Implementation of the centralized
 fibonacci sphere + lyapunov controller (path planner).
 """
 
+import time
+import atexit
 import threading
 import subprocess
 import numpy as np
@@ -17,6 +19,7 @@ from cf_funcs import *
 from natnet_funcs import *
 from trajectory_logger import TrajectoryLogger
 import ctrl_c
+from camera_logger import CameraLogger
 
 def main():
     print("\n==============================================")
@@ -88,6 +91,14 @@ def main():
     logger = TrajectoryLogger(drone_states, position_lock,
                             sample_period=LOG_SAMPLE_PERIOD)
     set_setpoint_logger(logger)     # every setpoint sent goes to <log>_setpoints.csv
+
+    # pose of the filming camera (phone), from the same NatNet frames (no second
+    # client), from now on: the sync gestures before the take off are recorded too
+    cam_log = None
+    if CAMERA_RIGID_BODY_ID is not None:
+        cam_log = CameraLogger(logger.output_path, CAMERA_RIGID_BODY_ID)
+        client.on_data_frame_received_event.handlers.append(cam_log.on_frame)
+        atexit.register(cam_log.close)
     
     # --------------------------------------------------------
     # Crazyflies
@@ -121,6 +132,8 @@ def main():
                         for uri, state in drone_states.items()
                     },
                 )
+                # Kalman estimator + Mellinger before the reset (the reset is of the Kalman filter)
+                swarm.parallel_safe(set_mellinger)
                 swarm.reset_estimators()
                 swarm.parallel_safe(capture_home,
                     args_dict={
@@ -134,8 +147,7 @@ def main():
                     print("ERROR: tracking lost during estimator settling.")
                     return
 
-                # Onboard Mellinger controller, then read back what the firmware has
-                swarm.parallel_safe(set_mellinger)
+                # read back what the firmware has (raises, so no arming, unless Kalman + Mellinger)
                 swarm.parallel_safe(read_firmware_params,
                     args_dict={uri: (firmware_params,) for uri in active_uris})
 
@@ -157,6 +169,8 @@ def main():
 
                 swarm.parallel_safe(logger.start_logging)   # per-drone log blocks
                 logger.begin()                              # single sampling thread + CSV
+                if cam_log is not None:
+                    cam_log.mark_flight_start(logger.start_time)
                 logger.mark_state("Take off")
 
                 swarm.parallel_safe(
