@@ -34,7 +34,7 @@ if scen == "traj5":
 elif scen == "traj6":
     sim.traj = 6; sim.nD = 5
 else:
-    sim.arena_experiment = True; sim.arena_traj = 5; sim.arena_target_drone = True
+    sim.scene = "arena"; sim.traj = 5; sim.arena_target_drone = True
     sim.nD = 3 if scen == "arena3" else 4
 if "--reset" in sys.argv:
     sim.admm_warm_multipliers = False

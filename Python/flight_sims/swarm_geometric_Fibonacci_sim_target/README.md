@@ -178,7 +178,7 @@ source <repo>/.venv/bin/activate     # the repository's root environment
 python main.py
 ```
 
-To redo the figures / animations of the last run without re-simulating (as in `V17_Lisbon_aeroport`): `main.py` saves the simulation data to `Results/simulation_results.pkl` when `param.display.store_data` is `True` (default), and
+To redo the figures / animations of the last run without re-simulating (as in the `swarm_MPC_voronoi` simulation): `main.py` saves the simulation data to `Results/simulation_results.pkl` when `param.display.store_data` is `True` (default), and
 
 ```bash
 python Animation_display.py     # loads Results/simulation_results.pkl, draws what the GraphicalDisplay flags select

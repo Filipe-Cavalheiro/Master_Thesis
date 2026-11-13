@@ -48,6 +48,8 @@ class DroneState:
         self.ang_vel: np.ndarray =  np.zeros([3,1], dtype=np.float64)
         self.ei: np.ndarray =  np.zeros([3,1], dtype=np.float64)
         self.eI: np.ndarray =  np.zeros([3,1], dtype=np.float64)
+        # integral of the position error of the Mellinger controller (Crazyflie firmware, drone_mellinger_ctrl)
+        self.pos_i_error: np.ndarray = np.zeros([3,1], dtype=np.float64)
         self.radii_to_target: np.floating = np.float32(0.0)
         
         self.estimated: EstimatedState = EstimatedState()

@@ -19,7 +19,7 @@ Run the swarm folders from inside their folder (`python main.py`) and the standa
 | [`swarm_take_off_hover_land/`](swarm_take_off_hover_land/README.md) | take off, hover, return, land. Run it first with new drones, batteries or gains | yes |
 | [`swarm_geometric_Fibonacci_sim_target/`](swarm_geometric_Fibonacci_sim_target/README.md) | Fibonacci-sphere encirclement of a virtual target (geometric controller) | no |
 | [`swarm_voronoi_sim_target/`](swarm_voronoi_sim_target/README.md) | Voronoi formation around a virtual target | no |
-| [`swarm_MPC_voronoi/`](swarm_MPC_voronoi/README.md) | Voronoi formation with the distributed MPC (`--target sim` or `--target real`) | no |
+| [`swarm_MPC_voronoi/`](swarm_MPC_voronoi/README.md) | Voronoi formation with the distributed MPC around a simulated or real target (`REAL_TARGET_DRONE_ID`, `-1` = simulated) | no |
 
 ## Standalone scripts
 
@@ -48,7 +48,7 @@ Before arming and after landing, Ctrl+C just quits. The handler is `ctrl_c.py`, 
 | Script | Use |
 |---|---|
 | `plot_data.py` | plots / animation of a flight log: `python plot_data.py [log.csv] [--animate] [--source est] [--save-figs DIR]` (default: newest log in `Results/`) |
-| `flight_sim.py` | simulates a swarm flight from its log and compares, or a dry run before flying: `python flight_sim.py swarm_MPC_voronoi`, `python flight_sim.py swarm_voronoi_sim_target --dry-run --drones 3` (the code is in V17, `Python/flight_sims/V17_Lisbon_aeroport/Python/flight_replay.py`; for `swarm_MPC_voronoi` also `python main.py --IRL_log` / `--arena` there) |
+| `flight_sim.py` | simulates a swarm flight from its log and compares, or a dry run before flying: `python flight_sim.py swarm_MPC_voronoi`, `python flight_sim.py swarm_voronoi_sim_target --dry-run --drones 3` (the code is in V17, `Python/flight_sims/swarm_MPC_voronoi/Python/flight_replay.py`; for `swarm_MPC_voronoi` also `python main.py --IRL_log` / `--arena` there) |
 | `camera_logger.py` | logs the phone rigid body from the flight's NatNet frames (used by `8traj.py`) |
 | `natnet_test.py` | checks the connection to Motive |
 

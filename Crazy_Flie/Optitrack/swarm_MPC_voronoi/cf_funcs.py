@@ -55,11 +55,15 @@ def capture_home(scf: SyncCrazyflie, drone_state: DroneState, position_lock: thr
                            f"Point the drone along +X of the tracking frame.")
 
 def set_onboard_controller(scf: SyncCrazyflie):
+    """Kalman estimator and Mellinger controller, with the gains of MELLINGER_PARAMS
+    (as the Fibonacci flight; call before swarm.reset_estimators)."""
     if ONBOARD_ESTIMATOR is not None:
         scf.cf.param.set_value('stabilizer.estimator', str(ONBOARD_ESTIMATOR))
     if ONBOARD_CONTROLLER is not None:
         scf.cf.param.set_value('stabilizer.controller', str(ONBOARD_CONTROLLER))
-    time.sleep(0.1)
+    for name, value in MELLINGER_PARAMS.items():
+        scf.cf.param.set_value(name, str(value))
+    time.sleep(0.2)
 
 # Firmware parameters read back after the setup and saved in <log>_meta.json
 # (the values the drone flew with; None if the firmware lacks one)
@@ -76,7 +80,8 @@ def read_firmware_params(scf: SyncCrazyflie, firmware_params: dict):
     """
     The LOGGED_FIRMWARE_PARAMS of this drone, as the firmware has them.
     Raises (no arming) unless the estimator / controller are those set by
-    set_onboard_controller (a drone left on the complementary estimator
+    set_onboard_controller, and the Mellinger mass and gains are those of
+    MELLINGER_PARAMS (a drone left on the complementary estimator
     ignores OptiTrack and does not take off).
     """
     values = {}
@@ -94,6 +99,11 @@ def read_firmware_params(scf: SyncCrazyflie, firmware_params: dict):
             (ONBOARD_CONTROLLER is not None and ctrl != ONBOARD_CONTROLLER):
         raise RuntimeError(f"{scf.cf.link_uri}: estimator {est}, controller {ctrl} "
                            f"(expected {ONBOARD_ESTIMATOR}, {ONBOARD_CONTROLLER}): not arming")
+    wrong = {k: values.get(k) for k, v in MELLINGER_PARAMS.items()
+             if values.get(k) is None or abs(values[k] - v) > 1e-4}
+    if wrong:
+        raise RuntimeError(f"{scf.cf.link_uri}: Mellinger parameters {wrong} read back, "
+                           f"expected {MELLINGER_PARAMS}: not arming")
 
 def flight_metadata(param, drone_states: dict, chaser_uris, firmware_params: dict, goals, slots, target_start):
     """What the simulation of this flight needs (saved in <log>_meta.json)."""
@@ -112,7 +122,11 @@ def flight_metadata(param, drone_states: dict, chaser_uris, firmware_params: dic
     return {
         "flight_code": "swarm_MPC_voronoi",
         "start": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "target_mode": TARGET_MODE, "target_traj": TARGET_TRAJ,
+        "scene": SCENE,
+        "drone": {"type": "Crazyflie", "model": DRONE_MODEL},
+        "mellinger_params_set": MELLINGER_PARAMS,     # written by set_onboard_controller (read back per drone: "firmware")
+        "target_mode": TARGET_MODE, "target_drone_id": TARGET_DRONE_ID, "target_traj": TARGET_TRAJ,
+        "target_traj_name": TRAJ_NAMES.get(TARGET_TRAJ, str(TARGET_TRAJ)),
         "target": {"radius": TARGET_TRAJ_RADIUS, "angular_speed": TARGET_ANGULAR_SPEED,
                    "height": TARGET_HEIGHT, "start": np.asarray(target_start).tolist()},
         "formation": {"sphere_radius": param.sphere_radius, "mesh_points": MESH_POINTS,
@@ -156,8 +170,17 @@ def warning_lights(scf: SyncCrazyflie):
     time.sleep(2)
     scf.cf.param.set_value('led.bitmask', 0)
 
+# Flight log of every setpoint sent (TrajectoryLogger.record_setpoint, <log>_setpoints.csv), set by main.py
+SETPOINT_LOG = None
+
+def set_setpoint_logger(logger):
+    global SETPOINT_LOG
+    SETPOINT_LOG = logger
+
 def send_position_setpoint(scf, x, y, z, yaw=0.0):
     scf.cf.commander.send_position_setpoint(float(x), float(y), float(z), float(yaw))
+    if SETPOINT_LOG is not None:
+        SETPOINT_LOG.record_setpoint(scf.cf.link_uri, "position", (x, y, z))
 
 def ramp_to(scf, target_pos, duration, label, state, position_lock, abort_event, respect_abort=True):
     """Smoothly move from the current measured position to `target_pos`."""
@@ -212,6 +235,8 @@ def send_full_state_setpoint(scf, p, v, a):
     scf.cf.commander.send_full_state_setpoint(
         [float(c) for c in p], [float(c) for c in v], [float(c) for c in a],
         [0.0, 0.0, 0.0, 1.0], 0.0, 0.0, 0.0)
+    if SETPOINT_LOG is not None:
+        SETPOINT_LOG.record_setpoint(scf.cf.link_uri, "full_state", p, v, a)
 
 def controller(scf, idx: int, state: DroneState, mpc: SwarmMPC,
                drone_states: dict[str, DroneState], position_lock: threading.Lock,

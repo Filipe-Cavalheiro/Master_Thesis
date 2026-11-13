@@ -6,7 +6,7 @@ import numpy as np
 
 # The arena experiment (trajectory 5) is shared with the Python simulation
 _REPO = next(p for p in Path(__file__).resolve().parents if (p / ".git").exists())
-sys.path.append(str(_REPO / "Python" / "flight_sims" / "V17_Lisbon_aeroport" / "Python"))
+sys.path.append(str(_REPO / "Python" / "flight_sims" / "swarm_MPC_voronoi" / "Python"))
 import experiment_arena as arena
 
 # CONSTS
@@ -37,6 +37,20 @@ ONBOARD_CONTROLLER = 2
 # Estimator (stabilizer.estimator) set before the reset: 2 = Kalman (fuses
 # the OptiTrack external position)
 ONBOARD_ESTIMATOR = 2
+# Mellinger mass and position gains written to every drone before the
+# estimator reset (cf_funcs.set_onboard_controller), as the geometric
+# Fibonacci flight (swarm_geometric_Fibonacci_sim_target, flown well on
+# 12 Nov): the firmware defaults, kp_xy 0.4 / kd_xy 0.2 (wn ~3.5 rad/s,
+# zeta ~0.9 at 32 g) and kp_z 1.25 / kd_z 0.4. A drone keeps the gains of
+# the last script until it reboots: 8traj.py leaves kp 1.1448 / kd 0.34344,
+# which saturated the attitude and crashed the drones. The values read back
+# must match these (read_firmware_params), else no arming. The simulation
+# plant uses the same gains (experiment_arena.CRAZYFLIE_ONBOARD).
+MELLINGER_PARAMS = {
+    "ctrlMel.mass": 0.032,
+    "ctrlMel.kp_xy": 0.4, "ctrlMel.kp_z": 1.25,
+    "ctrlMel.kd_xy": 0.2, "ctrlMel.kd_z": 0.4,
+}
 MAX_START_YAW_DEG = 10.0  # deg, |yaw| on the ground before arming (Kalman reset assumes 0)
 MIN_BATTERY_VOLTAGE = 3.8  # V at rest before arming (1S LiPo)
 
@@ -55,26 +69,39 @@ LAND_HEIGHT = 0.02        # m, motors stopped at the end of a landing
 TARGET_TRAJ = 2             # 1 = still, 2 = horizontal circle around the arena centre, 5 = Lisbon
                             # trajectory 5 window (Python/experiment_arena.py, wall at the KMZ angle)
 TARGET_TRAJ = int(os.environ.get("CF_TARGET_TRAJ", TARGET_TRAJ))   # flight_sim.py --dry-run --traj
-# The target, chosen per flight (python main.py --target sim | real, which
-# sets CF_TARGET; flight_sim.py sets it from the run folder name):
-#   real: a Crazyflie (rigid-body ID REAL_TARGET_DRONE_ID) flies the target
+TRAJ_NAMES = {1: "still", 2: "horizontal circle around the arena centre",
+              5: "Lisbon trajectory 5 slice (experiment_arena.ArenaTrajectory5)"}
+# Logged in <log>_meta.json: these flights are always in the OptiTrack arena
+# (scene "arena" of the Python simulation) with Crazyflies
+SCENE = "arena"
+DRONE_MODEL = arena.DRONE_MODEL     # entry of the simulation's drone_models.toml
+# The target (REAL_TARGET_DRONE_ID):
+#   a rigid-body ID (one of RIGID_BODY_IDS): that Crazyflie flies the target
 #         path with full-state setpoints and the formation follows its
-#         OptiTrack position and velocity
-#   sim:  virtual target, the formation follows the path itself
-REAL_TARGET_DRONE_ID = 4
-TARGET_MODE = os.environ.get("CF_TARGET", "sim")
+#         OptiTrack position and velocity (run: <folder>_real_target_...)
+#   -1:   simulated (virtual) target, the formation follows the path itself
+#         (run: <folder>_sim_target_...)
+# The replay of a flight (flight_replay.py) sets CF_TARGET (sim / real) and
+# CF_TARGET_DRONE_ID from its log, so a run is replayed as it was flown
+# whatever REAL_TARGET_DRONE_ID is now; the real flight (main.py) ignores them.
+REAL_TARGET_DRONE_ID = -1     # -1: simulated target; 4: the target drone of the real-target flights
+_target_id = int(os.environ.get("CF_TARGET_DRONE_ID", REAL_TARGET_DRONE_ID))
+TARGET_MODE = os.environ.get("CF_TARGET", "sim" if _target_id == -1 else "real")
 if TARGET_MODE not in ("sim", "real"):
     raise ValueError(f"CF_TARGET must be 'sim' or 'real', not {TARGET_MODE!r}")
-TARGET_DRONE_ID = REAL_TARGET_DRONE_ID if TARGET_MODE == "real" else None
+if TARGET_MODE == "real" and _target_id not in ID_TO_URI:
+    raise ValueError(f"Real target: REAL_TARGET_DRONE_ID = {_target_id} is not one of the rigid bodies "
+                     f"{sorted(ID_TO_URI)} (-1 for a simulated target)")
+TARGET_DRONE_ID = _target_id if TARGET_MODE == "real" else None
 TARGET_URI = ID_TO_URI.get(TARGET_DRONE_ID) if TARGET_DRONE_ID is not None else None
 TARGET_TRAJ_RADIUS = 1.6    # m (2.2 with lighthouse: with the formation around it, it left the 5 x 5 m arena)
-TARGET_ANGULAR_SPEED = 0.3  # rad/s (0.48 m/s on the circle)
+TARGET_ANGULAR_SPEED = 0.25 # rad/s (0.4 m/s on the circle; Fibonacci flight: 0.25 rad/s)
 TARGET_HEIGHT = 1.3         # m
 SPHERE_RADIUS = 0.8         # m, formation radius
 MESH_POINTS = 1001
 FORMATION_TIME = 30.0       # s, controllers running while the target moves
 if TARGET_TRAJ == 5:
-    # the sphere radius, path and duration of the Python simulation (arena_traj = 5)
+    # the sphere radius, path and duration of the Python simulation (scene = "arena", traj = 5)
     SPHERE_RADIUS = arena.TRAJ5_RADIUS
     FORMATION_TIME = arena.ArenaTrajectory5().t_stop + arena.TRAJ5_HOLD
 VORONOI_PERIOD = 0.1        # s, target and formation update
@@ -103,7 +130,7 @@ def clip_to_arena(pts):
 
 # MPC (mpc.py): the distributed Bernstein-polynomial MPC of the thesis
 # (Chapter 6), the code of the Python simulation V17
-# (Python/flight_sims/V17_Lisbon_aeroport/Python/obstacle_avoidance_funcs.py),
+# (Python/flight_sims/swarm_MPC_voronoi/Python/obstacle_avoidance_funcs.py),
 # with the weights of the thesis and the limits / safety radius of the arena.
 # As in the thesis the control (replanning) period is the setpoint period.
 MPC_PERIOD = SETPOINT_PERIOD  # s, replanning period: every control step
@@ -117,7 +144,7 @@ MPC_W_GOAL = 1000.0
 MPC_W_SMOOTH = 0.1
 MPC_W_VEL = 300.0           # goal velocity tracking (target velocity)
 MPC_GOAL_REF_TAU = 0.5      # s, min time constant of the exponential approach to the goal
-MPC_V_MAX = 0.8             # m/s (target at 0.48 m/s on the circle)
+MPC_V_MAX = 0.8             # m/s (target at 0.4 m/s on the circle)
 MPC_A_MAX = 1.0             # m/s^2
 if TARGET_TRAJ == 5:
     MPC_V_MAX = 3.0 * arena.TRAJ5_SCALE     # m/s, Lisbon 3 m/s scaled (0.48), as the simulation
@@ -201,7 +228,7 @@ class Param:
 
         if traj == 5:
             # Lisbon trajectory 5 scaled to the arena, the wall at the KMZ
-            # angle; same path as the Python simulation (arena_traj = 5)
+            # angle; same path as the Python simulation (scene = "arena", traj = 5)
             tr = arena.ArenaTrajectory5()
             self.wall_normal = np.array([*arena.TRAJ5_N_IN, 0.0])
             self.wall_point = np.array([*tr.wall_point, 0.0])

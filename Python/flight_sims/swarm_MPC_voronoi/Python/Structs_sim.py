@@ -5,7 +5,7 @@ import os
 import tomllib
 from dataclasses import dataclass
 
-from restricted_airspace import RestrictedAirspace, StraightAirspace, NoAirspace
+from restricted_airspace import RestrictedAirspace
 from environment import FlatGround
 
 # CONSTS
@@ -14,7 +14,7 @@ GOLDEN_ANGLE = math.pi * (3 - math.sqrt(5))
 class SimulationConfig:
     def __init__(self, config_path=None, drone_name="hb_x500"):
         # Simulation
-        self.Tend = 40 # [seconds]
+        self.Tend = 30 # [seconds]
         self.dTi = 0.01 # [seconds]
         self.Nsim = round(self.Tend / self.dTi) + 1
 
@@ -28,7 +28,7 @@ class SimulationConfig:
 
         # Drones
         self.nD = 5
-        self.sphere_radius = 5.0
+        self.sphere_radius = 0.8
 
         # Drop parameters
         self.nD_drop = 2
@@ -54,8 +54,9 @@ class SimulationConfig:
         self.ema_alpha = 0.2
         self.noise_std = 0.05
 
-        # Target path
-        self.traj = 6
+        # Target path: 1 hover, 2 circle, 3 Lissajous, 4 3D Lissajous, 5 intrusion across a
+        # straight red border, 6 intrusion through a red border joint (in both scenes)
+        self.traj = 2
 
         # MPC: plan a 1 s horizon to the goal (ADMM, with vel/acc limits,
         # inter-agent avoidance and the airspace). False: the goal position
@@ -74,7 +75,7 @@ class SimulationConfig:
         # constraints
         self.obstacle_avoidance = True 
         self.restricted_vel_acc = True
-        self.obstacle_avoidance_dim = 1.00
+        self.obstacle_avoidance_dim = 0.20
         # Safety envelope around the other drones (and the target drone): a
         # sphere of radius obstacle_avoidance_dim (thesis, inter-agent separation)
         self.n_degree = 5
@@ -115,24 +116,19 @@ class SimulationConfig:
         # options: "fibonacci" or "dijkstra" 
         self.distribution = "dijkstra"
 
-        # --- Restricted airspace (map) ---
-        #   "auto":     from the trajectory: 1-4 -> "straight", 5-6 -> "lisbon"
-        #   "lisbon":   the KMZ zones (ENU frame at the LPPT ARP, same as Gazebo), needed by trajectories 5, 6
-        #   "straight": the V16 scenario: the wall is the plane x = straight_wall_x facing +x,
-        #               the red zone x > straight_red_x (StraightAirspace)
-        #   "none":     empty world, the formation only reacts to a plane wall at x = 0
-        self.airspace_model = "auto"
-        self.straight_wall_x = 0.0      # [m] straight scenario: the wall (start of the grey band)
-        self.straight_red_x = 20.0      # [m] straight scenario: red border. Trajectory 2 reaches
-                                        # x = 10 m and its 5 m formation x = 15 m, so (with the 1 m
-                                        # margin) the red zone never constrains it, as in V16
-        # True: Crazyflie arena experiment (Crazy_Flies/swarm_MPC_voronoi_sim_target):
-        # Crazyflie model, the trajectory 5 scenario scaled to the OptiTrack
-        # arena (experiment_arena.py); overrides the airspace, path and scale
-        self.arena_experiment = False
-        self.arena_traj = 5         # arena path: 5 = Lisbon trajectory 5 window (radius 0.8 m), "loop"
-        self.arena_target_drone = True   # arena: the target is a Crazyflie (as Crazy_Flies/swarm_MPC_voronoi),
-                                         # avoided by the chasers' MPC; False: virtual target (swarm_MPC_voronoi_sim_target)
+        # --- Flight scene ---
+        #   "lisbon": the Lisbon airport (KMZ zones, ENU frame at the LPPT ARP, same as Gazebo),
+        #             X500. Trajectories 1-4 fly in a frame on the drones' wall at the
+        #             trajectory 5 crossing (x into the grey band, red border at x = wall_offset);
+        #             5 and 6 are the intrusions into the red zone.
+        #   "arena":  the Crazyflie OptiTrack arena (experiment_arena.py): Crazyflie model, the
+        #             Lisbon scenario scaled to the 6 x 6 x 3 m room (geofence). Trajectories 1-4
+        #             cross the wall x = arena_wall_x (wall <-> sphere); 5 and 6 are a slice of
+        #             the Lisbon trajectories 5 and 6 (the wall and its corner at the Lisbon angle).
+        self.scene = "lisbon"
+        self.arena_wall_x = 0.0         # [m] arena, trajectories 1-4: the wall (start of the grey band)
+        self.arena_target_drone = True  # arena: the target is a Crazyflie (as Crazy_Flies/swarm_MPC_voronoi),
+                                        # avoided by the chasers' MPC; False: virtual target (swarm_MPC_voronoi_sim_target)
         self.airspace_kmz = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
             "..", "Assets", "Aeroporto de Lisboa.kmz"
@@ -202,6 +198,60 @@ class ControllerConfig:
         self.c2 = 2
         self.c3 = 2
 
+def lisbon_local_traj(traj):
+    """Trajectories 1-4 of the Lisbon scene in the wall frame (x past the wall, y along it, z up), (3,) arrays."""
+    if traj == 1:
+        # Hover in the grey band, 10 m past the wall
+        return {"pos": lambda t: np.array([10.0, 0.0, 5.0]),
+                "vel": lambda t: np.zeros(3)}
+    # Speeds: the target stays well under the MPC limit v_max (3 m/s), with room
+    # for the chasers on the outer side of the formation (radius 5 m), which fly
+    # faster than the target in the turns. At V16's 0.25 rad/s (3.75 m/s) the
+    # chasers were held at v_max 25% of the time, 2 m behind their goals on average.
+    if traj == 2:
+        # Circle of 15 m around (-5, 0, 5): crosses the wall back and forth;
+        # 0.12 rad/s: target 1.8 m/s, outer chasers ~2.4 m/s
+        w, r = 0.12, 15.0
+        return {"pos": lambda t: np.array([-5 + r * np.sin(w * t), r * np.cos(w * t), 5.0]),
+                "vel": lambda t: np.array([r * w * np.cos(w * t), -r * w * np.sin(w * t), 0.0])}
+    if traj == 3:
+        # Lissajous centred on the wall; 0.2 rad/s: target up to 2.2 m/s (was 1 rad/s, 11 m/s)
+        w = 0.2
+        return {"pos": lambda t: np.array([5 * np.sin(w * t), 5 * np.sin(2 * w * t), 5.0]),
+                "vel": lambda t: np.array([5 * w * np.cos(w * t), 10 * w * np.cos(2 * w * t), 0.0])}
+    if traj == 4:
+        # 3D Lissajous centred on the wall, as 3 with 0.2 m in height
+        w = 0.2
+        return {"pos": lambda t: np.array([5 * np.sin(w * t), 5 * np.sin(2 * w * t), 5 + 0.2 * np.cos(2 * w * t)]),
+                "vel": lambda t: np.array([5 * w * np.cos(w * t), 10 * w * np.cos(2 * w * t),
+                                           -0.4 * w * np.sin(2 * w * t)])}
+    raise ValueError(f"Unknown trajectory {traj}")
+
+
+def lisbon_traj6_geometry(airspace):
+    """
+    Trajectory 6 of the Lisbon scene: along the bisector of the notch at red
+    vertex 8, from 30 m before the wall corner to 30 m inside the red zone.
+    Returns start (2,), vel (2,), t_stop, the wall corner (2,) and the inward direction (2,).
+    """
+    V = airspace.red.vertices
+    joint = V[8]
+    u1 = (V[7] - joint) / np.linalg.norm(V[7] - joint)
+    u2 = (V[9] - joint) / np.linalg.norm(V[9] - joint)
+    bisector_out = (u1 + u2) / np.linalg.norm(u1 + u2)
+    half_angle = 0.5 * np.arccos(np.clip(u1 @ u2, -1.0, 1.0))
+    wall_corner = airspace.wall_offset / np.sin(half_angle)     # distance joint -> wall corner
+    speed = 2.2                                                  # [m/s]
+    return {
+        "start": joint + (wall_corner + 30.0) * bisector_out,
+        "vel": -speed * bisector_out,
+        "speed": speed,
+        "t_stop": (wall_corner + 60.0) / speed,
+        "wall_corner": joint + wall_corner * bisector_out,
+        "dir_in": -bisector_out,
+    }
+
+
 class TrajectoryConfig:
     def __init__(
         self,
@@ -224,75 +274,35 @@ class TrajectoryConfig:
         )
 
 
+    def wall_frame_origin(self):
+        """
+        Frame of trajectories 1-4: origin on the drones' wall at the trajectory 5
+        crossing (40% along red edge 1, a straight 6 km edge over open ground),
+        x into the red zone (normal of the wall), y along the wall, z up. The
+        grey band is 0 < x < wall_offset; the red border is at x = wall_offset.
+        """
+        crossing = 0.6 * self.airspace.red.vertices[1] + 0.4 * self.airspace.red.vertices[2]
+        n_out, c, _ = self.airspace.red.outward_normal(crossing.reshape(1, 2))
+        n_in = -n_out[0]
+        tangent = np.array([-n_in[1], n_in[0]])
+        origin = c[0] - self.airspace.wall_offset * n_in
+        return origin, n_in, tangent
+
     def make_traj(self, traj):
-        if traj == 1:
-            # Hover
+        if traj in (1, 2, 3, 4):
+            # Paths of V16 in the wall frame (wall at x = 0, see wall_frame_origin):
+            # the target crosses the wall into the grey band and back, the
+            # formation morphs wall <-> sphere; the red zone is never reached.
+            local = lisbon_local_traj(traj)
+            origin, n_in, tangent = self.wall_frame_origin()
+            R = np.array([[n_in[0], tangent[0], 0.0],
+                          [n_in[1], tangent[1], 0.0],
+                          [0.0, 0.0, 1.0]])
+            o = np.array([origin[0], origin[1], 0.0])
             return {
-                "pos": lambda t: np.array([
-                    [10],
-                    [0],
-                    [5]
-                ]),
-
-                "vel": lambda t: np.zeros([3,1])
+                "pos": lambda t: (o + R @ local["pos"](t)).reshape(3, 1),
+                "vel": lambda t: (R @ local["vel"](t)).reshape(3, 1),
             }
-
-
-        elif traj == 2:
-            # Circle
-            vel_gain = 0.25
-            radius = 15
-
-            return {
-                "pos": lambda t: np.array([
-                    [-5 + radius*np.sin(vel_gain*t)],
-                    [radius*np.cos(vel_gain*t)],
-                    [5]
-                ]),
-
-                "vel": lambda t: np.array([
-                    [radius*vel_gain*np.cos(vel_gain*t)],
-                    [-radius*vel_gain*np.sin(vel_gain*t)],
-                    [0]
-                ])
-            }
-
-        elif traj == 3:
-            # Lissajous
-            return {
-                "pos": lambda t: np.array([
-                    5*np.sin(t),
-                    5*np.sin(2*t),
-                    5
-                ]),
-
-                "vel": lambda t: np.array([
-                    5*np.cos(t),
-                    10*np.cos(2*t),
-                    0
-                ])
-            }
-
-
-        elif traj == 4:
-            # 3D Lissajous
-            return {
-                "pos": lambda t: np.array([
-                    5*np.sin(t),
-                    5*np.sin(2*t),
-                    5+0.2*np.cos(2*t)
-                ]),
-
-                "vel": lambda t: np.array([
-                    5*np.cos(t),
-                    10*np.cos(2*t),
-                    -0.4*np.sin(2*t)
-                ])
-            }
-
-
-        elif traj in (5, 6) and self.airspace.kind != "lisbon":
-            raise ValueError(f"Trajectory {traj} needs the Lisbon airspace (airspace_model = \"lisbon\")")
 
         elif traj == 5:
             # Intrusion into the red zone: starts in the orange zone 50 m
@@ -323,21 +333,10 @@ class TrajectoryConfig:
         elif traj == 6:
             # Intrusion through a joint between two red border edges: the
             # target flies along the bisector of the sharp (34.6 deg) notch
-            # at red vertex 8, where the two walls meet (wall corner ~67 m
-            # from the vertex). Starts 30 m before the wall corner and stops
-            # 30 m inside the red zone.
-            V = self.airspace.red.vertices
-            joint = V[8]
-            u1 = (V[7] - joint) / np.linalg.norm(V[7] - joint)
-            u2 = (V[9] - joint) / np.linalg.norm(V[9] - joint)
-            bisector_out = (u1 + u2) / np.linalg.norm(u1 + u2)
-            half_angle = 0.5 * np.arccos(np.clip(u1 @ u2, -1.0, 1.0))
-            wall_corner = self.airspace.wall_offset / np.sin(half_angle)
-            start = joint + (wall_corner + 30.0) * bisector_out
-            height = 15.0
-            speed = 2.2                             # [m/s]
-            t_stop = (wall_corner + 60.0) / speed   # stops 30 m inside the red zone
-            vel = -speed * bisector_out
+            # at red vertex 8, where the two walls meet. Starts 30 m before
+            # the wall corner and stops 30 m inside the red zone.
+            g = lisbon_traj6_geometry(self.airspace)
+            start, vel, t_stop, height = g["start"], g["vel"], g["t_stop"], 15.0
 
             def pos(t):
                 xy = start + vel * min(t, t_stop)
@@ -353,6 +352,62 @@ class TrajectoryConfig:
             raise ValueError(
                 f"Unknown trajectory {traj}"
             )
+
+PYTHON_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_RESULTS_FILE = "Results/python/simulation_results.pkl"   # relative to the Python folder
+
+def results_file_path(display, latest=False):
+    """
+    Path of the results .pkl of display.results_file (relative to the Python
+    folder, or absolute). None: the newest .pkl of this simulation if latest
+    (loading: the Results/ folder of the Python folder, and the runs of the
+    repository Results/ folder, swarm_MPC_voronoi_*, e.g. the replays of real
+    flights), else DEFAULT_RESULTS_FILE (saving).
+    """
+    if display.results_file is not None:
+        return os.path.join(PYTHON_DIR, display.results_file)
+    if latest:
+        from pathlib import Path
+        local = Path(PYTHON_DIR, "Results")
+        repo = next(p for p in Path(PYTHON_DIR).parents if (p / ".git").exists()) / "Results"
+        pkls = [*local.rglob("*.pkl")]
+        for run in repo.glob("swarm_MPC_voronoi*"):
+            pkls += run.rglob("*.pkl")
+        if not pkls:
+            raise FileNotFoundError(f"No .pkl in {local} or {repo}/swarm_MPC_voronoi*")
+        return str(max(pkls, key=lambda p: p.stat().st_mtime))
+    return os.path.join(PYTHON_DIR, DEFAULT_RESULTS_FILE)
+
+
+# SimulationConfig values stored with the results (.pkl, "sim"): what the
+# figures need to be redrawn (animation_display.py) for the run's own scene
+SAVED_SIM_KEYS = ("scene", "traj", "nD", "Tend", "dTi", "Nsim", "nD_drop_time", "sphere_radius", "v_max", "a_max",
+                  "obstacle_avoidance_dim", "arena_wall_x")
+
+
+def sim_config(param):
+    """The SimulationConfig values of SAVED_SIM_KEYS (stored in the .pkl)."""
+    return {k: getattr(param.sim, k) for k in SAVED_SIM_KEYS if hasattr(param.sim, k)}
+
+
+def param_from_config(cfg):
+    """Param of a stored run (sim_config): its scene and trajectory, then its stored values."""
+    sim = SimulationConfig()
+    sim.scene, sim.traj = cfg.get("scene", sim.scene), cfg.get("traj", sim.traj)
+    if "arena_wall_x" in cfg:
+        sim.arena_wall_x = cfg["arena_wall_x"]
+    param = Param(sim)
+    for k, v in cfg.items():
+        setattr(param.sim, k, v)
+    param.sim.t = np.arange(param.sim.Nsim) * param.sim.dTi
+    return param
+
+
+def simulation_data(d):
+    """The SimulationData of a results dict (.pkl), without its extra entries (sim, phases, ...)."""
+    from dataclasses import fields
+    return SimulationData(**{f.name: d[f.name] for f in fields(SimulationData)})
+
 
 class GraphicalDisplay:
     def __init__(self):
@@ -389,7 +444,9 @@ class GraphicalDisplay:
         self.mp4_fps = 30
 
         self.save_location = "/Results/python"          # figures, relative to the Python folder
-        self.results_file = "Results/python/simulation_results.pkl"   # relative to the Python folder
+        # .pkl of the run, relative to the Python folder (or absolute). None: saved to
+        # DEFAULT_RESULTS_FILE; animation_display.py (redraw) loads the newest .pkl in Results/
+        self.results_file = DEFAULT_RESULTS_FILE
         self.trail_length = 100
         self.step = 5
 
@@ -435,24 +492,17 @@ class Param:
 
         self.gazebo = GazeboConfig()
 
-        if self.sim.arena_experiment:
-            # Crazyflie arena experiment: own airspace, path, model and scale
+        if self.sim.traj not in (1, 2, 3, 4, 5, 6):
+            raise ValueError(f"Unknown trajectory {self.sim.traj!r} (1-6)")
+        if self.sim.scene == "arena":
+            # Crazyflie arena: own airspace, path, model and scale
             from experiment_arena import configure_arena_experiment
             configure_arena_experiment(self)
-        else:
-            model = self.sim.airspace_model
-            if model == "auto":
-                model = "lisbon" if self.sim.traj in (5, 6) else "straight"
-            if model == "lisbon":
-                self.airspace = RestrictedAirspace(self.sim)
-            elif model == "straight":
-                self.airspace = StraightAirspace(self.sim)
-                self.display.trajectory_overview_plot = False   # the Lisbon KMZ map
-            elif model == "none":
-                self.airspace = NoAirspace(self.sim)
-            else:
-                raise ValueError(f"Unknown airspace_model {model!r} (auto, lisbon, straight, none)")
+        elif self.sim.scene == "lisbon":
+            self.airspace = RestrictedAirspace(self.sim)
             self.traj = TrajectoryConfig(self.airspace, traj=self.sim.traj)
+        else:
+            raise ValueError(f"Unknown scene {self.sim.scene!r} (lisbon, arena)")
 
 class Voronoi:
     def __init__(self, param: Param):

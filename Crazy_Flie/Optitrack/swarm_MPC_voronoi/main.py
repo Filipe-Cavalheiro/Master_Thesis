@@ -6,10 +6,13 @@ constraints, velocity/acceleration limits). Take off, fly to the formation
 slots, follow the formation for FORMATION_TIME, return above the takeoff
 points and land.
 
-    python main.py                  # --target sim (default): virtual target, the formation follows the path
-    python main.py --target real    # the Crazyflie REAL_TARGET_DRONE_ID flies the path (to the start of
-                                    # it in the approach), the formation follows its OptiTrack position
-                                    # and velocity and the chasers' MPC avoids it as the other drones
+    python main.py
+
+The target is set by REAL_TARGET_DRONE_ID (Structs.py): -1 for a simulated
+(virtual) target, the formation follows the path; a rigid-body ID: that
+Crazyflie flies the path (to the start of it in the approach), the formation
+follows its OptiTrack position and velocity and the chasers' MPC avoids it
+as the other drones.
 
 Log: Results/swarm_MPC_voronoi_<sim|real>_target_trajectory_<date>/.
 """
@@ -27,11 +30,10 @@ import numpy as np
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-# --target before importing Structs (it reads CF_TARGET)
-_ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-_ap.add_argument("--target", choices=("sim", "real"), default="sim",
-                 help="sim: virtual target; real: the Crazyflie REAL_TARGET_DRONE_ID flies the target path")
-os.environ["CF_TARGET"] = _ap.parse_args().target
+argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter).parse_args()
+# the target comes from REAL_TARGET_DRONE_ID only (the replay overrides are not for flights)
+os.environ.pop("CF_TARGET", None)
+os.environ.pop("CF_TARGET_DRONE_ID", None)
 
 from natnet import NatNetClient
 
@@ -102,6 +104,7 @@ def main():
                               run_name=f"{HERE.name}_{TARGET_MODE}_target",   # Results/swarm_MPC_voronoi_sim_target_trajectory_<date>/
                               sample_period=0.02,
                               target_fn=formation.get_target)
+    set_setpoint_logger(logger)     # every setpoint sent goes to <log>_setpoints.csv
 
     # pose of the filming camera (phone), from the same NatNet frames (no second
     # client), from now on: the sync gestures before the take off are recorded too

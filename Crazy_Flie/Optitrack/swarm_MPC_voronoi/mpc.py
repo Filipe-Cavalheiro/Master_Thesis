@@ -1,7 +1,7 @@
 """
 MPC of the formation: the distributed Bernstein-polynomial MPC of the thesis
 (Chapter 6, "Distributed Bernstein-Polynomial MPC"), the same code as the
-Python simulation V17 (Python/flight_sims/V17_Lisbon_aeroport/Python/
+Python simulation V17 (Python/flight_sims/swarm_MPC_voronoi/Python/
 obstacle_avoidance_funcs.py: init_obstacle_avoidance, set_goal_cost,
 AdmmMPC). This module only feeds it the OptiTrack states and the formation
 goals, and runs it in a thread for the Crazyflies.

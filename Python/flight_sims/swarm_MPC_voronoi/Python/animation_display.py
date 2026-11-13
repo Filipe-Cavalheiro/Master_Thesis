@@ -513,20 +513,23 @@ def _airspace_fields(param: Param, xlim, ylim, n):
 def _draw_airspace_floor(ax, param: Param, n=150):
     """
     Paint the restricted airspace on the z = 0 floor of a 3D axes over its
-    current x/y limits: orange zone floor, red zone floor, red/orange border
-    and the deterrent wall line (wall_offset outside the red border).
+    current x/y limits: orange zone floor (outside the wall), grey zone floor
+    (the band between the deterrent wall and the red border, where the
+    drones fly), red zone floor, the red border and the wall line
+    (wall_offset outside the red border).
     Returns the created artists so they can be removed on the next frame.
     """
     airspace = param.airspace
     if not airspace.enabled:
         return []
     X, Y, sd_red, orange = _airspace_fields(param, ax.get_xlim(), ax.get_ylim(), n)
-    zone = np.where(sd_red < 0, 2.0, np.where(orange, 1.0, 0.0))
+    grey = (sd_red >= 0) & (sd_red <= airspace.wall_offset)
+    zone = np.where(sd_red < 0, 3.0, np.where(grey, 2.0, np.where(orange, 1.0, 0.0)))
     kw = {"zdir": "z", "offset": 0.0}
     artists = []
     if zone.max() > 0:
-        artists.append(ax.contourf(X, Y, zone, levels=[0.5, 1.5, 2.5],
-                                   colors=["orange", "red"], alpha=0.35, **kw))
+        artists.append(ax.contourf(X, Y, zone, levels=[0.5, 1.5, 2.5, 3.5],
+                                   colors=["orange", "grey", "red"], alpha=0.35, **kw))
     for level, style in [(0.0, "solid"), (airspace.wall_offset, "dashed")]:
         if sd_red.min() < level < sd_red.max():
             artists.append(ax.contour(X, Y, sd_red, levels=[level], colors="darkred",
@@ -1647,7 +1650,7 @@ def trajectory_overview_plot(data: SimulationData, param: Param):
 
     airspace = param.airspace
     if airspace.kind != "lisbon":
-        print("trajectory overview plot needs the Lisbon airspace (airspace_model = \"lisbon\"), skipped")
+        print("trajectory overview plot needs the Lisbon scene (scene = \"lisbon\"), skipped")
         return
     fig = plt.figure(figsize=(18, 8))
     ax_map = fig.add_subplot(1, 2, 1)
@@ -1750,6 +1753,7 @@ def trajectory_animate(data: SimulationData, param: Param):
     if param.airspace.enabled:
         ax.legend(handles=[
             Patch(color="red", alpha=0.35, label="Red zone"),
+            Patch(color="grey", alpha=0.35, label="Grey zone (drones fly)"),
             Patch(color="orange", alpha=0.35, label="Orange zone"),
             Line2D([], [], color="darkred", lw=2, label="Red zone border"),
             Line2D([], [], color="darkred", lw=2, ls="--",
@@ -1926,14 +1930,22 @@ if __name__ == "__main__":
     from pathlib import Path
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # flight_sims/ (root_results)
     import root_results
-    root_results.mirror_on_exit("V17_Lisbon_aeroport", Path(__file__).resolve().parent / "Results")
-    param.display.results_file = "Results/python/simulation_results_traj_5.pkl" 
+    root_results.mirror_on_exit("swarm_MPC_voronoi", Path(__file__).resolve().parent / "Results")
+    param.display.results_file = None
     current_folder = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(current_folder, param.display.results_file)
+    from Structs_sim import results_file_path, param_from_config, simulation_data
+    file_path = results_file_path(param.display, latest=True)   # None: the newest .pkl of this simulation
+    print(f"Results: {file_path}")
     with open(file_path, "rb") as f:
         data = pickle.load(f)
+    if "sim" in data:
+        # the run's own scene, trajectory and settings (older .pkl: those of Structs_sim.py now)
+        param = param_from_config(data["sim"])
+        print("Run: " + ", ".join(f"{k} {v}" for k, v in data["sim"].items()))
+    if "flight" in data:
+        print("Simulation of the real flight " + data["flight"].get("log", ""))
 
-    sim_data = SimulationData(**data)
+    sim_data = simulation_data(data)
 
     os.makedirs(
         current_folder + param.display.save_location,

@@ -1,7 +1,7 @@
 """
 Simulation of a Crazyflie flight, to compare with its log, or a dry run of
 a flight code before flying it. The code is in the Python simulation V17
-(Python/flight_sims/V17_Lisbon_aeroport/Python/flight_replay.py, see there);
+(Python/flight_sims/swarm_MPC_voronoi/Python/flight_replay.py, see there);
 this script only runs it for any swarm folder of this directory.
 
     python flight_sim.py swarm_MPC_voronoi                       # newest run of swarm_MPC_voronoi (either target)
@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(REPO / "Python" / "flight_sims" / "V17_Lisbon_aeroport" / "Python"))
+sys.path.insert(0, str(REPO / "Python" / "flight_sims" / "swarm_MPC_voronoi" / "Python"))
 
 from flight_replay import main  # noqa: E402
 

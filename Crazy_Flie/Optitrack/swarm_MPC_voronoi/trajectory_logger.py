@@ -15,6 +15,10 @@ class TrajectoryLogger:
       - OptiTrack position (ground truth, same frame sent to the EKF)
       - Kalman estimate: position, velocity, attitude (deg), gyro (deg/s)
       - last position setpoint and virtual target (if `target_fn` is given)
+    Next to it, <log>_setpoints.csv (same time base, time_s): every setpoint
+    sent (record_setpoint): position, velocity and acceleration (zero for a
+    position setpoint), its kind, and the target at that time. The
+    simulation (main.py --IRL_log) replays the drones from it.
     `id` is the OptiTrack rigid-body ID of the drone.
     """
 
@@ -26,6 +30,12 @@ class TrajectoryLogger:
         "roll_deg", "pitch_deg", "yaw_deg",
         "gyro_x_dps", "gyro_y_dps", "gyro_z_dps",
         "sp_x", "sp_y", "sp_z",
+        "target_x", "target_y", "target_z",
+    ]
+
+    SETPOINT_COLUMNS = [
+        "time_s", "flight_state", "id", "kind",
+        "sp_x", "sp_y", "sp_z", "sp_vx", "sp_vy", "sp_vz", "sp_ax", "sp_ay", "sp_az",
         "target_x", "target_y", "target_z",
     ]
 
@@ -73,6 +83,10 @@ class TrajectoryLogger:
         self.log_configs = {uri: [] for uri in drone_states}
         self.file = None
         self.writer = None
+        self.setpoints_path = self.run_dir / f"trajectory_{timestamp}_setpoints.csv"
+        self.sp_file = None
+        self.sp_writer = None
+        self.sp_lock = threading.Lock()
 
     # ---------------- Crazyflie log blocks (per drone) ----------------
     @staticmethod
@@ -130,11 +144,37 @@ class TrajectoryLogger:
         self.file = self.output_path.open("w", newline="", encoding="utf-8")
         self.writer = csv.DictWriter(self.file, fieldnames=self.COLUMNS)
         self.writer.writeheader()
+        with self.sp_lock:
+            self.sp_file = self.setpoints_path.open("w", newline="", encoding="utf-8")
+            self.sp_writer = csv.DictWriter(self.sp_file, fieldnames=self.SETPOINT_COLUMNS)
+            self.sp_writer.writeheader()
 
         self.stop_evt.clear()
         self.thread = threading.Thread(target=self._run, daemon=True)
         self.thread.start()
         print(f"Started logging {len(self.drone_states)} drones at {1/self.sample_period:.0f} Hz.")
+
+    def record_setpoint(self, uri, kind, p, v=None, a=None):
+        """
+        One setpoint sent to drone `uri` (thread safe; ignored outside
+        begin()..close()): kind "position" or "full_state", position,
+        velocity, acceleration (None: zero).
+        """
+        if self.start_time is None:
+            return
+        t = time.monotonic() - self.start_time
+        p = np.asarray(p, dtype=float).reshape(-1)
+        v = np.zeros(3) if v is None else np.asarray(v, dtype=float).reshape(-1)
+        a = np.zeros(3) if a is None else np.asarray(a, dtype=float).reshape(-1)
+        row = {"time_s": t, "flight_state": self.current_state, "id": RIGID_BODY_IDS[uri], "kind": kind,
+               "sp_x": p[0], "sp_y": p[1], "sp_z": p[2], "sp_vx": v[0], "sp_vy": v[1], "sp_vz": v[2],
+               "sp_ax": a[0], "sp_ay": a[1], "sp_az": a[2]}
+        target = self.target_fn() if self.target_fn is not None else None
+        if target is not None:
+            row.update(target_x=target[0], target_y=target[1], target_z=target[2])
+        with self.sp_lock:
+            if self.sp_writer is not None:
+                self.sp_writer.writerow(row)
 
     def mark_state(self, state_name):
         self.current_state = state_name
@@ -149,6 +189,11 @@ class TrajectoryLogger:
         if self.file is not None:
             self.file.close()
             self.file = None
+        with self.sp_lock:
+            if self.sp_file is not None:
+                self.sp_file.close()
+                self.sp_file = None
+                self.sp_writer = None
         print(f"Log saved to: {self.output_path}")
 
     def _run(self):

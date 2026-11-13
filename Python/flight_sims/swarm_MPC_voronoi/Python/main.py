@@ -7,7 +7,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # flight_sims/ (root_results)
 import root_results
 
-from Structs_sim import Param, Voronoi, SimulationData, SimulationConfig
+from Structs_sim import (Param, Voronoi, SimulationData, SimulationConfig, results_file_path, sim_config,
+                         simulation_data)
 from Structs_agent import DroneState
 from voronoi_mesh_funcs import pre_compute_desired_pos
 from delaunay_triangulation_network import delaunay_triangulation_network
@@ -33,10 +34,10 @@ def main(param: Param | None = None, plant=None):
     if param is None:
         param = Param()
     # also copy the results of this run (figures, .pkl, replay log) into
-    # <repo>/Results/V17_Lisbon_aeroport_<date>/
-    root_results.mirror_on_exit("V17_Lisbon_aeroport", Path(__file__).resolve().parent / "Results")
+    # <repo>/Results/swarm_MPC_voronoi_<date>/
+    root_results.mirror_on_exit("swarm_MPC_voronoi", Path(__file__).resolve().parent / "Results")
     if plant is None:
-        plant = CrazyfliePlant(param) if param.sim.arena_experiment else PythonPlant(param)
+        plant = CrazyfliePlant(param) if param.sim.scene == "arena" else PythonPlant(param)
     voronoi = Voronoi(param)
     airspace = param.airspace
     environment = param.environment
@@ -299,36 +300,36 @@ def main(param: Param | None = None, plant=None):
         "perceived_target_hist": perceived_target_hist,
         "colors": plt.cm.tab10(np.linspace(0, 1, param.sim.nD)),
         "active_ids": active_ids,
-        "numAgents_history": numAgents_history
+        "numAgents_history": numAgents_history,
+        "sim": sim_config(param),       # to redraw the figures with the run's scene (animation_display.py)
     }
 
     if param.display.store_data == True:
         print("Saving simulation data (.pkl)")
-        current_folder = os.path.dirname(os.path.abspath(__file__))
-        file_path = os.path.join(current_folder, param.display.results_file)
+        file_path = results_file_path(param.display)     # None: DEFAULT_RESULTS_FILE
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, "wb") as f:
             pickle.dump(data, f)
 
     if param.display.verbose:
-        sim_data = SimulationData(**data)
+        sim_data = simulation_data(data)
         create_figures(sim_data, param)
 
 FLIGHT_CODE = "swarm_MPC_voronoi"      # Crazy_Flie/Optitrack/swarm_MPC_voronoi (the MPC of this simulation)
 
-
 def cli():
     """
     python main.py                   the simulation, the settings of Structs_sim.py
-    python main.py --traj K          the simulation on trajectory K; the map follows it (airspace_model
-                                     "auto"): 1-4 the straight wall at x = 0 (red zone beyond
-                                     straight_red_x), 5-6 the Lisbon airport
-    python main.py --arena           real-world simulation without a log: the swarm_MPC_voronoi flight
-                                     code with its current settings (Structs.py of the flight code), the
-                                     Crazyflie plant, the drones starting on its formation slots
-    python main.py --IRL_log [LOG]   real-world simulation of a flight: from the state and settings
-                                     (<log>_meta.json) of the newest swarm_MPC_voronoi run, or of LOG,
-                                     then compared with it
+    python main.py --traj K          the simulation on trajectory K (1-6)
+    python main.py --scene S         the simulation in scene S: lisbon (the airport, X500) or arena
+                                     (the Crazyflie arena, 6 x 6 x 3 m, experiment_arena.py)
+    python main.py --arena           real-world simulation without a log: only the Formation phase of the
+                                     swarm_MPC_voronoi flight code with its current settings (Structs.py of
+                                     the flight code), the Crazyflie plant, the drones starting on its slots
+    python main.py --IRL_log [LOG]   real-world simulation of a flight (the newest swarm_MPC_voronoi run, or
+                                     LOG): the whole flight from the logged takeoff points (take off,
+                                     approach, formation, return, land, motors off; phases at their logged
+                                     times, setup of <log>_meta.json), then compared with it
     Options of the real-world runs: --target sim|real, --traj K (TARGET_TRAJ of the flight code),
     --drones N (--arena), --no-show, --no-plot.
     """
@@ -339,6 +340,8 @@ def cli():
                       help=f"replay a real {FLIGHT_CODE} flight (default: the newest run in Results/)")
     mode.add_argument("--arena", action="store_true",
                       help=f"the {FLIGHT_CODE} flight code on the simulated Crazyflies, without a log")
+    ap.add_argument("--scene", choices=("lisbon", "arena"),
+                    help="flight scene of the simulation (default: SimulationConfig.scene)")
     import flight_replay
     flight_replay.add_arguments(ap)
     args = ap.parse_args()
@@ -346,6 +349,8 @@ def cli():
         sim = SimulationConfig()
         if args.traj is not None:
             sim.traj = args.traj
+        if args.scene is not None:
+            sim.scene = args.scene
         main(Param(sim))
         return
     args.folder = FLIGHT_CODE

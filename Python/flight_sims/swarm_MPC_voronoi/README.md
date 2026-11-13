@@ -2,7 +2,7 @@
 
 V17 is the Python simulation used for the Lisbon-airport results of the TAES paper
 ("Non-Destructive Deterrence of Drone Intrusions into Restricted Airspace with Morphing Swarm
-Formations"), copied from the `air-space-deterrent` repository (`Python/`, 8 Nov 2026). It replaces V16 (removed on 12 Nov, in the git history), whose straight-wall scenario it also runs (below). It differs from V16 in:
+Formations"), copied from the `air-space-deterrent` repository (`Python/`, 8 Nov 2026). It replaces V16 (removed on 12 Nov, in the git history), whose trajectories 1-4 it flies in the Lisbon and arena scenes (below). It differs from V16 in:
 
 - **Morphing formation and restricted airspace**: wall at 30 m outside the red zone of the LPPT
   KMZ. The mesh blends disc -> cone -> sphere -> disc on the red border. A geodesic CVT (Dijkstra) assigns the goals.
@@ -49,26 +49,21 @@ cd ../figures && python make_lisbon_figures.py
 
 Or run `python main.py` in `Python/` with the settings in `Structs_sim.py`.
 
-### Map from the trajectory; straight-boundary scenario (V16)
+### Trajectories and scenes
 
-The map follows the trajectory (`airspace_model = "auto"`, `Structs_sim.py`; set it to `"lisbon"`, `"straight"` or `"none"` to force one):
+`Structs_sim.py`: `sim.traj` (1-6, or `main.py --traj K`) and `sim.scene` (`"lisbon"` or `"arena"`, or `main.py --scene S`). Every trajectory flies in both scenes.
 
-| Trajectory (`sim.traj`, or `main.py --traj K`) | Map |
-|---|---|
-| 1 (still point), 2 (circle), 3, 4 (Lissajous) | straight wall at x = 0 (`StraightAirspace`) |
-| 5, 6 (Lisbon intrusions) | Lisbon airport KMZ zones (`RestrictedAirspace`) |
+| Trajectory | Lisbon (`RestrictedAirspace`, X500, formation radius 5 m) | Arena (`experiment_arena.py`, Crazyflie, radius 0.8 m, 6 x 6 x 3 m room) |
+|---|---|---|
+| 1 hover | 10 m past the wall, in the grey band | 1 m from the centre, past the wall |
+| 2 circle | 15 m around (-5, 0, 5) m in the wall frame, 0.12 rad/s (1.8 m/s; V16: 0.25 rad/s, faster than v_max) | 1.2 m around the centre, 0.3 rad/s |
+| 3, 4 Lissajous (4: 3D) | 5 m, centred on the wall, 0.2 rad/s (up to 2.2 m/s) | 1.2 m, centred on the centre, 0.15 rad/s |
+| 5 intrusion, straight border | KMZ red edge 1 | a slice of the Lisbon flight (scaled, the wall at the Lisbon angle) |
+| 6 intrusion, border joint | the 34.6 deg notch at red vertex 8 | a slice of the Lisbon flight (scaled, the corner of the two walls at the Lisbon angle) |
 
-The Crazyflie arena experiment (`arena_experiment`, `--arena`) keeps its own map.
+Lisbon, trajectories 1-4: the wall frame has its origin on the drones' wall at the trajectory 5 crossing (red edge 1, a straight 6 km edge), x into the grey band (the red border at x = `wall_offset`, 30 m), y along the wall. The target crosses the wall and the formation morphs wall <-> sphere; it never gets closer than 20 m to the red zone.
 
-The straight-wall map with trajectory 2 is the scenario of V16 and of the thesis section "Simulation Results: Straight Boundary": the circle of 15 m around (-5, 0, 5) m at 0.25 rad/s, crossing x = 0 back and forth, with `StraightAirspace` (`restricted_airspace.py`): the drones' wall is the plane x = `straight_wall_x` (0) facing +x, where the grey band starts, and the red zone is x > `straight_red_x` (20 m: the target reaches x = 10 m and its 5 m formation x = 15 m, so with the 1 m margin the red zone never constrains it, as in V16, which had none). No orange ceiling. Everything else as in `Structs_sim.py` (V17 MPC, drone model, 5 chasers, 40 s).
-
-```bash
-cd Python && python main.py --traj 2      # the default in Structs_sim.py is trajectory 6 (Lisbon)
-```
-
-Seed 1, 5 chasers: while the target is beyond the wall (x > 0) the chasers surround it, while it is behind it (x < 0, 15-25 s) they all wait on the wall at x = 0; chasers at most at x = 11.3 m, min inter-agent distance 1.23 m (envelope 1 m).
-
-V16 itself differed from this run in the older model and MPC (5 kg quadrotor, Euler step, the V16 MPC: whole horizon pulled to the goal, box velocity/acceleration limits, unscaled ADMM), so its numbers (thesis straight-boundary figures) are not reproduced exactly; check it out from the git history for that.
+Arena, trajectories 1-4: the drones' wall is x = `arena_wall_x` (0 m, facing +x; the scaled red border is 4.8 m past it, outside the room), so the target crosses it and the formation morphs wall <-> sphere inside the room. Every arena flight keeps the formation inside the geofence (0.3 m from the room walls and ceiling).
 
 ### Real-world simulation of the Crazyflie flights (`main.py --arena` / `--IRL_log`)
 
@@ -76,16 +71,17 @@ The OptiTrack flight `Crazy_Flie/Optitrack/swarm_MPC_voronoi` uses **this simula
 
 ```bash
 cd Python
-python main.py                                   # the simulation (Lisbon), Structs_sim.py
+python main.py [--scene arena] [--traj K]       # the simulation, Structs_sim.py
 python main.py --arena [--target real] [--traj 5] [--drones 4] [--no-show]
-                                                 # the flight code with its current settings, no log: the drones
-                                                 # start on its formation slots (Results/<code>_dry_run_..._<date>/)
+                                                 # only the Formation phase of the flight code with its current
+                                                 # settings, no log: the drones start on its formation slots
+                                                 # (Results/<code>_dry_run_..._<date>/)
 python main.py --IRL_log [LOG] [--no-show]       # a real flight (default: the newest swarm_MPC_voronoi run in
-                                                 # Results/) from its state at the start of the Formation phase,
+                                                 # Results/), the whole flight from the logged takeoff points,
                                                  # then compared with it
 ```
 
-`--IRL_log` uses the flight setup of `<log>_meta.json` (target mode and trajectory, formation and MPC settings, Mellinger position gains read back from the firmware) and the setpoint / formation periods measured in the log. It writes `<log>_sim.csv` next to the log and the comparison figures (`position`, `top_view`, `formation`) to `<run folder>/comparison/`. The same runs, for any flight folder: `Crazy_Flie/Optitrack/flight_sim.py`. The default is trajectory 6 with 5 chasers
+As in the geometric Fibonacci simulation, the plain simulation runs only the formation, and `--IRL_log` the whole flight: the drones start at rest on the floor at their logged takeoff points and get the setpoints the flight sent, at the times it sent them, until the motors stop (`flight_replay.simulate_logged`; from `<log>_setpoints.csv`, logged by the flight from 13 Nov, else from the setpoints sampled in the trajectory log). The decisions of the flight code are the flown ones, so the difference measures the drone model (13 Nov flight: 4–6 cm RMS per drone). `--IRL_log --rerun` re-runs the flight code instead (take off, approach to the formation slots, the Formation phase with its formation, MPC and controllers, return to the takeoff points, landing, motors off; `flight_replay.simulate_flight`), each phase starting at its logged time: the formation can then settle in another valid arrangement and the drones return to other takeoff points than in the flight. Both write `<run>/simulation/simulation_results.pkl` (rewatch with `python animation_display.py`) and the comparison (`compare_real.py`: figures with the phases as backgrounds, `metrics.json`). It uses the flight setup of `<log>_meta.json` (scene, always `arena`; drone, always the Crazyflie `cf2x_L250`; target mode and trajectory; formation goals and approach slots; formation and MPC settings; Mellinger position gains read back from the firmware) and the setpoint / formation periods measured in the log. The comparison covers the whole flight (position error per phase). It writes `<log>_sim.csv` next to the log and the comparison figures (`position`, `top_view`, `formation`) to `<run folder>/comparison/`. The same runs, for any flight folder: `Crazy_Flie/Optitrack/flight_sim.py`. The default is trajectory 6 with 5 chasers
 and the animation on. The paper runs use `numpy.random.seed(1)`. Seeds 2-5 are the repetitions quoted in the paper
 (their `.pkl` files are not copied here. Re-run them with `run_sims_sphere.py traj5 2 Results/python/traj5_s2.pkl`).
 

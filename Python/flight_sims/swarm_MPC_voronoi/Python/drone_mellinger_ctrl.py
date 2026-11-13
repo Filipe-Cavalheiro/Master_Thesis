@@ -13,11 +13,26 @@ def drone_mellinger_ctrl(agent: DroneState, dpsi_d, param: Param):
     e_p = agent.position - agent.desired.position
     e_v = agent.velocity - agent.desired.velocity
 
+    # Mass of the feedforward terms: the controller's own mass (Crazyflie
+    # firmware: ctrlMel.mass, set by the flight code) if given, else the
+    # model mass. The dynamics always use the model mass (param.sim.drone_mass).
+    mel = param.controller.Mellinger
+    ff_mass = mel.get("mass") or param.sim.drone_mass
+
     # Desired force vector with attitude
-    f_d = (-param.controller.Mellinger["kp"] @ e_p
-           - param.controller.Mellinger["kv"] @ e_v
-           + param.sim.drone_mass * param.sim.gravity * zW
-           + param.sim.drone_mass * agent.desired.acceleration)
+    f_d = (-mel["kp"] @ e_p
+           - mel["kv"] @ e_v
+           + ff_mass * param.sim.gravity * zW
+           + ff_mass * agent.desired.acceleration)
+
+    # Integral of the position error (Crazyflie firmware controller_mellinger.c:
+    # i_error += (setpoint - position) * dt, clamped to +-i_range per axis,
+    # force += ki * i_error), if the gains have "ki" / "i_range"
+    ki = mel.get("ki")
+    if ki is not None:
+        i_range = np.asarray(mel["i_range"], dtype=float).reshape(3, 1)
+        agent.pos_i_error = np.clip(agent.pos_i_error - e_p * param.sim.dTi, -i_range, i_range)
+        f_d = f_d + ki @ agent.pos_i_error
 
     # Optional tilt limit (None = no limit): the horizontal part of the
     # desired force is scaled so the commanded tilt stays below max_tilt_deg
@@ -51,7 +66,7 @@ def drone_mellinger_ctrl(agent: DroneState, dpsi_d, param: Param):
     R_d = np.column_stack((xB_d, yB_d, zB_d))
 
     # Compute desired angular velocity
-    hw_d = (param.sim.drone_mass / thrust) * (
+    hw_d = (ff_mass / thrust) * (
         agent.desired.jerk - (zB_d.T@agent.desired.jerk) * zB_d
     )
 

@@ -29,7 +29,7 @@ This README is an overview. Each category is explained in more detail in the REA
 | Folder | What it simulates | Details |
 |---|---|---|
 | `swarm_geometric_Fibonacci_sim_target` | Hierarchical control on the two-sphere: Fibonacci points, Hungarian assignment, APF, adaptive radius (`main.py`); `main.py --IRL_log` replays the matching real flight, for sim-vs-real comparison | [README](Python/flight_sims/swarm_geometric_Fibonacci_sim_target/README.md) |
-| `V17_Lisbon_aeroport` | The thesis simulation: Voronoi formation on a morphing mesh, distributed estimation, Delaunay network, distributed Bernstein MPC solved with ADMM, restricted airspace. The map follows the trajectory: 1-4 the straight wall at x = 0 of V16 (`python main.py --traj 2`; V16 was removed on 12 Nov, it is in the git history), 5-6 the Lisbon airport (`python main.py`, trajectory 6), and the `swarm_MPC_voronoi` Crazyflie flight (`--arena`, `--IRL_log`, which uses this simulation's MPC) | [README](Python/flight_sims/V17_Lisbon_aeroport/README.md) |
+| `swarm_MPC_voronoi` | The thesis simulation (V17): Voronoi formation on a morphing mesh, distributed estimation, Delaunay network, distributed Bernstein MPC solved with ADMM, restricted airspace. Trajectories 1-6 (`--traj K`) in two scenes (`--scene`): `lisbon`, the Lisbon airport (1-4 across the drones' wall into the grey band, 5-6 the intrusions into the prohibited area), and `arena`, the 6 x 6 x 3 m Crazyflie arena (1-4 across a wall at x = 0, 5-6 scaled slices of the Lisbon flights). `--arena` / `--IRL_log`: the `swarm_MPC_voronoi` Crazyflie flight, which uses this simulation's MPC (formation only / the whole flight from its log) | [README](Python/flight_sims/swarm_MPC_voronoi/README.md) |
 | `8traj`, `swarm_take_off_hover_land` | Simulations of the matching real flights, for sim-vs-real comparison | [8traj](Python/flight_sims/8traj/README.md), [swarm_take_off_hover_land](Python/flight_sims/swarm_take_off_hover_land/README.md) |
 
 ## How to run: simulation, real flight, and the overlay that joins them
@@ -51,10 +51,10 @@ With the environment active, `python` works from any folder. The commands below 
 Thesis simulation (Lisbon airport, Voronoi formation + distributed MPC). The settings are in `Structs_sim.py`:
 
 ```bash
-cd Python/flight_sims/V17_Lisbon_aeroport/Python && python main.py
+cd Python/flight_sims/swarm_MPC_voronoi/Python && python main.py
 ```
 
-The straight-wall scenario (formerly V16): `python main.py --traj 2`. The other simulations in `Python/flight_sims/` (Fibonacci sphere, 8traj, take off / hover / land) run the same way, with `python main.py` in their folder. See each folder's README.
+Other trajectories and the Crazyflie arena: `python main.py --traj K --scene lisbon|arena`. The other simulations in `Python/flight_sims/` (Fibonacci sphere, 8traj, take off / hover / land) run the same way, with `python main.py` in their folder. See each folder's README.
 
 ### 2. A Crazyflie flight (filmed with the phone)
 
