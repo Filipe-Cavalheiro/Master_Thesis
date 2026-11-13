@@ -66,6 +66,7 @@ sys.path.insert(0, str(HERE))
 from overlay_lib import (CameraTrack, Intrinsics, VideoWriter, load_extrinsics, put_label,  # noqa: E402
                          video_frames, video_info)
 from flight_dashboard import Dashboard  # noqa: E402
+import camera_recovery  # noqa: E402
 from phone_align import (T_BC_NOMINAL, crazyflie_segments, draw_segs, floor_segments,  # noqa: E402
                          proj_w)
 
@@ -135,7 +136,7 @@ def phase_at(ph, t):
 
 
 def load_camera(log_path):
-    """Phone rigid-body track in flight-log time."""
+    """Phone rigid-body track in flight-log time (None if the rigid body was never tracked)."""
     p = Path(log_path)
     csv = p.with_name(p.stem + "_camera.csv")
     meta = json.loads(p.with_name(p.stem + "_camera.json").read_text())
@@ -145,7 +146,7 @@ def load_camera(log_path):
     df = pd.read_csv(csv)
     df = df[df["valid"] == 1]
     if df.empty:
-        raise SystemExit(f"No valid camera pose in {csv}")
+        return None                                   # never tracked: camera_recovery.recover_static
     t = df["mono_s"].to_numpy(float) - t0
     return CameraTrack(t, df[["x", "y", "z"]].to_numpy(float), df[["qx", "qy", "qz", "qw"]].to_numpy(float))
 
@@ -368,6 +369,15 @@ def main():
     ap.add_argument("--no-dashboard", action="store_true", help="do not render dashboard.mp4 (the slow part)")
     ap.add_argument("--dash-size", type=int, nargs=2, default=(1920, 1080), metavar=("W", "H"))
     ap.add_argument("--dash-trail", type=float, help="trail length in the dashboard 3D / top views [s] (default: all)")
+    ap.add_argument("--recover", choices=("auto", "off"), default="auto",
+                    help="camera pose where the rigid body was lost: rotation from the video, anchored on the "
+                         "tracked poses around the gap, refined on the drones (camera_recovery.py)")
+    ap.add_argument("--no-drone-refine", action="store_true", help="gaps: video + anchors only, no drone refinement")
+    ap.add_argument("--static", action="store_true",
+                    help="static camera (tripod) solved from the drones: pose, focal length, k1 and offset "
+                         "(automatic when the rigid body was never tracked; needs a rough --offset, +- 1 s)")
+    ap.add_argument("--keep-intrinsics", action="store_true",
+                    help="--static: keep the intrinsics of --calib instead of solving f and k1 (same lens and zoom)")
     args = ap.parse_args()
 
     log = Path(args.log).resolve()
@@ -384,18 +394,43 @@ def main():
     sim = tracks(read_flight(sim_p), with_att=True)
     ph = phases_of(flight)
     cam = load_camera(log)
+    names = flight_phases(ph)
+    t_a, t_b = (ph[names[0]] if names else 0.0) - args.margin, ph["EOF"] + args.margin
 
     info = video_info(args.video)
     W, H = info["width"], info["height"]
     calib = Path(args.calib)
-    intr = Intrinsics.load(calib / "phone_intrinsics.json")
-    if (intr.width > intr.height) != (W > H):
+    static = args.static or cam is None
+    if static:
+        # --- camera never tracked (or forced static): solve it from the drones
+        if args.offset is None:
+            raise SystemExit("No valid camera pose in the camera log: static camera solve, give a rough --offset "
+                             "(video t = flight t + offset, +- 1 s: take off in the video - take off in the log)")
+        print("Static camera: pose" + ("" if args.keep_intrinsics else ", focal length, k1") +
+              " and offset from the drones ...")
+        keep = Intrinsics.load(calib / "phone_intrinsics.json") if args.keep_intrinsics else None
+        T_wc, intr, offset, rep = camera_recovery.recover_static(args.video, real, t_a + args.margin,
+                                                                 t_b - args.margin, args.offset, keep)
+        intr.save(out / "static_intrinsics.json", note="solved from the drones (camera_recovery.recover_static)")
+        (out / "static_camera.json").write_text(json.dumps({**rep, "T_wc": T_wc.tolist()}, indent=2))
+        cam = camera_recovery.static_track(T_wc, np.eye(4), t_a, t_b)
+        T_bc0 = np.eye(4)
+        args.offset, args.flip = offset, "off"
+        args.recover = "off"
+    else:
+        intr = Intrinsics.load(calib / "phone_intrinsics.json")
+    if not static and (intr.width > intr.height) != (W > H):
         raise SystemExit("The video and the phone calibration have different orientations (portrait / landscape)")
-    if (intr.width, intr.height) != (W, H):
+    if not static and abs(intr.width / intr.height - W / H) > 0.01 * W / H:
+        print(f"WARNING: video {W}x{H} and calibration {intr.width}x{intr.height} have different aspect ratios: "
+              "another lens / zoom (e.g. 0.5x ultra wide)? The intrinsics do not apply; a static camera can be "
+              "solved from the drones (--static --offset)")
+    elif (intr.width, intr.height) != (W, H):
         print(f"Note: video {W}x{H}, calibration {intr.width}x{intr.height}: intrinsics scaled "
               "(valid only if the phone used the same field of view)")
     intr = intr.scaled_to(W, H)
-    T_bc0 = T_BC_NOMINAL if args.corrected else load_extrinsics(calib / "extrinsics.json")
+    if not static:
+        T_bc0 = T_BC_NOMINAL if args.corrected else load_extrinsics(calib / "extrinsics.json")
     cands = {"off": T_bc0, "on": T_bc0 @ R_FLIP}
     if args.flip != "auto":
         cands = {args.flip: cands[args.flip]}
@@ -427,9 +462,15 @@ def main():
                                                "next_best_correlation": second, "flip": flip,
                                                "candidates": {k: list(v) for k, v in res.items()}}, indent=2))
 
+    # --- camera pose where the rigid body was lost
+    if args.recover == "auto" and camera_recovery.find_gaps(cam, t_a, t_b):
+        print("Camera pose gaps: recovering from the video and the drones ...")
+        cam, rec_rep = camera_recovery.recover_gaps(args.video, offset, intr, T_bc, cam, real, t_a, t_b,
+                                                    refine=not args.no_drone_refine)
+        camera_recovery.save_track(cam, out / "camera_recovered.csv")
+        camera_recovery.save_report(rec_rep, out / "camera_recovery.json")
+
     rend = Renderer(intr, real, sim, ph, grid=args.grid, trail=args.trail)
-    names = flight_phases(ph)
-    t_a, t_b = (ph[names[0]] if names else 0.0) - args.margin, ph["EOF"] + args.margin
     v0, v1 = max(0.0, t_a + offset), t_b + offset
 
     # --- stills in the middle of every phase (the dashboard one: of the longest phase)

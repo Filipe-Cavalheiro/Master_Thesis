@@ -27,6 +27,8 @@ video_overlay/
   flight_overlay.py         hand-held phone video of swarm_take_off_hover_land vs its simulation
                             (phone rigid body logged by the flight code, phone_align.py calibration)
   flight_dashboard.py       dashboard.mp4 of flight_overlay.py: overlay + V17-style animated plots
+  camera_recovery.py        camera pose where the rigid body was lost (gaps) or never tracked (static
+                            camera), from the video and the drones; used by flight_overlay.py
   make_synthetic.py         synthetic sessions with ground truth (no footage needed)
   run_synthetic_test.py     end-to-end test on them
   test_output/              test results (see "Validation" below)
@@ -292,6 +294,40 @@ RMS, trails and curves growing with time as in `Python/flight_sims/swarm_MPC_vor
   the one with the higher signed correlation (`"flip"` in `sync.json`). Flight of 10 Nov
   (`trajectory_20261110_161917`): flip on, offset 10.16 s, correlation 0.66 (next best 0.32;
   0.08 without the flip).
+
+### Camera pose lost or never tracked (`camera_recovery.py`)
+
+`flight_overlay.py` fills the frames where Motive lost the phone rigid body (`valid = 0` in
+`_camera.csv`) by default (`--recover auto`; `--recover off` leaves them as "no camera pose"):
+
+* **Gaps** between tracked stretches: rotation from the background motion of the video
+  (frame-to-frame KLT + the essential matrix every 0.1 s), integrated from the last tracked pose
+  and back from the first recovered one, blended so it closes on both; optical centre along the
+  translation directions of the video, scaled to close on the second anchor; then refined so that
+  the projected OptiTrack drones fall on the drones in the image (motion-compensated frame
+  difference: the spinning propellers). A gap at the start / end of the camera log has one anchor
+  (position held there, then the drones). Outputs: `overlay/camera_recovered.csv`,
+  `overlay/camera_recovery.json` (per gap: drone misfit before / after, correction size).
+  Test: a tracked 6 s stretch of the Fibonacci flight of 12 Nov, hidden and recovered (phone
+  walked ~1.4 m): drones 4.2 px from their detections at 960 px width (the OptiTrack poses
+  themselves: 12 px, hand-eye bias of that day), pose vs OptiTrack 0.22 m / 3 deg median.
+  `--no-drone-refine`: video and anchors only.
+* **Never tracked**, camera on a tripod (`--static`, automatic when `_camera.csv` has no valid
+  pose): pose, focal length, k1 and the time offset are solved from the drones, no clicks. Give a
+  rough `--offset` (+- 1 s: take off in the video - take off in the log). `--keep-intrinsics`
+  keeps those of `--calib` (same lens and zoom) instead of solving them. Outputs:
+  `overlay/static_camera.json`, `overlay/static_intrinsics.json`.
+
+The phone calibration (`Results/phone_calib`) is for the **1x** lens. With the 0.5x ultra wide
+(1066x480 video instead of 854x480 on the A52) the intrinsics do not apply (flight_overlay.py
+warns about the aspect ratio); for a static camera solve them from the drones (`--static`). MPC
+flight of 13 Nov (`swarm_MPC_voronoi_sim_target_trajectory_20261113_144433`, 0.5x, tripod, rigid
+body never tracked):
+
+```bash
+python flight_overlay.py <repo>/Results/swarm_MPC_voronoi_sim_target_trajectory_20261113_144433/trajectory_20261113_144433.csv --offset 47.5
+#   -> f 499 px (hfov 94 deg; 1x: ~50 deg), k1 -0.04, camera at (-2.22, 2.46, 1.51), offset 47.80 s, 2.1 px median
+```
 
 ### Figure 8 (`Crazy_Flie/Optitrack/8traj.py`)
 
