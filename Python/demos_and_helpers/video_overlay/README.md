@@ -285,6 +285,21 @@ view in cm, z(t) real / sim / setpoint and the real - sim error components with 
 RMS, trails and curves growing with time as in `Python/flight_sims/swarm_MPC_voronoi/Python/animation_display.py`),
 `stills/`, `overlay_metrics.csv`, `sync.json`.
 
+Also drawn, when the logs have them:
+
+* **Target** (magenta ball with its trail, `target (sim)`): the `target_x/y/z` columns of the
+  simulation (else of the flight log), while the formation follows it: the phase in which the
+  target starts to move (`Main Controller`, `Formation`), not while the drones return and land.
+* **Formation mesh** (light-blue dots, where the desired points lie): `swarm_MPC_voronoi` flights,
+  computed for the target of every frame by the flight code's own mesh controller
+  (`Crazy_Flie/Optitrack/swarm_MPC_voronoi`, `pos_based_mesh_transform`) with the setup of
+  `<log>_meta.json` (mesh points, sphere radius, trajectory). `--no-target`, `--no-mesh` to leave them out.
+* **Lost drones** (red ring, `CFxx lost (last tracked)`): a real drone that OptiTrack stops
+  tracking (a crash, occlusion: the log repeats its last pose, or has no position) is held at its
+  last tracked position until the end; the real - sim error (`overlay_metrics.csv`, column
+  `real_lost`, and the dashboard) is measured against that position. The camera solve and
+  recovery use only the tracked samples.
+
 * Sync: image motion of the video (phase correlation) vs the image motion predicted from the
   phone rotation, both smoothed over 0.2 s. Check `sync.json`: correlation >= 0.5 and well
   above the next best peak.

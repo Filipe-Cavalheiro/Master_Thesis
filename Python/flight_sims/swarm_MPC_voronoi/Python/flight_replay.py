@@ -592,6 +592,96 @@ def load_setpoint_stream(log_path, ids, real, setpoint_mode="full_state"):
     return stream, "the setpoints sampled in the trajectory log (no <log>_setpoints.csv)"
 
 
+def complete_lost_drones(stream, ids, homes, phases, S):
+    """
+    A drone that the real flight lost (OptiTrack lost it, e.g. after a crash)
+    gets no setpoints after the loss: the flight code stops commanding it
+    (tracking timeout). So that its simulated flight does not hover at its
+    last setpoint until the end, its setpoint stream is completed as the flight
+    code would have flown it:
+      - until Return: its last setpoint (hover);
+      - Return: the rest of the smoothstep ramp to the takeoff point the other
+        drones left free (assign_land_spots: one drone per takeoff point), at
+        TAKEOFF_HEIGHT, continuous with its logged ramp, ending when the
+        other drones' Return ramps end;
+      - Land: the landing ramp to LAND_HEIGHT in place, timed as the other
+        drones' (or the rest of it, if it was lost during the landing).
+    The setpoints are position setpoints (zero velocity / acceleration), as
+    those of the flight code in these phases. Returns the completed stream and
+    {id: (loss time, takeoff point)} of the completed drones.
+    """
+    from scipy.optimize import linear_sum_assignment
+    last = {i: stream[i][0][-1] if len(stream[i][0]) else -np.inf for i in ids}
+    t_end = max(last.values())
+    lost = [i for i in ids if last[i] < t_end - 1.0]
+    t_ret, t_land = phases.get("Return"), phases.get("Land")
+    if not lost or t_ret is None or t_land is None:
+        if lost:
+            print("Lost drones " + ", ".join(lost) + ": no Return / Land in the log, not completed")
+        return stream, {}
+    ok = [i for i in ids if i not in lost]
+    homes = np.asarray(homes, dtype=float)
+    period = float(getattr(S, "SETPOINT_PERIOD", 0.05))
+
+    def ramp_end(t0, t1):
+        """End of the ramps of the drones still flying in [t0, t1): their last setpoint there."""
+        ends = [stream[i][0][(stream[i][0] >= t0) & (stream[i][0] < t1)] for i in ok]
+        ends = [e[-1] for e in ends if len(e)]
+        return max(ends) if ends else t1
+
+    t_ret_end, t_land_end = ramp_end(t_ret, t_land), ramp_end(t_land, np.inf)
+
+    # takeoff points: those reached by the other drones at the end of Return are taken
+    def sp_before(i, t):
+        ts, P = stream[i][0], stream[i][1]
+        k = np.searchsorted(ts, t, side="right") - 1
+        return P[max(k, 0)]
+    taken = {int(np.argmin(np.linalg.norm(homes[:, :2] - sp_before(i, t_land)[:2], axis=1))) for i in ok}
+    free = [h for h in range(len(homes)) if h not in taken]
+    lost_sp = np.array([sp_before(i, np.inf) for i in lost])
+    cost = np.linalg.norm(lost_sp[:, None, :2] - homes[None, free, :2], axis=2)
+    rows, cols = linear_sum_assignment(cost)
+    home_of = {lost[r]: free[c] for r, c in zip(rows, cols)}
+
+    def smooth(t, t0, t1):
+        return smoothstep(np.clip((t - t0) / max(t1 - t0, 1e-9), 0.0, 1.0))
+
+    done = {}
+    for i in lost:
+        if i not in home_of:
+            print(f"CF{i}: lost by the flight, no free takeoff point: not completed")
+            continue
+        ts, P, V, A = stream[i]
+        t_l, p_l = last[i], sp_before(i, np.inf).astype(float)
+        above = np.array([*homes[home_of[i], :2], S.TAKEOFF_HEIGHT])
+        new_t, new_p = [], []
+        if t_l < t_ret_end:
+            # hover until Return, then the rest of the Return ramp (continuous with the logged one)
+            f_l = float(smooth(t_l, t_ret, t_ret_end))
+            for t in np.arange(max(t_l + period, t_ret), t_ret_end + 1e-9, period):
+                f = (smooth(t, t_ret, t_ret_end) - f_l) / max(1.0 - f_l, 1e-9)
+                new_t.append(t)
+                new_p.append(p_l + (above - p_l) * f)
+            land_start, f_l = above, 0.0
+        else:
+            land_start = p_l                      # lost during the landing: the rest of it
+            f_l = float(smooth(t_l, t_land, t_land_end))
+        land_goal = np.array([*land_start[:2], S.LAND_HEIGHT])
+        for t in np.arange(max(t_l + period, t_land), t_land_end + 1e-9, period):
+            f = (smooth(t, t_land, t_land_end) - f_l) / max(1.0 - f_l, 1e-9)
+            new_t.append(t)
+            new_p.append(land_start + (land_goal - land_start) * f)
+        if not new_t:
+            continue
+        new_p = np.array(new_p)
+        z = np.zeros_like(new_p)
+        stream[i] = (np.r_[ts, new_t], np.vstack([P, new_p]), np.vstack([V, z]), np.vstack([A, z]))
+        done[i] = (t_l, homes[home_of[i]])
+        print(f"CF{i}: no setpoints after {t_l:.2f} s (lost by the flight): completed in the simulation, "
+              f"Return to its takeoff point ({above[0]:.2f}, {above[1]:.2f}) and landing")
+    return stream, done
+
+
 def simulate_logged(ids, homes, stream, phases, real, setpoint_mode="full_state", target_index=None, gains=None,
                     drone_model=None, sphere_radius=0.8, history=None):
     """
@@ -1016,6 +1106,8 @@ def replay(folder, run_code, log_path, meta, args):
         setpoint_mode = getattr(S, "SETPOINT_MODE", "position")
         stream, source = load_setpoint_stream(log_path, ids, real, setpoint_mode)
         print(f"Replay: the setpoints of the flight, from {source}")
+        if not getattr(args, "keep_lost", False):
+            stream, _ = complete_lost_drones(stream, ids, homes, phases, S)
         target_id = str(S.TARGET_DRONE_ID) if getattr(S, "TARGET_URI", None) is not None else None
         sim_df = simulate_logged(ids, homes, stream, phases, real, setpoint_mode,
                                  ids.index(target_id) if target_id in ids else None, gains, drone_model,
@@ -1069,6 +1161,9 @@ def add_arguments(parser):
                         help="replay: re-run the flight code (formation, MPC, landing spots) from the takeoff points "
                              "instead of feeding the drones the setpoints of the flight")
     parser.add_argument("--no-plot", action="store_true", help="no figures")
+    parser.add_argument("--keep-lost", action="store_true",
+                        help="replay: a drone the flight lost (no setpoints after the loss) keeps its last setpoint; "
+                             "by default its Return and landing are completed as the flight code would fly them")
     parser.add_argument("--drones", type=int, default=3, help="dry run: number of chasers (plus the target drone, if any)")
     parser.add_argument("--traj", type=int, help="trajectory: of the flight code with --IRL_log / --arena "
                         "(TARGET_TRAJ, default: the one of the log, else Structs.py), else of the simulation "
