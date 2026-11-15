@@ -627,3 +627,120 @@ Lloyd (half plane)     & 0.8486 & 0.0728 & 360.77 \\
 \paragraph{Lloyd (half plane)} This method produces the most uniform spacing of the three, the lowest $CV(d_{NN})$ (0.0728) and lowest Riesz energy (360.77), but at a steep computational cost: a mean run time of 1.367 s (about $41\times$ slower than the convex-hull method and $16\times$ slower than the Thomson method), and a lower convergence rate (93/100) requiring more iterations on average (29.110) when it does converge.
 
 \paragraph{Final analysis} In short, Thomson's method is unsuitable under the present convergence criterion despite its low per-run cost, since it never converges and yields the poorest spacing. The two Lloyd variants are much closer contenders: convex hull offers substantially faster run time than half plane with a perfect, reliable convergence, while half plane offers a further, but comparatively small, improvement in spacing uniformity at a disproportionate cost in run time and a slightly reduced convergence rate. Given that the spacing-quality gap between the two Lloyd variants is small relative to the order-of-magnitude difference in run time, both are retained for full system-level testing of the control architecture, so that this trade-off can be assessed under simulation operating conditions rather than resolved on run time alone.
+
+\section{Comparison between the spherical CVT methods and the Dijkstra-based CVT} \label{annex:Comparison between the spherical CVT methods and the Dijkstra-based CVT}
+
+Chapter~\ref{cha:Decentralized Development} computes the \gls{CVT} with two constructions that only exist on the two-sphere, the convex hull and the half plane (Section~\ref{sec.5:Iterative computation agent spacing on the two-sphere}), whereas Chapter~\ref{cha:Generalized Development} replaces them with a Lloyd iteration whose Voronoi regions are obtained with Dijkstra's algorithm on a triangle mesh (Sections~\ref{sec.6:Iterative computation agent spacing on the two-sphere} and~\ref{sec.6:goal_assignment}). The two-sphere is the only surface on which the three methods can be applied, so this section compares them there, in order to quantify what is gained and what is lost when moving from the spherical constructions to the mesh-based one.
+
+\subsection{Differences between the methods}
+
+Table~\ref{tab.annex:cvt_properties} summarizes how the three methods differ. The convex-hull and half-plane methods place the sites anywhere on the sphere, while the Dijkstra method restricts the sites to the vertices of the mesh and measures distances along its edges. The Dijkstra method is therefore an approximation in two ways: the positions of the sites are quantized to the mesh resolution, and the graph distance overestimates the geodesic distance, since a path can only follow mesh edges. In exchange, it is the only one of the three that does not depend on the geometry of the sphere, and it accepts the vertex weights used in Section~\ref{sec:velocity_weighting}.
+
+\begin{table}[htbp]
+\centering
+\caption{Properties of the three \gls{CVT} methods.}
+\label{tab.annex:cvt_properties}
+\small\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccc}
+\toprule
+Property & \makecell{Lloyd\\(convex hull)} & \makecell{Lloyd\\(half plane)} & \makecell{Lloyd\\(Dijkstra)} \\
+\midrule
+Chapter & \ref{cha:Decentralized Development} & \ref{cha:Decentralized Development} & \ref{cha:Generalized Development} \\
+Surface & two-sphere & two-sphere & any triangle mesh \\
+Site positions & continuous & continuous & mesh vertices \\
+Distance & geodesic (exact) & geodesic (exact) & \makecell{shortest path\\on mesh edges} \\
+Voronoi region & \makecell{spherical polygon\\(dual of the hull)} & \makecell{sampled sphere cut\\by bisector planes} & \makecell{set of vertices\\and faces} \\
+Centroid & \makecell{from the vertices\\of the region} & \makecell{area-weighted,\\sampled sphere} & \makecell{area-weighted,\\mesh faces} \\
+Minimum number of sites & 4 (non-coplanar) & 2 & 1 \\
+Density or weights & no & no & vertex weights \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Test conditions}
+
+The conditions are those of Section~\ref{annex:Comparison of Agent Distributions on the Two-Sphere}: 30 sites on the unit sphere, 100 runs, at most 1000 iterations per run, and a run converges when no site moves more than $5\times10^{-3}$~m (tol) between two iterations. Each run starts from random points on the sphere, and the same initial points are given to the three methods; for the Dijkstra method each initial point is moved to the closest mesh vertex. All sites are updated in every iteration, that is, the methods are run with full knowledge of the other sites, as in Section~\ref{annex:Comparison of Agent Distributions on the Two-Sphere}.
+
+The mesh of the Dijkstra method is the one of Section~\ref{sec.6:Iterative computation agent spacing on the two-sphere}: the vertices are a Fibonacci lattice on the unit sphere and the faces are its convex hull. The main comparison uses 3001 vertices (mean edge length 0.071), and the effect of the mesh resolution is evaluated separately with 1001 and 10001 vertices. The implementation is the one used in the MATLAB simulations of this thesis, a binary-heap Dijkstra over an array of vertex objects, whose adjacency lists are rebuilt in every iteration because in Chapter~\ref{cha:Generalized Development} the mesh changes between iterations. Since tol is smaller than the edge length of every mesh, for the Dijkstra method the convergence criterion is equivalent to no site changing vertex.
+
+The three methods were run again for this section, on the computer of Section~\ref{appendix:Computer Specifications} under Linux with MATLAB R2024a, so the values of the convex-hull and half-plane methods differ slightly from those of Tables~\ref{tab.5:method_comparison_convergence} and~\ref{tab.5:method_comparison_spacing}, which come from a different set of runs. The spacing metrics are here averaged over the runs instead of being taken from one representative run.
+
+\subsection{Results}
+
+Table~\ref{tab.annex:cvt_convergence} reports the run time and the convergence of the three methods, and Table~\ref{tab.annex:cvt_spacing} the spacing metrics of the final distributions, defined in Section~\ref{annex:Comparison of Agent Distributions on the Two-Sphere}. Figures~\ref{fig.annex:cvt_run_time} and~\ref{fig.annex:cvt_cv} show the distribution over the 100 runs of the run time and of $CV(d_{NN})$.
+
+\begin{table}[htbp]
+\centering
+\caption[Convergence of the spherical and Dijkstra-based CVT methods]{Convergence of the spherical and Dijkstra-based \gls{CVT} methods (30 sites, 100 runs, 1000 iterations max, tol $=5\times10^{-3}$ m; Dijkstra on a mesh of 3001 vertices).}
+\label{tab.annex:cvt_convergence}
+\small\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccccc}
+\toprule
+Method & \makecell{Mean run\\time (s)} & \makecell{Median run\\time (s)} & \makecell{Mean time per\\iteration (s)} & \makecell{Mean iters.\\to converge} & \makecell{Converged\\/ 100} \\
+\midrule
+Lloyd (convex hull) & 0.022 & 0.022 & 0.0011 & 20.26 & 100 \\
+Lloyd (half plane)  & 1.545 & 0.511 & 0.0177 & 29.66 & 94 \\
+Lloyd (Dijkstra)    & 6.259 & 5.974 & 0.6594 & 9.49  & 100 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption[Spacing quality of the spherical and Dijkstra-based CVT methods]{Spacing quality of the spherical and Dijkstra-based \gls{CVT} methods (30 sites, mean $\pm$ standard deviation over the runs; half plane over its 94 converged runs).}
+\label{tab.annex:cvt_spacing}
+\begin{tabular}{lccc}
+\toprule
+Method & $d_{NN,\min}/d_{NN,avg}$ & $CV(d_{NN})$ & Riesz Energy ($s=1$) \\
+\midrule
+Lloyd (convex hull) & $0.803 \pm 0.059$ & $0.118 \pm 0.024$ & $362.74 \pm 1.12$ \\
+Lloyd (half plane)  & $0.896 \pm 0.029$ & $0.061 \pm 0.012$ & $360.33 \pm 0.24$ \\
+Lloyd (Dijkstra)    & $0.806 \pm 0.051$ & $0.109 \pm 0.020$ & $362.98 \pm 1.27$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.85\textwidth]{5-Figures/Appendix/cvt_dijkstra_comparison/cvt_dijkstra_run_time.pdf}
+  \caption[Run time of the spherical and Dijkstra-based CVT methods]{Run time of 100 runs for 30 sites (logarithmic scale; Dijkstra on a mesh of 3001 vertices).}
+  \label{fig.annex:cvt_run_time}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.85\textwidth]{5-Figures/Appendix/cvt_dijkstra_comparison/cvt_dijkstra_cv.pdf}
+  \caption[Spacing uniformity of the spherical and Dijkstra-based CVT methods]{$CV(d_{NN})$ of the final distribution of each run for 30 sites (Dijkstra on a mesh of 3001 vertices; half plane over its 94 converged runs).}
+  \label{fig.annex:cvt_cv}
+\end{figure}
+
+\paragraph{Run time} The Dijkstra method is the slowest of the three. One iteration takes 0.66~s, about 600 times longer than one iteration of the convex hull and about 37 times longer than one of the half plane, and a run takes 6.3~s on average. Part of this cost belongs to the implementation and not to the algorithm, since the vertex objects and their adjacency lists are rebuilt in every iteration, but the cost of the search itself also grows with the number of mesh vertices, while the cost of the other two methods depends only on the number of sites. This is the reason why in Chapter~\ref{cha:Generalized Development} the \gls{CVT} is the most expensive module and runs at a lower rate than the rest of the pipeline.
+
+\paragraph{Convergence} The Dijkstra method converged in all 100 runs and needed the fewest iterations (9.49 on average, against 20.26 and 29.66). This does not mean that it is closer to the continuous \gls{CVT}: the sites can only move from vertex to vertex, so a centroid displacement smaller than the vertex spacing does not move the site and the iteration stops earlier. Because the positions are discrete, the iteration could also return to a configuration already visited and repeat it indefinitely; this was monitored and did not occur in any run. The half plane failed to converge in 6 runs. In all 6 the positions became undefined: a cell contained no element of the sampled sphere, so its centroid was divided by a zero area. These runs then used the 1000 iterations, which explains the difference between the mean (1.545~s) and the median (0.511~s) run time of this method.
+
+\paragraph{Spacing quality} With 3001 vertices the Dijkstra method gives a distribution as uniform as that of the convex hull ($CV(d_{NN})$ of 0.109 against 0.118, with similar ratio and Riesz energy) and less uniform than that of the half plane (0.061). The discretization is therefore not what limits the quality at this resolution and number of sites.
+
+\subsection{Effect of the mesh resolution}
+
+Table~\ref{tab.annex:cvt_mesh_resolution} repeats the test of the Dijkstra method with three mesh resolutions. Because of its run time, the mesh of 10001 vertices was run 20 times instead of 100, using the first 20 initial conditions of the other two.
+
+\begin{table}[htbp]
+\centering
+\caption[Effect of the mesh resolution on the Dijkstra-based CVT]{Effect of the mesh resolution on the Dijkstra-based \gls{CVT} (30 sites; 100 runs for 1001 and 3001 vertices, 20 runs for 10001 vertices; all runs converged).}
+\label{tab.annex:cvt_mesh_resolution}
+\begin{tabular}{cccccc}
+\toprule
+\makecell{Mesh\\vertices} & \makecell{Mean edge\\length} & \makecell{Mean time per\\iteration (s)} & \makecell{Mean iters.\\to converge} & \makecell{Mean run\\time (s)} & $CV(d_{NN})$ \\
+\midrule
+1001  & 0.123 & 0.197 & 6.29  & 1.24  & $0.154 \pm 0.033$ \\
+3001  & 0.071 & 0.659 & 9.49  & 6.26  & $0.109 \pm 0.020$ \\
+10001 & 0.039 & 2.399 & 17.20 & 41.25 & $0.076 \pm 0.013$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The uniformity improves with the resolution, from a $CV(d_{NN})$ of 0.154 with 1001 vertices, worse than both spherical methods, to 0.076 with 10001 vertices, better than the convex hull and close to the half plane. The cost grows faster than the quality: the time per iteration is roughly proportional to the number of vertices, and the number of iterations also increases, because smaller site displacements become visible on a finer mesh. Going from 3001 to 10001 vertices multiplies the run time by 6.6 and reduces $CV(d_{NN})$ by 30\%. The mesh resolution is thus the parameter that trades uniformity for computation in the Dijkstra method. For reference, the formation mesh of the simulations of Chapter~\ref{cha:Generalized Development} has to be recomputed at every control step, which limits the resolution that can be used there.
+
+\subsection{Final analysis}
+
+On the two-sphere the Dijkstra method has no advantage over the spherical methods of Chapter~\ref{cha:Decentralized Development}: at equal uniformity it is two orders of magnitude slower than the convex hull, and reaching the uniformity of the half plane requires a mesh fine enough to make it about 80 times slower than the half plane in median run time. For a formation that is always a sphere, the methods of Chapter~\ref{cha:Decentralized Development} remain the better choice. The Dijkstra method is used in Chapter~\ref{cha:Generalized Development} because it is the only one of the three that works on a surface that is not a sphere, such as the disc, the cone and the intermediate shapes produced by the mesh controller, and because it accepts the vertex weights of the velocity-dependent metric. It also showed the most predictable behaviour of the three in this test, converging in every run and never producing the degenerate configurations of the convex hull or the undefined centroids of the half plane. The results of this section show that its distribution on the sphere is comparable to that of the convex-hull method when the mesh has about 100 vertices per site, so the generalization to arbitrary meshes costs computation time and not formation quality.

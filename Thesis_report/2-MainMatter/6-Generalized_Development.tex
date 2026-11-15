@@ -61,7 +61,7 @@ The collision avoidance keeps the chasers separated but does not separate chaser
 
 \section{Agent Distribution} \label{sec.6:Iterative computation agent spacing on the two-sphere}
 
-The presented method continues to use Lloyd's algorithm, presented in Section~\ref{annex:Lloyd's algorithm}, being the geodesic distances on the mesh approximated using the shortest-path distance computed with Dijkstra's algorithm. This section illustrates the method on generic meshes; its decentralized use on the formation mesh is described in Section~\ref{sec.6:goal_assignment}.
+The presented method continues to use Lloyd's algorithm, presented in Section~\ref{annex:Lloyd's algorithm}, being the geodesic distances on the mesh approximated using the shortest-path distance computed with Dijkstra's algorithm. This section illustrates the method on generic meshes; its decentralized use on the formation mesh is described in Section~\ref{sec.6:goal_assignment}. A comparison on the two-sphere between this method and the convex-hull and half-plane methods of Chapter~\ref{cha:Decentralized Development} is given in Appendix~\ref{annex:Comparison between the spherical CVT methods and the Dijkstra-based CVT}.
 
 \paragraph{Voronoi Dijkstra}
 Voronoi separation using the Dijkstra method is a graph-based approach for constructing discrete Voronoi regions on generalized, well-defined meshes. In this framework, the mesh is interpreted as a weighted graph whose vertices correspond to mesh nodes and whose edges encode adjacency, with weights typically derived from geometric properties such as edge lengths or anisotropic metrics.
@@ -1010,7 +1010,7 @@ Figures~\ref{fig.6:multiple time steps close up} and~\ref{fig.6:composed_12_agen
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.9\textwidth]{5-Figures/Chapter6/Results/composed_12_agents.pdf}
-    \caption{Composed view of all 6 time steps.}
+    \caption[Composed view of all 6 time steps]{Composed view of the mesh and the target $(\cdot)$ at the six time steps of Figure~\ref{fig.6:multiple time steps close up}, with the wall $x=0$ (dashed).}
     \label{fig.6:composed_12_agents}
 \end{figure}
 
