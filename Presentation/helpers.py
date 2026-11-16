@@ -28,6 +28,10 @@ import re
 # translation is shown as is and listed in i18n_missing.txt at exit.
 LANG = "pt"
 _ManimText, _ManimMathTex, _ManimTex = Text, MathTex, Tex
+# Pin the font: an empty font name means the system default (Noto Serif on the Linux machine the
+# slides were designed on), which differs on other systems, e.g. Windows. Noto Serif has no →≈≤≥:
+# Linux takes them from DejaVu Serif by fallback, Windows does not fall back, so name it per glyph.
+_ManimText.set_default(font="Noto Serif", t2f={c: "DejaVu Serif" for c in "→≈≤≥"})
 _MISSING: set[str] = set()
 if LANG == "pt":
     from i18n_pt import PT, PT_PATTERNS
