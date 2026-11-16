@@ -1,0 +1,115 @@
+# MSc thesis defence — Cooperative Encirclement of Non-Cooperative Drones
+
+Manim + manim-slides presentation for Filipe Cavalheiro's MSc defence
+(NOVA FCT, Electrical and Computer Engineering; adviser Prof. Bruno J. Guerreiro).
+The presentation is in Portuguese (pt-PT).
+The visual style (black background, section titles in the upper-left corner, red target,
+white chasers, blue desired points, yellow highlights) follows the APCA 2026 paper
+presentation, since it is the same research line.
+
+Target length: **~20:40** of talk with both flight videos in real time, over the 20 min hard limit (see the budget in `SPEAKER_NOTES.md`). See `SPEAKER_NOTES.md` for the
+per-slide script and timing budget.
+
+## Files
+
+| File | Content |
+|---|---|
+| `slides.py` | all scenes (one `Slide` class per section, sub-slides via `next_slide()`) |
+| `helpers.py` | colours, 3D projection helper, Fibonacci lattice, Voronoi/Lloyd, mesh controller, Bezier |
+| `scenes.txt` | scene order (main talk + backup slides) |
+| `manim.cfg` | 1920x1080, 30 fps, black background |
+| `requirements.txt` | direct dependencies; `requirements.lock.txt` = exact versions that were tested |
+| `assets/images/` | thesis figures converted from `Thesis_report/5-Figures` (PDF -> PNG, 200-450 dpi) + logos |
+| `assets/data/generalized_sim_12agents.npz` | thesis Ch. 6 simulation (12 agents, 4 lost at 10 s), every 5th sample of `Python/V16/simulation_results.pkl` |
+| `assets/videos/*.mp4` | real-flight clips shown at the end of the `CentralizedResults` and `Results` scenes, cut from `../Results/*/overlay/overlay.mp4` by `assets/videos/make_clips.sh` |
+| `assets/data/lisbon_traj5.npz` | thesis Ch. 6 Lisbon-airport simulation (trajectory 5, 12 chasers, 4 lost at 25 s) in the wall frame, exported by `assets/data/make_lisbon_data.py` |
+| `i18n_pt.py` | text shown on the slides (pt-PT), looked up from the key strings in `slides.py` |
+| `SPEAKER_NOTES.md` | speaker script (pt-PT) + timing |
+
+## Setup
+
+```bash
+cd Presentation
+uv venv .venv            # or: python3 -m venv .venv
+uv pip install --python .venv/bin/python -r requirements.lock.txt   # exact tested versions
+source .venv/bin/activate
+```
+
+System requirements: ffmpeg, pango/cairo, a LaTeX distribution (for `MathTex`).
+
+## Render
+
+```bash
+# quick check (480p15)
+manim-slides render -ql slides.py $(cat scenes.txt)
+
+# final quality (1080p30, as in manim.cfg) - takes considerably longer
+manim-slides render slides.py $(cat scenes.txt)
+# or 4K: manim-slides render -qk slides.py $(cat scenes.txt)
+```
+
+A single scene can be re-rendered on its own, e.g. `manim-slides render slides.py Results`.
+
+## Present
+
+```bash
+# native presenter (arrow keys / space: next, left: previous, q: quit, f: fullscreen)
+manim-slides present $(cat scenes.txt) --full-screen
+
+# self-contained HTML (reveal.js) - works offline, open in any browser
+manim-slides convert $(cat scenes.txt) presentation.html --one-file --offline
+```
+
+`scenes.txt` contains the main talk followed by the backup slides
+(`BackupLyapunov`, `BackupControllers`, `BackupDirect` and `BackupIterative` (comparisons of the direct and
+iterative point-distribution methods, thesis appendix), `BackupDecentralized` (convex-hull failure),
+`BackupArchitectures` (centralized, decentralized and generalized block diagrams, one per key press)).
+To present only the main talk, drop those names.
+
+## Language
+
+The scene code in `slides.py` keeps its text in English; those strings are only keys. Every
+`Text` / `MathTex` / `Tex` string is replaced by its Portuguese entry in `i18n_pt.py` (see `tr`
+in `helpers.py`). When adding slide text, add the key and its translation to `i18n_pt.py`: a
+string without an entry is shown as written and listed in `i18n_missing.txt` after the render.
+Text inside the thesis figures and in the flight videos is in English, and numbers keep the
+decimal point of the figures.
+
+## Notes / provenance
+
+* All numbers on the slides come from the thesis text, tables and figures
+  (Ch. 1, 4, 5, 6, 7 and the appendix).
+* The animations of the Fibonacci lattice, Lyapunov controller (5 agents), Lloyd's algorithm
+  (2D and on the sphere), mesh controller and Bernstein MPC are **illustrative
+  re-implementations** of the thesis methods, written for the slides. The spherical Lloyd
+  animation uses a sample-based Voronoi partition, not the convex-hull/half-plane code; its live
+  CV value is illustrative and the quoted thesis values are in the table next to it.
+* The 3D replay in `Results` uses the actual simulation data (`Python/V16/simulation_results.pkl`,
+  the run that produced the Ch. 6 result figures) played at 2x speed; the mesh drawn behind the
+  agents is recomputed from the true target position with the thesis mesh-controller equations.
+
+Math on the slides: any `$...$` segment of a `Text` string is rendered with LaTeX inline
+(`helpers.mixed_text`); `MathTex` for whole formulas. The thesis title and subtitle are kept in
+English. The mesh-controller animation uses the thesis cone (rim on the wall); the `Results` replay
+keeps the V16 cone its simulation was run with (`precompute_meshes(legacy_cone=True)`).
+
+## Structure
+
+16 main scenes (51 key presses: the mesh controller stops at the cone and at the sphere, both
+replays of `Results` stop at every phase) + 6 backup scenes (11 key presses). Each scene ends with a short fade-out that
+advances automatically (`auto_next`) into the next scene, so no blank "extra" key press is needed.
+Speaker notes from `SPEAKER_NOTES.md` (`#### [Scene.k]` blocks) are attached to the slides at
+render time: press `S` in the HTML export to open the reveal.js speaker view.
+After editing the notes, re-render the affected scene(s) and re-run `convert`.
+
+## Left for the author
+
+* The last sub-slide of `CentralizedResults` and of `Results` plays the camera + simulation overlay of a Crazyflie/OptiTrack flight
+  (`Results/swarm_geometric_Fibonacci_sim_target_trajectory_20261113_182427` and
+  `Results/swarm_MPC_voronoi_sim_target_trajectory_20261113_144433`, whole flights in real time, 46 s and 72 s;
+  the next key press skips the rest of a video). These flights are not in the thesis text, and the `Conclusions` slide
+  still lists "simulation only" as a limitation: adjust it if you want the two to agree.
+* The motivation headlines (RTP, Público) and logos are reused from the APCA presentation;
+  the DFS numbers (161 in 2024, 225 in 2025) are from thesis Ch. 1.
+* Rehearse with a timer: the budget is in `SPEAKER_NOTES.md`; animations play automatically on
+  each key press, so the timing mostly depends on speech.
