@@ -20,7 +20,7 @@ per-slide script and timing budget.
 | `manim.cfg` | 1920x1080, 30 fps, black background |
 | `requirements.txt` | direct dependencies; `requirements.lock.txt` = exact versions that were tested |
 | `assets/images/` | thesis figures converted from `Thesis_report/5-Figures` (PDF -> PNG, 200-450 dpi) + logos |
-| `assets/data/generalized_sim_12agents.npz` | thesis Ch. 6 simulation (12 agents, 4 lost at 10 s), every 5th sample of `Python/V16/simulation_results.pkl` |
+| `assets/data/generalized_sim_12agents.npz` | thesis Ch. 6 scenario (12 agents, 4 lost at 10 s) simulated with `Python/flight_sims/swarm_MPC_voronoi`, every 5th sample; made by `tools/make_generalized_replay.py` |
 | `assets/videos/*.mp4` | real-flight clips shown at the end of the `CentralizedResults` and `Results` scenes, cut from `../Results/*/overlay/overlay.mp4` by `assets/videos/make_clips.sh` |
 | `assets/data/lisbon_traj5.npz` | thesis Ch. 6 Lisbon-airport simulation (trajectory 5, 12 chasers, 4 lost at 25 s) in the wall frame, exported by `assets/data/make_lisbon_data.py` |
 | `i18n_pt.py` | text shown on the slides (pt-PT), looked up from the key strings in `slides.py` |
@@ -108,14 +108,18 @@ decimal point of the figures.
   re-implementations** of the thesis methods, written for the slides. The spherical Lloyd
   animation uses a sample-based Voronoi partition, not the convex-hull/half-plane code; its live
   CV value is illustrative and the quoted thesis values are in the table next to it.
-* The 3D replay in `Results` uses the actual simulation data (`Python/V16/simulation_results.pkl`,
-  the run that produced the Ch. 6 result figures) played at 2x speed; the mesh drawn behind the
-  agents is recomputed from the true target position with the thesis mesh-controller equations.
+* The 3D replay in `Results` plays simulation data at 2x speed: the Ch. 6 straight-boundary
+  scenario (circle at 0.25 rad/s, 12 agents, 4 lost at 10 s) re-simulated with
+  `Python/flight_sims/swarm_MPC_voronoi`, whose cone has its rim on the wall
+  (`tools/make_generalized_replay.py`). The V16 run behind the thesis figures used a cone whose
+  outer ring curled back past the wall (goals up to 3.9 m outside), so it is not replayed; the
+  plots on the next slide are still the thesis figures. The mesh drawn behind the agents is
+  recomputed from the true target position with the thesis mesh-controller equations.
 
 Math on the slides: any `$...$` segment of a `Text` string is rendered with LaTeX inline
 (`helpers.mixed_text`); `MathTex` for whole formulas. The thesis title and subtitle are kept in
-English. The mesh-controller animation uses the thesis cone (rim on the wall); the `Results` replay
-keeps the V16 cone its simulation was run with (`precompute_meshes(legacy_cone=True)`).
+English. The mesh-controller animation and the `Results` replay both use the thesis cone (rim on
+the wall).
 
 ## Structure
 

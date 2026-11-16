@@ -1139,23 +1139,34 @@ class GeneralizedMesh(Base):
         self.new_title("10. Generalized: mesh controller")
         R = 5.0
         meshes = precompute_meshes(320, R)
-        proj = Proj(phi=72 * DEGREES, theta=-125 * DEGREES, scale=0.33, center=np.array([-3.6, -0.6, 0]), world_center=np.array([0, 0, 0]))
+        # as the thesis figure (fig_mesh): seen from the restricted side, the wall normal pointing
+        # right, the points coloured by their distance past the wall (viridis, 0 .. 2R)
+        proj = Proj(phi=70 * DEGREES, theta=-62 * DEGREES, scale=0.27, center=np.array([-3.4, -0.1, 0]), world_center=np.array([2.0, 0, 0]))
         x_t = ValueTracker(-7.5)
+        viridis = color_gradient([ManimColor(c) for c in ("#4a6fe3", "#21a3a3", "#5ec962", "#fde725")], 101)
 
-        plane_pts = np.array([[0, -8, -6], [0, 8, -6], [0, 8, 6], [0, -8, 6]], float)
-        plane = Polygon(*proj(plane_pts), stroke_color=GREY_B, stroke_width=1.5, fill_color=RED_E, fill_opacity=0.12)
-        side_out = Text("outside", font_size=22, color=GREY_A).next_to(plane, LEFT, buff=0.6).shift(UP * 1.2)
-        side_in = Text("restricted airspace", font_size=22, color=RED_C).next_to(plane, UP, buff=0.15).shift(RIGHT * 1.4)
+        def vcol(x):
+            return viridis[int(np.clip(x / (2 * R), 0, 1) * 100)]
+
+        # the wall: large enough for the disc (radius sqrt(2) R), so no vertex leaves it
+        L = 7.6
+        plane_pts = np.array([[0, -L, -L], [0, L, -L], [0, L, L], [0, -L, L]], float)
+        plane = Polygon(*proj(plane_pts), stroke_color=GREY_B, stroke_width=1.5, fill_color=GREY, fill_opacity=0.18)
+        n_arrow = Arrow(proj(np.array([0, 0, -L])), proj(np.array([4.0, 0, -L])), buff=0, color=RED_C, stroke_width=3, max_tip_length_to_length_ratio=0.25)
+        side_in = Text("restricted airspace", font_size=22, color=RED_C).next_to(n_arrow, RIGHT, buff=0.1)
+        side_out = Text("outside", font_size=22, color=GREY_A).next_to(plane, LEFT, buff=0.15).align_to(side_in, DOWN)
 
         def world():
             tgt = np.array([x_t.get_value(), 0.0, 0.0])
             v, u1, u2 = mesh_state(tgt, meshes, R)
             g = VGroup()
-            d = (v - tgt) @ proj.basis()[2]
+            d = proj.depth(v)
             order = np.argsort(d)
+            far = d < np.median(d) if u2 > 0.5 else np.zeros(len(v), bool)
             for kk in order:
-                g.add(Dot(proj(v[kk]), radius=0.03, color=BLUE, fill_opacity=0.9 if d[kk] > 0 else 0.35))
-            g.add(Dot(proj(tgt), radius=0.09, color=RED))
+                g.add(Dot(proj(v[kk]), radius=0.032, color=vcol(v[kk, 0]), fill_opacity=0.4 if far[kk] else 0.95))
+            # the target is behind the wall (seen through it) while outside
+            g.add(Star(outer_radius=0.13, color=RED, fill_opacity=1 if tgt[0] >= 0 else 0.55, stroke_width=0).move_to(proj(tgt)))
             return g
 
         w = always_redraw(world)
@@ -1189,7 +1200,7 @@ class GeneralizedMesh(Base):
         if rgt.width > 5.4:
             rgt.set(width=5.4)
         rgt.move_to(RIGHT * 1.3 + DOWN * 1.6, aligned_edge=LEFT)
-        self.play(FadeIn(plane), FadeIn(side_out), FadeIn(side_in), FadeIn(w), FadeIn(st))
+        self.play(FadeIn(plane), FadeIn(n_arrow), FadeIn(side_out), FadeIn(side_in), FadeIn(w), FadeIn(st))
         self.play(FadeIn(formula), FadeIn(d_txt))
         self.next_slide()
         # target approaches and crosses the boundary: disc -> cone (complete at d = R/2)
@@ -1327,28 +1338,17 @@ class GeneralizedMPC(Base):
         sites = mesh.nearest(fibonacci_points(12))
         for _ in range(40):
             sites = mesh.lloyd_step(sites, w_uni)[0]
-        uni = (sites, mesh.owner(sites, w_uni))
-        hist = []                               # (sites, weighted cells) per Lloyd iteration
+        uni = sites
+        hist = []                               # sites per Lloyd iteration with the weighted metric
         for _ in range(30):
-            new, owner = mesh.lloyd_step(sites, w_vel)
-            hist.append((sites, owner))
+            new = mesh.lloyd_step(sites, w_vel)[0]
             if np.array_equal(new, sites):
                 break
+            hist.append(new)
             sites = new
 
         proj = Proj(phi=72 * DEGREES, theta=-72 * DEGREES, scale=2.4, center=np.array([-3.7, -0.4, 0]))
-        cell_cols = [TEAL_D, MAROON_B, GOLD_C, PURPLE_B, GREEN_B, PINK, ORANGE, RED_C, LIGHT_BROWN, YELLOW_E,
-                     GREY_A, "#5B6EE1"]   # no light blue: that is the colour of the desired points
         depth = mesh.V @ proj.basis()[2]
-
-        def cells(owner, sites):
-            slot = {int(s): k for k, s in enumerate(sites)}
-            g = VGroup()
-            for k in np.argsort(depth):
-                d = Dot(proj(mesh.V[k]), radius=0.034, color=cell_cols[slot[int(owner[k])]])
-                d.set_opacity(1.0 if depth[k] >= 0 else 0.25)
-                g.add(d)
-            return g
 
         def agents(sites):
             g = dots3d(mesh.V[sites], proj, color=DESIRED_COLOR, radius=0.1, back_op=0.35, stable=True, z_base=2.0)
@@ -1369,14 +1369,13 @@ class GeneralizedMPC(Base):
                          width=2.0, front_op=0.6, back_op=0.15, sphere_center=np.zeros(3))
         sil = Circle(radius=proj.scale, color=GREY_B, stroke_width=1.5).move_to(proj(ORIGIN))
         tgt = Dot(proj(ORIGIN), radius=0.11, color=TARGET_COLOR).set_z_index(1.5)
-        cell_g = cells(uni[1], uni[0])
-        agent_g = agents(uni[0])
+        agent_g = agents(uni)
 
         cap = Text("target velocity unknown: uniform CVT", font_size=22, color=GREY_A)
         cap.move_to(np.array([-6.6, 2.55, 0]), aligned_edge=LEFT)
         w = MathTex(r"w_i=\exp\!\Big(\frac{\theta_i^2}{2\sigma^2}\Big),\ \ \sigma=1.2", font_size=32)
         wt = Text("$\\theta_i$: angle from the direction\nbehind the target\n→ more weight in front", font_size=20, color=GREY_A, line_spacing=0.8)
-        st = stats(uni[0])
+        st = stats(uni)
         st_lab = VGroup(
             Text("mean directional alignment\n(≈ 0 for a symmetric formation)", font_size=18, color=GREY_A, line_spacing=0.8),
             Text("agents in front of the target", font_size=18, color=GREY_A),
@@ -1401,25 +1400,23 @@ class GeneralizedMPC(Base):
         place_stats(st)
         st_lab[1].next_to(st[1], DOWN, buff=0.1).align_to(st[0], LEFT)
 
-        self.play(FadeIn(sil), FadeIn(cell_g), FadeIn(divide), FadeIn(tgt), FadeIn(cap))
+        self.play(FadeIn(sil), FadeIn(divide), FadeIn(tgt), FadeIn(cap))
         self.play(LaggedStart(*[GrowFromCenter(d) for d in agent_g], lag_ratio=0.05), run_time=1.0)
         self.play(FadeIn(st), FadeIn(st_lab))
         self.next_slide()
 
-        # the velocity becomes known: the weights bias the cells, Lloyd re-converges
+        # the velocity becomes known: the weighted metric moves the sites, Lloyd re-converges
         tip = proj(1.45 * vel)
         v_arrow = Arrow(proj(ORIGIN), tip, buff=0, color=TARGET_COLOR, stroke_width=7,
                         max_tip_length_to_length_ratio=0.12).set_z_index(3)
         v_lab = MathTex(r"\mathbf{v}", font_size=40, color=TARGET_COLOR).next_to(tip, UP, buff=0.12).set_z_index(3)
         cap2 = Text("target velocity known: weighted CVT (Lloyd)", font_size=22, color=YELLOW).move_to(cap, aligned_edge=LEFT)
         self.play(GrowArrow(v_arrow), FadeIn(v_lab), Transform(cap, cap2), run_time=1.0)
-        # same sites, cells measured with the weighted metric (longer edges in front: front cells shrink)
-        self.play(Write(w), FadeIn(wt), FadeIn(it_lab), Transform(cell_g, cells(hist[0][1], hist[0][0])), run_time=1.2)
-        for k, (s, own) in enumerate(hist[1:], start=1):
+        self.play(Write(w), FadeIn(wt), FadeIn(it_lab), run_time=1.2)
+        for k, s in enumerate(hist, start=1):
             new_st = place_stats(stats(s))
             new_it = Text(f"iteration {k}", font_size=22, color=GREY_B).move_to(it_lab, aligned_edge=LEFT)
             self.play(
-                Transform(cell_g, cells(own, s)),
                 Transform(agent_g, agents(s)),
                 Transform(st, new_st),
                 Transform(it_lab, new_it),
@@ -1445,7 +1442,7 @@ class Results(Base):
         active = set(int(a) for a in data["active"])
         R = float(data["R"])
         Tn = len(t)
-        meshes = precompute_meshes(260, R, legacy_cone=True)   # the cone of the simulated run (V16)
+        meshes = precompute_meshes(260, R)   # the thesis cone (rim on the wall), as in the simulated run
 
         proj = Proj(phi=68 * DEGREES, theta=-115 * DEGREES, scale=0.205, center=np.array([-2.6, -0.6, 0]), world_center=np.array([-5.0, 0.0, 5.0]))
         plane_pts = np.array([[0, -20, 0], [0, 20, 0], [0, 20, 13], [0, -20, 13]], float)
@@ -1502,7 +1499,7 @@ class Results(Base):
             Text("$t\\approx 13$ s: back to planar barrier", font_size=20),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
         events.next_to(leg, DOWN, buff=0.4).align_to(leg, LEFT)
-        src = Text("thesis simulation data (Python, Ch. 6 scenario), 2x speed", font_size=16, color=GREY_B).to_edge(DOWN, buff=0.55).shift(LEFT * 2.5)
+        src = Text("Ch. 6 scenario, Python simulation with the thesis mesh controller, 2x speed", font_size=16, color=GREY_B).to_edge(DOWN, buff=0.55).to_edge(LEFT, buff=0.4)
 
         self.play(FadeIn(plane), FadeIn(ground), FadeIn(lab_in), FadeIn(w), FadeIn(clock), FadeIn(leg), FadeIn(src))
         # one key press per phase: the replay stops at every event

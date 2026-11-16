@@ -247,7 +247,7 @@ PT = {
     "t ≈ 4 s: closed sphere": "t ≈ 4 s: esfera fechada",
     "t = 10 s: 4 agents lose power": "t = 10 s: 4 agentes sem energia",
     "t ≈ 13 s: back to planar barrier": "t ≈ 13 s: regresso à barreira plana",
-    "thesis simulation data (Python, Ch. 6 scenario), 2x speed": "dados de simulação da tese (Python, cenário do Cap. 6), velocidade 2x",
+    "Ch. 6 scenario, Python simulation with the thesis mesh controller, 2x speed": "cenário do Cap. 6, simulação em Python com o controlador de malha da tese, velocidade 2x",
     "12. Results: quantitative view": "12. Resultados: análise quantitativa",
     "distance to target (R = 5 m)": "distância ao alvo (R = 5 m)",
     "inter-agent distance (threshold 1 m)": "distância entre agentes (limiar 1 m)",

@@ -478,14 +478,13 @@ class SphereMesh:
 
 
 # ----------------------------------------------------------------------------
-# Mesh controller (re-implementation of Ch. 6, Python/V16/voronoi_mesh_funcs.py)
+# Mesh controller (re-implementation of Ch. 6, Python/flight_sims/swarm_MPC_voronoi/Python/voronoi_mesh_funcs.py)
 # ----------------------------------------------------------------------------
-def precompute_meshes(P=400, R=5.0, legacy_cone=False):
+def precompute_meshes(P=400, R=5.0):
     """
     Disc, cone and sphere of the mesh controller (thesis Ch. 6). The cone is
-    lifted by R (1 - (r / r_max)^2), so its rim lies on the wall. legacy_cone:
-    the V16 cone, R (1 - (r / R)^2), whose outer ring curls back past the wall
-    (the simulation of the Results replay was run with it).
+    lifted by R (1 - (r / r_max)^2), so its rim lies on the wall and no vertex
+    goes behind it (the disc radius r_max is about sqrt(2) R).
     """
     N = max(int(np.floor((P - 1) / 2)), 1)
     k = np.arange(P)
@@ -493,8 +492,7 @@ def precompute_meshes(P=400, R=5.0, legacy_cone=False):
     th = (k + 1) * GOLDEN_ANGLE
     v_circle = np.column_stack([np.zeros(P), r * np.cos(th), r * np.sin(th)])
     radial = np.sqrt(v_circle[:, 1] ** 2 + v_circle[:, 2] ** 2)
-    r_max = R if legacy_cone else radial.max()
-    v_cone = np.column_stack([R * (1 - (radial / r_max) ** 2), v_circle[:, 1], v_circle[:, 2]])
+    v_cone = np.column_stack([R * (1 - (radial / radial.max()) ** 2), v_circle[:, 1], v_circle[:, 2]])
     phi_g = (1 + np.sqrt(5)) / 2
     i = np.arange(P)
     phi = 2 * np.pi * i / phi_g

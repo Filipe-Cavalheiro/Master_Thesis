@@ -226,6 +226,8 @@ sapo do conjunto de dados Thingi10K, com 8 sítios cada.
 Isto permite o comportamento principal. Longe da fronteira, os agentes formam um disco plano:
 uma barreira, um aviso à frente da zona restrita. A malha é uma interpolação entre três formas
 pré-calculadas — disco, cone e esfera — comandada pela distância com sinal do alvo à fronteira.
+As cores indicam a distância de cada vértice para lá da fronteira: nenhum vértice sai para o
+lado de fora.
 
 #### [GeneralizedMesh.3] Disco para cone
 À medida que o alvo se aproxima e atravessa a fronteira, o disco deforma-se num cone em torno
@@ -251,22 +253,22 @@ penalização elevada, não uma restrição rígida, pelo que não há garantia 
 
 #### [GeneralizedMPC.2] Sem velocidade: CVT uniforme
 Por fim, a velocidade do alvo. Sem ela, os 12 pontos de Lloyd numa malha esférica distribuem-se
-uniformemente: as cores são as células de Voronoi calculadas com Dijkstra. O alinhamento
+uniformemente, com células de Voronoi calculadas com Dijkstra. O alinhamento
 direcional médio é praticamente zero e metade dos agentes está à frente do alvo.
 
 #### [GeneralizedMPC.3] Com velocidade: CVT ponderada
 Quando a velocidade é conhecida, cada vértice recebe um peso que cresce com o ângulo à direção
-atrás do alvo, e as arestas da malha ficam mais longas à frente. As células da frente encolhem e
-o algoritmo de Lloyd volta a convergir em poucas iterações, com mais agentes à frente. Com sigma
+atrás do alvo, e as arestas da malha ficam mais longas à frente. As células da frente encolhem, os
+agentes deslocam-se para a frente e o algoritmo de Lloyd volta a convergir em poucas iterações, com mais agentes à frente. Com sigma
 1,2 e 12 agentes, o alinhamento sobe para cerca de 0,32 e 8 de 12 agentes ficam no hemisfério da
 frente, como na tese.
 
 ## 13. Resultados (3:40)
 
 #### [Results.1] Repetição: disco na fronteira
-Estes são os dados reais da simulação, ao dobro da velocidade: 12 agentes, o alvo voa numa
-circunferência, entrando e saindo da região restrita (x > 0). Cada tecla avança até à fase
-seguinte. Ao 1 s, os agentes formam um disco na fronteira.
+Esta é a simulação do cenário do capítulo 6 com o controlador de malha da tese, ao dobro da
+velocidade: 12 agentes, o alvo voa numa circunferência, entrando e saindo da região restrita
+(x > 0). Cada tecla avança até à fase seguinte. Ao 1 s, os agentes formam um disco na fronteira.
 
 #### [Results.2] Cone
 Aos 2,5 s, com o alvo a atravessar a fronteira, a malha é um cone.
