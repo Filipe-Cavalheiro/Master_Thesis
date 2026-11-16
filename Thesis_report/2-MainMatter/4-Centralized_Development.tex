@@ -264,21 +264,21 @@ The control law above generates reference commands for the drone's low-level (in
     \paragraph{Convergence via LaSalle's invariance principle.}
     Because $\gls{e_q_i}$ (and hence the closed-loop vector field) is undefined
     at $\gls{q_i} = -\gls{q_i_desired}$, LaSalle's principle cannot be applied
-    directly on $\mathbb{S}^2$. Instead, for any $0 < c < 2$ define the sublevel
+    directly on $\mathbb{S}^2$. Instead, for any $0 < \ell < 2$ define the sublevel
     set
     \begin{equation*}
-        D_c \triangleq \left\{ \gls{q_i} \in \mathbb{S}^2 \;:\;
-        \Psi(\gls{q_i}, \gls{q_i_desired}) \le c \right\}.
+        D_\ell \triangleq \left\{ \gls{q_i} \in \mathbb{S}^2 \;:\;
+        \Psi(\gls{q_i}, \gls{q_i_desired}) \le \ell \right\}.
     \end{equation*}
     Since $\Psi$ is continuous on $\mathbb{S}^2$ and
-    $\Psi(-\gls{q_i_desired}, \gls{q_i_desired}) = 2$, the set $D_c$ is compact and excludes an open neighborhood of $-\gls{q_i_desired}$ for every $c < 2$.
-    Since $\dot V \le 0$, $D_c$ is positively invariant, and on $D_c$ the
-    closed-loop vector field is smooth. LaSalle's invariance principle therefore applies on $D_c$: every trajectory initialized in $D_c$ converges to the largest invariant set contained in
+    $\Psi(-\gls{q_i_desired}, \gls{q_i_desired}) = 2$, the set $D_\ell$ is compact and excludes an open neighborhood of $-\gls{q_i_desired}$ for every $\ell < 2$.
+    Since $\dot V \le 0$, $D_\ell$ is positively invariant, and on $D_\ell$ the
+    closed-loop vector field is smooth. LaSalle's invariance principle therefore applies on $D_\ell$: every trajectory initialized in $D_\ell$ converges to the largest invariant set contained in
     \begin{equation*}
-        \left\{ \gls{q_i} \in D_c \;:\; \gls{e_q_i} = 0 \right\}.
+        \left\{ \gls{q_i} \in D_\ell \;:\; \gls{e_q_i} = 0 \right\}.
     \end{equation*}
     From \eqref{eq.4:new_err_ref_dynamic}, $\gls{e_q_i} = 0$ if and only if
-    $\gls{q_i} = \gls{q_i_desired}$ (the unique minimizer of $\Psi$), which is therefore the only invariant point in this set. Consequently, every trajectory initialized in $D_c$ converges asymptotically to $\gls{q_i_desired}$. Since $\Psi(\gls{q_i}, \gls{q_i_desired}) < 2$ for every $\gls{q_i} \neq -\gls{q_i_desired}$, the sets $D_c$ exhaust $\mathbb{S}^2 \setminus \{-\gls{q_i_desired}\}$ as $c$ increases toward $2$. Hence every trajectory initialized in $\mathbb{S}^2 \setminus \{-\gls{q_i_desired}\}$ converges asymptotically to $\gls{q_i_desired}$, establishing asymptotic stability of $\gls{q_i} = \gls{q_i_desired}$ on $\mathbb{S}^2 \setminus \{-\gls{q_i_desired}\}$.
+    $\gls{q_i} = \gls{q_i_desired}$ (the unique minimizer of $\Psi$), which is therefore the only invariant point in this set. Consequently, every trajectory initialized in $D_\ell$ converges asymptotically to $\gls{q_i_desired}$. Since $\Psi(\gls{q_i}, \gls{q_i_desired}) < 2$ for every $\gls{q_i} \neq -\gls{q_i_desired}$, the sets $D_\ell$ exhaust $\mathbb{S}^2 \setminus \{-\gls{q_i_desired}\}$ as $\ell$ increases toward $2$. Hence every trajectory initialized in $\mathbb{S}^2 \setminus \{-\gls{q_i_desired}\}$ converges asymptotically to $\gls{q_i_desired}$. LaSalle's principle establishes this convergence (attractivity) but not stability in the sense of Lyapunov; the latter follows from Lyapunov's stability theorem (Section~\ref{sec.3:Lyapunov Stability and Lyapunov-Based Control}), since $V$ is positive definite about $\gls{q_i} = \gls{q_i_desired}$ and $\dot V \le 0$ in a neighborhood of it. Being both Lyapunov stable and attractive, $\gls{q_i} = \gls{q_i_desired}$ is asymptotically stable on $\mathbb{S}^2 \setminus \{-\gls{q_i_desired}\}$.
 
     \paragraph{Conclusion.}
     Every trajectory initialized in $\mathbb{S}^2 \setminus \{-\gls{q_i_desired}\}$
