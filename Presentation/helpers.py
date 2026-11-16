@@ -421,6 +421,59 @@ def nn_cv(sites):
 
 
 # ----------------------------------------------------------------------------
+# Velocity-weighted CVT on a sphere mesh (thesis Ch. 6, Python/demos_and_helpers/
+# CVT_weighted_verticies/voronoi_mesh_funcs.py: Dijkstra cells, edge length scaled by the
+# mean vertex weight, site -> mesh vertex closest to the cell centroid)
+# ----------------------------------------------------------------------------
+class SphereMesh:
+    """Unit-sphere triangle mesh (Fibonacci vertices + convex hull) for the mesh CVT."""
+
+    def __init__(self, n=1000):
+        from scipy.spatial import ConvexHull
+
+        self.V = fibonacci_points(n)
+        F = ConvexHull(self.V).simplices
+        E = np.vstack([F[:, [0, 1]], F[:, [1, 2]], F[:, [2, 0]]])
+        self.E = np.unique(np.sort(E, axis=1), axis=0)
+        self.L = np.linalg.norm(self.V[self.E[:, 0]] - self.V[self.E[:, 1]], axis=1)
+
+    def nearest(self, pts):
+        """Indices of the mesh vertices closest to the unit vectors ``pts``."""
+        return np.argmax(np.asarray(pts) @ self.V.T, axis=1)
+
+    def velocity_weights(self, v, sigma=1.2):
+        """w = exp(theta^2 / (2 sigma^2)), theta = angle from the direction behind the target (-v)."""
+        if v is None:
+            return np.ones(len(self.V))
+        back = -np.asarray(v, float) / np.linalg.norm(v)
+        th = np.arccos(np.clip(self.V @ back, -1, 1))
+        return np.exp(th ** 2 / (2 * sigma ** 2))
+
+    def lloyd_step(self, sites, w):
+        """One synchronous Lloyd step; returns (new site indices, owner site of each vertex)."""
+        from scipy.sparse import coo_matrix
+        from scipy.sparse.csgraph import dijkstra
+
+        c = self.L * (w[self.E[:, 0]] + w[self.E[:, 1]]) / 2
+        i, j = self.E[:, 0], self.E[:, 1]
+        n = len(self.V)
+        G = coo_matrix((np.r_[c, c], (np.r_[i, j], np.r_[j, i])), shape=(n, n)).tocsr()
+        _, _, src = dijkstra(G, indices=sites, min_only=True, return_predecessors=True)
+        occupied = set(int(s) for s in sites)
+        new = []
+        for s in sites:
+            m = self.V[src == s].mean(axis=0)
+            occupied.discard(int(s))
+            k = next(int(k) for k in np.argsort(-(self.V @ m)) if int(k) not in occupied)
+            occupied.add(k)
+            new.append(k)
+        return np.array(new), src
+
+    def owner(self, sites, w):
+        return self.lloyd_step(sites, w)[1]
+
+
+# ----------------------------------------------------------------------------
 # Mesh controller (re-implementation of Ch. 6, Python/V16/voronoi_mesh_funcs.py)
 # ----------------------------------------------------------------------------
 def precompute_meshes(P=400, R=5.0, legacy_cone=False):

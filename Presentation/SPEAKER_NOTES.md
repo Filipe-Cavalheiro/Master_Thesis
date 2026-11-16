@@ -19,7 +19,7 @@ orador). Manter o formato dos títulos ao editar o texto.
 | 9 | CentralizedResults | 3 | 2:00 | 10:35 |
 | 10 | Decentralized | 4 | 1:50 | 12:25 |
 | 11 | GeneralizedMesh | 5 | 1:30 | 13:55 |
-| 12 | GeneralizedMPC | 2 | 1:30 | 15:25 |
+| 12 | GeneralizedMPC | 3 | 1:30 | 15:25 |
 | 13 | Results | 12 | 3:40 | 19:05 |
 | 14 | Conclusions | 1 | 0:55 | 20:00 |
 | 15 | FutureWork | 1 | 0:30 | 20:30 |
@@ -249,11 +249,17 @@ Bernstein de grau 5, pelo que as derivadas são lineares nos pontos de controlo.
 passo é aplicado, e depois resolve-se de novo. Uma nota honesta: o termo de colisão é uma
 penalização elevada, não uma restrição rígida, pelo que não há garantia formal de segurança.
 
-#### [GeneralizedMPC.2] Ponderação pela velocidade
-Por fim, se a velocidade do alvo for conhecida, a malha é ponderada de modo que a região à
-frente do alvo atraia mais agentes. Com sigma 1,2 e 12 agentes, o alinhamento direcional médio é
-0,32 — uma formação simétrica daria cerca de zero — e 8 de 12 agentes estão no hemisfério da
-frente.
+#### [GeneralizedMPC.2] Sem velocidade: CVT uniforme
+Por fim, a velocidade do alvo. Sem ela, os 12 pontos de Lloyd numa malha esférica distribuem-se
+uniformemente: as cores são as células de Voronoi calculadas com Dijkstra. O alinhamento
+direcional médio é praticamente zero e metade dos agentes está à frente do alvo.
+
+#### [GeneralizedMPC.3] Com velocidade: CVT ponderada
+Quando a velocidade é conhecida, cada vértice recebe um peso que cresce com o ângulo à direção
+atrás do alvo, e as arestas da malha ficam mais longas à frente. As células da frente encolhem e
+o algoritmo de Lloyd volta a convergir em poucas iterações, com mais agentes à frente. Com sigma
+1,2 e 12 agentes, o alinhamento sobe para cerca de 0,32 e 8 de 12 agentes ficam no hemisfério da
+frente, como na tese.
 
 ## 13. Resultados (3:40)
 
@@ -311,12 +317,13 @@ E fica a um metro dela até ao fim: os perseguidores nunca entram na zona.
 ## 14. Conclusões (0:55)
 
 #### [Conclusions.1] Conclusões
-Para concluir: um enxame consegue circundar um alvo não cooperativo em 3D, em simulação.
+Para concluir: um enxame consegue circundar um alvo não cooperativo em 3D, em simulação e em
+voos reais com Crazyflies.
 Centralizado: a rede de Fibonacci com o controlador de Lyapunov é a opção mais simples, escala
 até 31 agentes e tem uma prova de convergência quase global. Descentralizado: consenso mais Lloyd
 local funciona sem nó central e sobrevive à perda de agentes. Generalizado: qualquer malha,
-barreira e envolvimento, um único MPC com limites dinâmicos. As limitações são claras: apenas
-simulação, comunicação instantânea, posição real do alvo mais ruído, e colisões penalizadas em
+barreira e envolvimento, um único MPC com limites dinâmicos. As limitações são claras: voos reais
+apenas em interior e com alvo virtual, comunicação instantânea, posição real do alvo mais ruído, e colisões penalizadas em
 vez de formalmente excluídas.
 
 ## 15. Trabalho futuro (0:30)

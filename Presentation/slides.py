@@ -225,7 +225,7 @@ class Motivation(Base):
             [
                 "Flights delayed, diverted or cancelled",
                 "Hospital heliports: emergency transport at risk",
-                "Cheap, accessible drones: many incursions\nare unintentional (operator unaware)",
+                "Cheap, accessible drones",
             ],
             font_size=22,
         )
@@ -1317,24 +1317,114 @@ class GeneralizedMPC(Base):
         self.clear_body()
 
         # --- velocity weighting ----------------------------------------------
+        # 12 sites on a sphere mesh (1000 vertices): uniform CVT first, then Lloyd with the
+        # velocity-weighted Dijkstra cells once the target velocity is known
         self.new_title("11. Generalized: using the target velocity")
-        n1 = captioned(plot_panel(ASSETS + "wcvt_no.png", height=3.9), "unweighted CVT (12 points)")
-        n2 = captioned(plot_panel(ASSETS + "wcvt_yes.png", height=3.9), "velocity-weighted, v along +x")
-        imgs = Group(n1, n2).arrange(RIGHT, buff=0.3).to_edge(LEFT, buff=0.35).shift(DOWN * 0.2)
+        mesh = SphereMesh(1000)
+        vel = np.array([1.0, 0.0, 0.0])
+        w_uni = mesh.velocity_weights(None)
+        w_vel = mesh.velocity_weights(vel, sigma=1.2)
+        sites = mesh.nearest(fibonacci_points(12))
+        for _ in range(40):
+            sites = mesh.lloyd_step(sites, w_uni)[0]
+        uni = (sites, mesh.owner(sites, w_uni))
+        hist = []                               # (sites, weighted cells) per Lloyd iteration
+        for _ in range(30):
+            new, owner = mesh.lloyd_step(sites, w_vel)
+            hist.append((sites, owner))
+            if np.array_equal(new, sites):
+                break
+            sites = new
+
+        proj = Proj(phi=72 * DEGREES, theta=-72 * DEGREES, scale=2.4, center=np.array([-3.7, -0.4, 0]))
+        cell_cols = [TEAL_D, MAROON_B, GOLD_C, PURPLE_B, GREEN_B, PINK, ORANGE, RED_C, LIGHT_BROWN, YELLOW_E,
+                     GREY_A, "#5B6EE1"]   # no light blue: that is the colour of the desired points
+        depth = mesh.V @ proj.basis()[2]
+
+        def cells(owner, sites):
+            slot = {int(s): k for k, s in enumerate(sites)}
+            g = VGroup()
+            for k in np.argsort(depth):
+                d = Dot(proj(mesh.V[k]), radius=0.034, color=cell_cols[slot[int(owner[k])]])
+                d.set_opacity(1.0 if depth[k] >= 0 else 0.25)
+                g.add(d)
+            return g
+
+        def agents(sites):
+            g = dots3d(mesh.V[sites], proj, color=DESIRED_COLOR, radius=0.1, back_op=0.35, stable=True, z_base=2.0)
+            for d, k in zip(g, sites):
+                d.set_stroke(WHITE, width=2.0, opacity=1.0 if depth[k] >= 0 else 0.35)
+            return g
+
+        def stats(sites):
+            p = mesh.V[sites] @ vel
+            n_fwd = int((p > 0).sum())
+            return VGroup(
+                MathTex(rf"A = {p.mean():.2f}", font_size=34, color=YELLOW),
+                MathTex(rf"F_{{\mathrm{{fwd}}}} = {n_fwd}/12 = {n_fwd / 12:.2f}", font_size=34, color=YELLOW),
+            )
+
+        t = np.linspace(0, 2 * np.pi, 121)
+        divide = curve3d(np.column_stack([np.zeros_like(t), np.cos(t), np.sin(t)]), proj, color=YELLOW,
+                         width=2.0, front_op=0.6, back_op=0.15, sphere_center=np.zeros(3))
+        sil = Circle(radius=proj.scale, color=GREY_B, stroke_width=1.5).move_to(proj(ORIGIN))
+        tgt = Dot(proj(ORIGIN), radius=0.11, color=TARGET_COLOR).set_z_index(1.5)
+        cell_g = cells(uni[1], uni[0])
+        agent_g = agents(uni[0])
+
+        cap = Text("target velocity unknown: uniform CVT", font_size=22, color=GREY_A)
+        cap.move_to(np.array([-6.6, 2.55, 0]), aligned_edge=LEFT)
         w = MathTex(r"w_i=\exp\!\Big(\frac{\theta_i^2}{2\sigma^2}\Big),\ \ \sigma=1.2", font_size=32)
         wt = Text("$\\theta_i$: angle from the direction\nbehind the target\n→ more weight in front", font_size=20, color=GREY_A, line_spacing=0.8)
-        res = VGroup(
-            MathTex(r"A = 0.3202", font_size=34, color=YELLOW),
+        st = stats(uni[0])
+        st_lab = VGroup(
             Text("mean directional alignment\n(≈ 0 for a symmetric formation)", font_size=18, color=GREY_A, line_spacing=0.8),
-            MathTex(r"F_{\mathrm{fwd}} = 0.667", font_size=34, color=YELLOW),
-            Text("8 of 12 agents in front", font_size=18, color=GREY_A),
-        ).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
-        rcol = VGroup(w, wt, res).arrange(DOWN, aligned_edge=LEFT, buff=0.35).next_to(imgs, RIGHT, buff=0.35)
-        if rcol.get_right()[0] > 6.9:
-            rcol.set(width=rcol.width - (rcol.get_right()[0] - 6.9)).next_to(imgs, RIGHT, buff=0.35)
-        self.play(FadeIn(n1))
-        self.play(FadeIn(n2), Write(w), FadeIn(wt))
-        self.play(FadeIn(res))
+            Text("agents in front of the target", font_size=18, color=GREY_A),
+        )
+        it_lab = Text("iteration 0", font_size=22, color=GREY_B)
+        rcol_x = 1.25
+
+        # right column: weight (top), iteration, A + label, F_fwd + label
+        VGroup(w, wt).arrange(DOWN, aligned_edge=LEFT, buff=0.3).move_to(np.array([rcol_x, 1.15, 0]), aligned_edge=LEFT)
+        it_lab.move_to(np.array([rcol_x, -0.4, 0]), aligned_edge=LEFT)
+        for m in st_lab:
+            if m.get_right()[0] - m.get_left()[0] > 6.9 - rcol_x:
+                m.set(width=6.9 - rcol_x)
+
+        def place_stats(s):
+            s[0].move_to(np.array([rcol_x, -1.0, 0]), aligned_edge=LEFT)
+            s[1].next_to(st_lab[0], DOWN, buff=0.3).align_to(s[0], LEFT)
+            return s
+
+        st[0].move_to(np.array([rcol_x, -1.0, 0]), aligned_edge=LEFT)
+        st_lab[0].next_to(st[0], DOWN, buff=0.1).align_to(st[0], LEFT)
+        place_stats(st)
+        st_lab[1].next_to(st[1], DOWN, buff=0.1).align_to(st[0], LEFT)
+
+        self.play(FadeIn(sil), FadeIn(cell_g), FadeIn(divide), FadeIn(tgt), FadeIn(cap))
+        self.play(LaggedStart(*[GrowFromCenter(d) for d in agent_g], lag_ratio=0.05), run_time=1.0)
+        self.play(FadeIn(st), FadeIn(st_lab))
+        self.next_slide()
+
+        # the velocity becomes known: the weights bias the cells, Lloyd re-converges
+        tip = proj(1.45 * vel)
+        v_arrow = Arrow(proj(ORIGIN), tip, buff=0, color=TARGET_COLOR, stroke_width=7,
+                        max_tip_length_to_length_ratio=0.12).set_z_index(3)
+        v_lab = MathTex(r"\mathbf{v}", font_size=40, color=TARGET_COLOR).next_to(tip, UP, buff=0.12).set_z_index(3)
+        cap2 = Text("target velocity known: weighted CVT (Lloyd)", font_size=22, color=YELLOW).move_to(cap, aligned_edge=LEFT)
+        self.play(GrowArrow(v_arrow), FadeIn(v_lab), Transform(cap, cap2), run_time=1.0)
+        # same sites, cells measured with the weighted metric (longer edges in front: front cells shrink)
+        self.play(Write(w), FadeIn(wt), FadeIn(it_lab), Transform(cell_g, cells(hist[0][1], hist[0][0])), run_time=1.2)
+        for k, (s, own) in enumerate(hist[1:], start=1):
+            new_st = place_stats(stats(s))
+            new_it = Text(f"iteration {k}", font_size=22, color=GREY_B).move_to(it_lab, aligned_edge=LEFT)
+            self.play(
+                Transform(cell_g, cells(own, s)),
+                Transform(agent_g, agents(s)),
+                Transform(st, new_st),
+                Transform(it_lab, new_it),
+                run_time=0.7,
+            )
         self.next_slide(auto_next=True)
         self.clear_all()
 
@@ -1592,8 +1682,9 @@ class Conclusions(Base):
         items.arrange(DOWN, aligned_edge=LEFT, buff=0.35).move_to(UP * 0.55)
         lim = VGroup(
             Text("Limitations", font_size=24, color=RED_C),
-            Text("simulation only · instantaneous communication · ground-truth target + noise ·", font_size=20, color=GREY_A),
-            Text("collisions penalized, not formally excluded · lost agents ignored, not obstacles", font_size=20, color=GREY_A),
+            Text("indoor flights only (Crazyflies, virtual target) · instantaneous communication ·", font_size=20, color=GREY_A),
+            Text("ground-truth target + noise · collisions penalized, not formally excluded ·", font_size=20, color=GREY_A),
+            Text("lost agents ignored, not obstacles", font_size=20, color=GREY_A),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.08)
         lim.next_to(items, DOWN, buff=0.4).align_to(items, LEFT)
         for it in items:
@@ -1648,9 +1739,8 @@ class ThankYou(Base):
 
         w = always_redraw(world)
         thanks = Text("Thank you!", font_size=56).shift(DOWN * 1.7)
-        q = Text("Questions?", font_size=34, color=YELLOW).next_to(thanks, DOWN, buff=0.3)
         self.play(FadeIn(w), Write(thanks))
-        self.play(FadeIn(q), rot.animate.set_value(PI), run_time=3, rate_func=linear)
+        self.play(rot.animate.set_value(PI), run_time=3, rate_func=linear)
         self.next_slide(loop=True)
         self.play(rot.animate.set_value(3 * PI), run_time=6, rate_func=linear)
         self.next_slide(auto_next=True)

@@ -232,6 +232,9 @@ PT = {
     "θ_i: angle from the direction\nbehind the target\n→ more weight in front": "θ_i: ângulo desde a direção\natrás do alvo\n→ mais peso à frente",
     "mean directional alignment\n(≈ 0 for a symmetric formation)": "alinhamento direcional médio\n(≈ 0 para uma formação simétrica)",
     "8 of 12 agents in front": "8 de 12 agentes à frente",
+    "target velocity unknown: uniform CVT": "velocidade do alvo desconhecida: CVT uniforme",
+    "target velocity known: weighted CVT (Lloyd)": "velocidade do alvo conhecida: CVT ponderada (Lloyd)",
+    "agents in front of the target": "agentes à frente do alvo",
     # --- 12. results --------------------------------------------------------------
     "12. Results: 12 agents, moving target, 4 lost at t = 10 s": "12. Resultados: 12 agentes, alvo móvel, 4 perdidos em t = 10 s",
     "restricted (x > 0)": "restrito (x > 0)",
@@ -283,7 +286,7 @@ PT = {
     "Lloyd + Dijkstra on any mesh: barrier and enclosure; velocity weighting biases": "Lloyd + Dijkstra em qualquer malha: barreira e envolvimento; a ponderação pela velocidade",
     "agents forward; one Bernstein MPC enforces v/a limits, penalizes collisions": "desloca os agentes para a frente; um MPC de Bernstein impõe limites de v/a e penaliza colisões",
     "Limitations": "Limitações",
-    "simulation only · instantaneous communication · ground-truth target + noise ·": "apenas simulação · comunicação instantânea · posição real do alvo + ruído ·",
+    "indoor flights only (Crazyflies, virtual target) · instantaneous communication · ground-truth target + noise ·": "voos reais só em interior (Crazyflies, alvo virtual) · comunicação instantânea · posição real do alvo + ruído ·",
     "collisions penalized, not formally excluded · lost agents ignored, not obstacles": "colisões penalizadas, não excluídas formalmente · agentes perdidos ignorados, não são obstáculos",
     "14. Future work": "14. Trabalho futuro",
     "System maturity": "Maturidade do sistema",
@@ -418,6 +421,9 @@ PT = {
     "approach slower than with a static target: mean distance still ~4.3 m at 30 s": "aproximação mais lenta do que com o alvo estático: distância média ainda ~4.3 m aos 30 s",
     "desired points stay uniform: $CV(d_{NN})\\lesssim 0.1$, $d_{NN}$ 2.0 → 2.2 m after the loss": "os pontos desejados mantêm-se uniformes: $CV(d_{NN})\\lesssim 0.1$, $d_{NN}$ 2.0 → 2.2 m após a perda",
     "min. distance ~1.7 m at the loss, no near-collisions": "distância mín. ~1.7 m na perda, sem quase-colisões",
+    "indoor flights only (Crazyflies, virtual target) · instantaneous communication ·": "voos reais só em interior (Crazyflies, alvo virtual) · comunicação instantânea ·",
+    "ground-truth target + noise · collisions penalized, not formally excluded ·": "posição real do alvo + ruído · colisões penalizadas, não excluídas formalmente ·",
+    "lost agents ignored, not obstacles": "agentes perdidos ignorados, não são obstáculos",
 }
 
 # strings built at run time: (compiled pattern, replacement)
