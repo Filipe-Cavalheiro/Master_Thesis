@@ -50,6 +50,30 @@ manim-slides render slides.py $(cat scenes.txt)
 
 A single scene can be re-rendered on its own, e.g. `manim-slides render slides.py Results`.
 
+### `render.sh`: render on the lab machine when it is reachable
+
+`./render.sh` renders every scene and builds `presentation.html`. If the Windows render machine
+(`user@192.168.50.210`, override with `RENDER_HOST`) answers over ssh with key login, the scenes
+are rendered there, all in parallel, and copied back into `slides/`; otherwise they are rendered
+here. Options: scene names (only those), `-q l|m|h|p|k`, `--local`, `--remote`, `--no-html`
+(`./render.sh --help`).
+
+The render machine has no LaTeX and no internet. `render.sh` compiles new formulas here first and
+sends `media/Tex` along. Its one-time setup lives in `C:\Users\user\thesis_render`:
+
+* `python\`: standalone CPython 3.12 for Windows (python-build-standalone, `install_only`);
+  3.12 because `moderngl`/`glcontext` have no Windows wheels for 3.14.
+* `venv\`: `python\python.exe -m venv venv`, then
+  `venv\Scripts\python.exe -m pip install --no-index --find-links wheels -r requirements.txt`.
+  The wheels are downloaded on Linux with
+  `pip download -d wheels --platform win_amd64 --python-version 3.12 --only-binary=:all: -r requirements.txt -c requirements.lock.txt`
+  (minus `pexpect`/`ptyprocess`), plus `colorama` and a wheel of `srt` (`pip wheel srt`).
+* ssh key login: this machine's public key in `C:\ProgramData\ssh\administrators_authorized_keys`
+  (`user` is an administrator), readable only by SYSTEM and Administrators.
+
+Text uses Noto Serif (DejaVu Serif for →≈≤≥), pinned in `helpers.py` so both machines produce
+the same slides.
+
 ## Present
 
 ```bash
