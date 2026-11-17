@@ -193,8 +193,10 @@ pontos da rede são atribuídos com o algoritmo de Munkres, minimizando a distâ
 #### [CentralizedResults.2] Arquitetura completa
 Antes dos resultados, a arquitetura completa do método centralizado. Um nó central gera a rede de
 Fibonacci e atribui os pontos com o Munkres, a partir da posição de todos os agentes. Em cada
-agente, o controlador radial e o geométrico levam a direção até ao ponto atribuído, a salvaguarda
-APF corrige a referência e o controlador de Mellinger — posição e atitude — segue-a. A estimativa
+agente, o controlador geométrico leva a direção até ao ponto atribuído e a salvaguarda APF
+corrige-a; o erro do controlador geométrico alimenta o controlador radial, que só fecha o raio
+quando a direção está alinhada; a referência é a estimativa do alvo mais o raio vezes a direção, e
+o controlador de Mellinger — posição e atitude — segue-a. A estimativa
 do alvo vem da medição com ruído, filtrada pela média móvel exponencial e partilhada por consenso
 na rede de Delaunay.
 

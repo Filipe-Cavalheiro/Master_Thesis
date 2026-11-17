@@ -58,7 +58,7 @@ else
   mkdir -p media/Tex
   T=$(mktemp -d)
   trap 'rm -rf "${T:?}"' EXIT
-  cp slides.py helpers.py i18n_pt.py SPEAKER_NOTES.md manim.cfg "$T"/
+  cp slides.py helpers.py SPEAKER_NOTES.md manim.cfg "$T"/
   ln -s "$PWD/assets" "$T/assets"
   mkdir -p "$T/media"
   ln -s "$PWD/media/Tex" "$T/media/Tex"
@@ -75,7 +75,7 @@ else
   stamp="media/.render_sent_${HOST//[^A-Za-z0-9]/_}"
   newstamp="$T/stamp"; touch "$newstamp"
   newer=(); if [ -f "$stamp" ]; then newer=(-newer "$stamp"); fi
-  mapfile -t send < <(find slides.py helpers.py i18n_pt.py SPEAKER_NOTES.md manim.cfg scenes.txt \
+  mapfile -t send < <(find slides.py helpers.py SPEAKER_NOTES.md manim.cfg scenes.txt \
       requirements.txt tools/render_remote.ps1 assets media/Tex -type f "${newer[@]}")
   echo "==> sending ${#send[@]} changed file(s) to $HOST"
   if [ ${#send[@]} -gt 0 ]; then

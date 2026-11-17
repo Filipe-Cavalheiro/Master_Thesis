@@ -105,9 +105,9 @@ class Base(Slide):
         frame = SurroundingRectangle(video, color=GREY_D, stroke_width=1.5, buff=0)
         leg = VGroup(
             legend_entry(GREEN, "real (OptiTrack)", font_size=20, radius=0.07),
-            legend_entry(ORANGE, "simulation of the same flight", font_size=20, radius=0.07),
+            legend_entry(ORANGE, "simulação do mesmo voo", font_size=20, radius=0.07),
             *[legend_entry(c, lab, font_size=20, radius=0.07) for c, lab in extra],
-            Text(speed if isinstance(speed, str) else ("real time" if speed == 1 else f"{speed}x speed"), font_size=20, color=GREY_B),
+            Text(speed if isinstance(speed, str) else ("tempo real" if speed == 1 else f"velocidade {speed}x"), font_size=20, color=GREY_B),
         ).arrange(RIGHT, buff=0.45)
         if leg.width > 12.8:
             leg.set(width=12.8)
@@ -139,9 +139,9 @@ def arch_diagram(kind: str) -> VGroup:
     g = VGroup()
 
     # low level (every agent): Mellinger controller + quadrotor, state feedback
-    pos = B("Position controller", (2.0, 2.4))
-    att = B("Attitude controller", (2.0, 0.9))
-    ruav = B("Quadrotor model", (5.0, 1.65), w=2.0)
+    pos = B("Controlador de\nposição", (2.0, 2.4))
+    att = B("Controlador de\natitude", (2.0, 0.9))
+    ruav = B("Modelo do\nquadrirrotor", (5.0, 1.65), w=2.0)
     g.add(pos, att, ruav)
     g.add(
         W(port(pos, DOWN), port(att, UP), label=r"\mathbf{F}^\star", side=RIGHT),
@@ -155,10 +155,10 @@ def arch_diagram(kind: str) -> VGroup:
     )
 
     # target estimation (every agent): noisy measurement -> EMA -> consensus over the Delaunay graph
-    cons = B("Consensus", (xA, yC))
-    ema = B("Exponential moving\naverage (EMA)", (xA, yE))
-    net = B("Spatial network\n(Delaunay)", (2.0, yC))
-    noisy = B("Noisy measurement", (2.0, yE))
+    cons = B("Consenso", (xA, yC))
+    ema = B("Média móvel\nexponencial (EMA)", (xA, yE))
+    net = B("Rede espacial\n(Delaunay)", (2.0, yC))
+    noisy = B("Medição com\nruído", (2.0, yE))
     g.add(cons, ema, net, noisy)
     g.add(
         W((XR, yC), port(net, RIGHT), label=r"\mathbf{p}_i"),
@@ -168,8 +168,8 @@ def arch_diagram(kind: str) -> VGroup:
         W(port(ema, UP), port(cons, DOWN), label=r"\hat{\mathbf{p}}_T", side=RIGHT),
     )
     groups = VGroup(
-        arch_group([pos, att], "Mellinger controller", BLUE_C),
-        arch_group([cons, ema, net, noisy], "Target estimation", ORANGE, label_at=DL),
+        arch_group([pos, att], "Controlador de Mellinger", BLUE_C),
+        arch_group([cons, ema, net, noisy], "Estimação do alvo", ORANGE, label_at=DL),
     )
 
     def p_into(block, y, label=r"\mathbf{p}_i"):    # state from the left trunk into a block
@@ -179,35 +179,46 @@ def arch_diagram(kind: str) -> VGroup:
         return VGroup(W((0.45, yC), (0.45, yL), *route, label="L", seg=1, side=DOWN, at=0.1), J((0.45, yC)))
 
     if kind in ("centralized", "decentralized"):
-        geom = B("Geometric controller", (xG, 2.4))
-        apf = B("Safeguard (APF)", (xA, 2.4))
-        radii = B("Radii control", (xG, 0.9))
-        src = (B("Fibonacci lattice\n+ Munkres", (-5.2, yS)) if kind == "centralized"
-               else B("Lloyd's algorithm\n(Voronoi on the sphere)", (-5.2, yS), new=True))
-        g.add(geom, apf, radii, src)
+        # as in the code (swarm_geometric_Fibonacci_sim_target/main.py) and thesis eqs. (11), (14),
+        # (15): the geometric controller moves q_i towards q_i*, the APF adjusts it, the radii
+        # control is driven by the geometric error e_q, and p_d = p_T + r_i q_i
+        xP, xC = -2.45, -0.45                    # APF and radii column, reference block
+        geom = B("Controlador\ngeométrico", (xG, 2.4), w=2.0)
+        apf = B("Salvaguarda\n(APF)", (xP, 2.4), w=1.8)
+        radii = B("Controlador\nradial", (xP, 0.9), w=1.8)
+        comb = VGroup(RoundedRectangle(corner_radius=0.14, width=1.15, height=0.85, stroke_color=ARCH_STROKE,
+                                       stroke_width=2, fill_color=ARCH_FILL, fill_opacity=1),
+                      MathTex(r"\hat{\mathbf{p}}_T+r_i\tilde{\mathbf{q}}_i", font_size=24, color=WHITE))
+        comb[1].set(width=min(comb[1].width, 1.0))
+        comb.move_to(np.array([xC, 2.4, 0]))
+        src = (B("Rede de Fibonacci\n+ Munkres", (-5.2, yS)) if kind == "centralized"
+               else B("Algoritmo de Lloyd\n(Voronoi na esfera)", (-5.2, yS), new=True))
+        g.add(geom, apf, radii, comb, src)
         y_est = 0.0
+        x_src = src[0].get_top()[0]
         g.add(
-            W(port(radii, UP), port(geom, DOWN), label=r"\mathbf{q}_i^\star", side=RIGHT),
+            W((x_src, src[0].get_top()[1]), (x_src, geom[0].get_bottom()[1]), label=r"\mathbf{q}_i^\star", side=LEFT, at=0.75),
+            W(port(geom, DOWN, 0.55), (xG + 0.55, 0.9), port(radii, LEFT), label=r"\mathbf{e}_{q_i}", seg=1, side=DOWN),
             W(port(geom, RIGHT), port(apf, LEFT), label=r"\bar{\mathbf{q}}_i"),
-            W(port(apf, RIGHT), port(pos, LEFT), label=r"\tilde{\mathbf{q}}_i"),
-            W((src[0].get_top()[0], src[0].get_top()[1]), (src[0].get_top()[0], radii[0].get_bottom()[1]),
-              label=r"\mathbf{p}_i^\star", side=RIGHT),
-            W(port(cons, UP), (xA, y_est), (-4.0, y_est), (-4.0, radii[0].get_bottom()[1]),
+            W(port(apf, RIGHT), port(comb, LEFT), label=r"\tilde{\mathbf{q}}_i"),
+            W(port(radii, RIGHT), (xC - 0.3, 0.9), port(comb, DOWN, -0.3), label="r_i", seg=0),
+            W(port(comb, RIGHT), port(pos, LEFT), label=r"\mathbf{p}_d"),
+            W(port(cons, UP), (xA, y_est), (xC + 0.3, y_est), port(comb, DOWN, 0.3),
               label=r"\hat{\mathbf{p}}_T", seg=1, side=DOWN),
-            W((-3.55, y_est), (-3.55, yE), port(ema, LEFT)), J((-3.55, y_est)),     # EMA uses the estimate
+            W((xA, y_est), (-3.55, y_est), (-3.55, yE), port(ema, LEFT)), J((xA, y_est)),   # EMA uses the estimate
             W((XL, TOP), (XL, yS), tip=False),                                     # left trunk
-            p_into(geom, 2.4), p_into(radii, 0.9),
+            p_into(geom, 2.4),
         )
         if kind == "centralized":
             g.add(W((XL, yS), port(src, LEFT), label=r"\mathbf{p}_{1..N}", at=0.4))
-            groups.add(arch_group([src], "Central node", GREY_B, label_at=DL))
+            groups.add(arch_group([src], "Nó central", GREY_B, label_at=DL))
         else:
             g.add(p_into(src, yS), neighbours_into((-5.2, yL), port(src, DOWN)))
-        groups.add(arch_group([geom, apf, radii], "Path planning", RED_C))
+        groups.add(arch_group([geom, apf, radii, comb], "Planeamento de trajetória", RED_C))
     else:
-        mpc = B("MPC (Bernstein)", (xG, 2.4), new=True)
-        lloyd = B("Lloyd's algorithm\n(geodesic CVT\non the mesh)", (xG, 0.85), h=1.05, new=True)
-        mesh = B("Mesh controller", (-1.2, 0.85), new=True)
+        mpc = B("MPC\n(Bernstein)", (xG, 2.4), new=True)
+        lloyd = B("Algoritmo de Lloyd\n(CVT geodésica\nna malha)", (xG, 0.85), h=1.05, new=True)
+        mesh = B("Controlador\nde malha", (-1.2, 0.85), new=True)
         g.add(mpc, lloyd, mesh)
         g.add(
             W(port(mpc, RIGHT), port(pos, LEFT), label=r"\mathbf{p}_d"),
@@ -219,11 +230,11 @@ def arch_diagram(kind: str) -> VGroup:
             W((XL, TOP), (XL, 1.05), port(lloyd, LEFT, 0.2), label=r"\mathbf{p}_i", seg=1, at=0.3),   # left trunk
             neighbours_into((-6.6, yL), (-6.6, 0.65), port(lloyd, LEFT, -0.2)),
         )
-        groups.add(arch_group([mpc, lloyd, mesh], "Path planning", RED_C))
+        groups.add(arch_group([mpc, lloyd, mesh], "Planeamento de trajetória", RED_C))
     if kind != "centralized":
         leg = VGroup(RoundedRectangle(corner_radius=0.08, width=0.45, height=0.28, stroke_color=HIGHLIGHT,
                                       stroke_width=3, fill_color=ARCH_FILL, fill_opacity=1),
-                     Text("new in this chapter", font_size=20, color=HIGHLIGHT)).arrange(RIGHT, buff=0.15)
+                     Text("novo neste capítulo", font_size=20, color=HIGHLIGHT)).arrange(RIGHT, buff=0.15)
         leg.move_to(np.array([5.0, -3.55, 0]))
         groups.add(leg)
     d = VGroup(groups, g)
@@ -250,9 +261,9 @@ class TitleCard(Base):
             Text("on Spherical and Generalized Surfaces", font_size=26, color=GREY_A),
         ).arrange(DOWN, buff=0.12)
         author = Text("Filipe Cavalheiro", font_size=32, color=YELLOW)
-        adviser = Text("Adviser: Prof. Bruno J. Guerreiro", font_size=24)
+        adviser = Text("Orientador: Prof. Bruno J. Guerreiro", font_size=24)
         degree = Text(
-            "MSc in Electrical and Computer Engineering  ·  NOVA School of Science and Technology",
+            "Mestrado em Engenharia Eletrotécnica e de Computadores  ·  NOVA FCT",
             font_size=20,
             color=GREY_B,
         )
@@ -289,10 +300,10 @@ class TitleCard(Base):
 # 1. Motivation
 # =============================================================================
 class Motivation(Base):
-    SECTION = "Motivation"
+    SECTION = "Motivação"
 
     def construct(self):
-        self.header("1. Motivation")
+        self.header("1. Motivação")
 
         def headline(logo, en, pt):
             txt = VGroup(Text(en, font_size=28), Text(pt, font_size=16, color=GREY_B)).arrange(DOWN, aligned_edge=LEFT, buff=0.15)
@@ -301,13 +312,13 @@ class Motivation(Base):
 
         h2 = headline(
             "logo_RTP.png",
-            "Brussels Airport closes due to the presence of drones in its airspace",
-            'Original: "Aeroporto de Bruxelas encerra espaço aéreo devido à presença de drones"',
+            "Aeroporto de Bruxelas encerra espaço aéreo devido à presença de drones",
+            "RTP",
         )
         h1 = headline(
             "logo_Publico.png",
-            "Airports in Belgium and Sweden close due to drones",
-            'Original: "Drones levam a encerramento de aeroportos na Bélgica e Suécia"',
+            "Drones levam a encerramento de aeroportos na Bélgica e Suécia",
+            "Público",
         )
         news = Group(h2, h1).arrange(DOWN, buff=0.5, aligned_edge=LEFT).move_to(UP * 0.4)
         self.play(FadeIn(h2, shift=RIGHT * 0.3))
@@ -335,16 +346,16 @@ class Motivation(Base):
             bars.add(bar)
             labels.add(Text(str(v), font_size=26, color=WHITE).next_to(bar, UP, buff=0.08))
             labels.add(Text(yr, font_size=20, color=GREY_A).next_to(bottom, DOWN, buff=0.12))
-        chart_title = Text("Drone-related disruptions at German airports (DFS)", font_size=18, color=GREY_A)
+        chart_title = Text("Perturbações com drones em aeroportos alemães (DFS)", font_size=18, color=GREY_A)
         chart_title.next_to(axes, UP, buff=0.35)
         self.play(Create(axes), FadeIn(chart_title))
         self.play(*[GrowFromEdge(b, DOWN) for b in bars], FadeIn(labels), run_time=1.2)
 
         impact = bullet_list(
             [
-                "Flights delayed, diverted or cancelled",
-                "Hospital heliports: emergency transport at risk",
-                "Cheap, accessible drones",
+                "Voos atrasados, desviados ou cancelados",
+                "Heliportos hospitalares: emergências em risco",
+                "Drones baratos e acessíveis",
             ],
             font_size=22,
         )
@@ -357,8 +368,7 @@ class Motivation(Base):
         self.next_slide()
 
         question = Text(
-            "How can a drone entering restricted airspace be surrounded\n"
-            "safely, visibly, and without destructive means?",
+            "Como circundar um drone que entra em espaço aéreo restrito\nde forma segura, visível e sem meios destrutivos?",
             font_size=30,
             color=YELLOW,
             line_spacing=0.9,
@@ -394,12 +404,12 @@ class Motivation(Base):
         area1 = VGroup(*[zone(d[f], ORANGE, 0.22) for f in sorted(d.files) if f.startswith("orange")])
         red = zone(d["red"], RED, 0.38)
         arp = Dot(P(0, 0), radius=0.05, color=WHITE)
-        arp_lab = Text("airport", font_size=16).next_to(arp, RIGHT, buff=0.08)
+        arp_lab = Text("aeroporto", font_size=16).next_to(arp, RIGHT, buff=0.08)
         X = border.get_right()[0] + 0.45               # left edge of everything right of the map
         msg = VGroup(
-            Text("Restricted airspace is not just the airport:", font_size=24, color=HIGHLIGHT),
-            Text("the approach corridors cross the city", font_size=24),
-            Text("hospitals, stadiums, a university, the main rail hub, dense housing", font_size=19, color=GREY_A),
+            Text("O espaço aéreo restrito não é só o aeroporto:", font_size=24, color=HIGHLIGHT),
+            Text("os corredores de aproximação atravessam a cidade", font_size=24),
+            Text("hospitais, estádios, a universidade, a Gare do Oriente, habitação densa", font_size=19, color=GREY_A),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.1)
         fit(msg, 6.9 - X).move_to(np.array([X, 2.4, 0]), aligned_edge=LEFT)
 
@@ -430,11 +440,11 @@ class Motivation(Base):
         dots = VGroup(*[Dot(p, radius=0.045, color=HIGHLIGHT) for p in pts])
         leaders = VGroup(*[Line(pts[i], slots[s], stroke_width=1, color=HIGHLIGHT).set_opacity(0.55) for i, s in enumerate(best)])
         key = VGroup(
-            VGroup(Square(0.22, stroke_color=RED, fill_color=RED, fill_opacity=0.5), Text("Prohibited area", font_size=17)).arrange(RIGHT, buff=0.15),
-            VGroup(Square(0.22, stroke_color=ORANGE, fill_color=ORANGE, fill_opacity=0.35), Text("Area 1 (height-limited)", font_size=17)).arrange(RIGHT, buff=0.15),
+            VGroup(Square(0.22, stroke_color=RED, fill_color=RED, fill_opacity=0.5), Text("Área proibida", font_size=17)).arrange(RIGHT, buff=0.15),
+            VGroup(Square(0.22, stroke_color=ORANGE, fill_color=ORANGE, fill_opacity=0.35), Text("Área 1 (altura limitada)", font_size=17)).arrange(RIGHT, buff=0.15),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
         key.next_to(col, DOWN, buff=0.45).align_to(col, LEFT)
-        src = Text("Lisbon airport (LPPT) drone zones, ANAC · map © OpenStreetMap contributors", font_size=13, color=GREY_B)
+        src = Text("Zonas de drones do aeroporto de Lisboa (LPPT), ANAC · mapa © contribuidores OpenStreetMap", font_size=13, color=GREY_B)
         fit(src, 6.9 - X).move_to(np.array([X, border.get_bottom()[1] + 0.08, 0]), aligned_edge=LEFT)
 
         self.play(FadeIn(city), FadeIn(border), FadeIn(src), run_time=0.8)
@@ -453,16 +463,16 @@ class Motivation(Base):
                 VGroup(Text("→", font_size=20, color=RED_C), Text(effect, font_size=17, color=GREY_A, line_spacing=0.8)).arrange(RIGHT, buff=0.15, aligned_edge=UP),
             ).arrange(DOWN, aligned_edge=LEFT, buff=0.1)
 
-        cm_title = Text("Usual counter-drone measures", font_size=22, color=HIGHLIGHT)
+        cm_title = Text("Contramedidas habituais", font_size=22, color=HIGHLIGHT)
         cite = Text("Lykou et al. (2020)", font_size=13, color=GREY_B)
         head = VGroup(cm_title, cite).arrange(RIGHT, buff=0.2, aligned_edge=DOWN)
         cms = VGroup(
-            counter("Jamming / spoofing", "drone falls or flies away uncontrolled;\ninterferes with landing aids and radio"),
-            counter("Interception: nets, interceptor drones", "capture or collision over the city:\nfalling drone and debris"),
+            counter("Interferência (jamming / spoofing)", "o drone cai ou foge descontrolado;\ninterfere com ajudas à aterragem e rádio"),
+            counter("Interceção: redes, drones intercetores", "captura ou colisão sobre a cidade:\nqueda do drone e de destroços"),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.3)
         cm = fit(VGroup(head, cms).arrange(DOWN, aligned_edge=LEFT, buff=0.25), W)
         cm.move_to(np.array([RX, 1.4, 0]), aligned_edge=UL)
-        verdict = fit(Text("Over people and infrastructure:\nno jamming, no collision.\nContain the intruder at a safe distance.",
+        verdict = fit(Text("Sobre pessoas e infraestruturas:\nsem interferência, sem colisão.\nConter o intruso a uma distância segura.",
                            font_size=22, color=HIGHLIGHT, line_spacing=0.8), W - 0.3)
         verdict.next_to(cm, DOWN, buff=0.45).align_to(cm, LEFT).shift(RIGHT * 0.15)
         verdict_box = SurroundingRectangle(verdict, color=HIGHLIGHT, buff=0.15, corner_radius=0.1)
@@ -477,10 +487,10 @@ class Motivation(Base):
 # 2. Problem statement
 # =============================================================================
 class Problem(Base):
-    SECTION = "Problem"
+    SECTION = "Problema"
 
     def construct(self):
-        self.header("2. Problem statement")
+        self.header("2. Definição do problema")
 
         # ---- three notions of "encirclement": left out of the talk for time (uncomment to restore) --
         # # ---- three notions of "encirclement" ---------------------------------
@@ -558,9 +568,9 @@ class Problem(Base):
             return VGroup(*parts).arrange(RIGHT, buff=0.15)
 
         legend = VGroup(
-            entry(RED, "target UAV", r"\mathbf{p}_T", "(non-cooperative)"),
-            entry(WHITE, "chaser UAVs", r"\mathbf{p}_i"),
-            entry(BLUE, "desired points", r"\mathbf{p}_i^\star"),
+            entry(RED, "UAV alvo", r"\mathbf{p}_T", "(não cooperativo)"),
+            entry(WHITE, "UAV perseguidores", r"\mathbf{p}_i"),
+            entry(BLUE, "pontos desejados", r"\mathbf{p}_i^\star"),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.15)
         legend.move_to(RIGHT * 0.6 + UP * 2.3, aligned_edge=LEFT + UP)
         self.play(FadeIn(world), FadeIn(legend))
@@ -569,11 +579,11 @@ class Problem(Base):
         objective = MathTex(r"\lim_{t\to\infty}\ \mathbf{p}_i(t)=\mathbf{p}_i^\star,\quad \forall i", font_size=40)
         reqs = bullet_list(
             [
-                "Fully 3D, target static or moving",
-                "Agents as evenly spaced as possible",
-                "Collision-aware motion",
-                "Only a noisy target position is known",
-                "Decentralized, robust to agent loss",
+                "Totalmente 3D, alvo estático ou móvel",
+                "Agentes uniformemente espaçados",
+                "Movimento com prevenção de colisões",
+                "Só se conhece a posição do alvo, com ruído",
+                "Descentralizado, tolera perda de agentes",
             ],
             font_size=21,
             buff=0.16,
@@ -585,7 +595,7 @@ class Problem(Base):
         self.next_slide()
 
         scope = Text(
-            "Out of scope: malicious operators, physical capture / interception, legal follow-up",
+            "Fora do âmbito: operadores maliciosos, captura / interceção física, seguimento legal",
             font_size=20,
             color=GREY_B,
         ).to_edge(DOWN, buff=0.6)
@@ -601,12 +611,12 @@ class Problem(Base):
 def roadmap_grid(font_size=19):
     # the sphere-only decentralized stage (thesis Ch. 5) is left out of the talk: the generalized
     # stage (Ch. 6), decentralized as well, is presented as "Decentralized"
-    cols = ["Centralized", "Decentralized"]
-    rows = ["Where to go?\n(distribution)", "How to get there?\n(path planning)", "Safely?\n(collisions)"]
+    cols = ["Centralizado", "Descentralizado"]
+    rows = ["Para onde ir?\n(distribuição)", "Como lá chegar?\n(planeamento)", "Em segurança?\n(colisões)"]
     cells = [
-        ["Fibonacci lattice\n+ Munkres assignment", "Lloyd + Dijkstra on any mesh\n+ velocity weighting"],
-        ["Lyapunov geometric\n+ radial controller", "Bernstein-polynomial MPC\n(v, a limits)"],
-        ["APF safeguard\non the sphere", "MPC collision cost\n(ellipsoidal envelope)"],
+        ["Rede de Fibonacci\n+ atribuição de Munkres", "Lloyd + Dijkstra em qualquer malha\n+ ponderação pela velocidade"],
+        ["Controlador geométrico\nde Lyapunov + radial", "MPC com polinómios de Bernstein\n(limites de v, a)"],
+        ["Salvaguarda APF\nna esfera", "Custo de colisão no MPC\n(envelope elipsoidal)"],
     ]
     W, H, X0 = 5.0, 1.05, -1.85
     grid = VGroup()
@@ -632,7 +642,7 @@ def roadmap_grid(font_size=19):
             row.add(VGroup(rect, txt))
         body.add(row)
     est = Text(
-        "All: target estimate = noisy measurement ($\\pm 5\\%$) → EMA → consensus over a Delaunay spatial network",
+        r"Ambas: estimativa do alvo = medição com ruído ($\pm 5\%$) → EMA → consenso numa rede espacial de Delaunay",
         font_size=18,
         color=GREY_A,
     )
@@ -642,10 +652,10 @@ def roadmap_grid(font_size=19):
 
 
 class Roadmap(Base):
-    SECTION = "Problem"
+    SECTION = "Problema"
 
     def construct(self):
-        self.header("3. Proposed solution: two stages")
+        self.header("3. Solução proposta: duas etapas")
         g = roadmap_grid()
         head, row_labels, body, est = g
         self.play(FadeIn(row_labels))
@@ -660,21 +670,21 @@ class Roadmap(Base):
 # 4. State of the art
 # =============================================================================
 class StateOfTheArt(Base):
-    SECTION = "Problem"
+    SECTION = "Problema"
 
     def construct(self):
-        self.header("4. State of the art (circular formations)")
+        self.header("4. Estado da arte (formações circulares)")
         centers = [LEFT * 4.4 + UP * 0.9, UP * 0.9, RIGHT * 4.4 + UP * 0.9]
-        names = ["Cyclic pursuit", "Leader-follower", "Artificial potential fields"]
+        names = ["Perseguição cíclica", "Líder-seguidor", "Campos de potencial (APF)"]
         pros = [
-            "+ minimal communication,\n   leaderless",
-            "+ intuitive, explicit\n   formation geometry",
-            "+ Lyapunov-based design,\n   obstacle avoidance",
+            "+ comunicação mínima,\n   sem líder",
+            "+ intuitivo, geometria\n   da formação explícita",
+            "+ projeto baseado em Lyapunov,\n   desvio de obstáculos",
         ]
         cons = [
-            "- may collapse to a point\n   without extra terms",
-            "- leader = single point\n   of failure",
-            "- local minima, tuning;\n   N must be known",
+            "- pode colapsar num ponto\n   sem termos adicionais",
+            "- líder = ponto único\n   de falha",
+            "- mínimos locais, afinação;\n   N tem de ser conhecido",
         ]
         t = ValueTracker(0.0)
 
@@ -731,7 +741,7 @@ class StateOfTheArt(Base):
             self.play(FadeIn(demos[k]), FadeIn(texts[k]), run_time=1.0)
 
         gap = Text(
-            "Gap: most methods are planar (2D); 3D ones assign agents to predefined sectors",
+            "Lacuna: a maioria dos métodos é planar (2D); os 3D usam setores predefinidos",
             font_size=24,
             color=YELLOW,
         ).to_edge(DOWN, buff=0.65)
@@ -744,10 +754,10 @@ class StateOfTheArt(Base):
 # 5. Background
 # =============================================================================
 class Background(Base):
-    SECTION = "Background"
+    SECTION = "Fundamentos"
 
     def construct(self):
-        self.header("5. Background: Lloyd's algorithm & Voronoi diagrams")
+        self.header("5. Fundamentos: algoritmo de Lloyd e diagramas de Voronoi")
         # --- 2D Lloyd animation -------------------------------------------------
         B = 2.6
         sq_center = LEFT * 3.7 + DOWN * 0.25
@@ -776,9 +786,9 @@ class Background(Base):
         site_dots = VGroup(*[Dot(to_screen(s), color=WHITE, radius=0.07) for s in sites])
 
         steps = VGroup(
-            Text("1. Partition: each point goes to its closest site", font_size=21),
-            Text("2. Move every site to its cell's centroid", font_size=21),
-            Text("3. Repeat → centroidal Voronoi tessellation", font_size=21),
+            Text("1. Partição: cada ponto → sítio mais próximo", font_size=21),
+            Text("2. Mover cada sítio para o centroide da sua célula", font_size=21),
+            Text("3. Repetir → tesselação centroidal de Voronoi", font_size=21),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.25)
         steps.next_to(border, RIGHT, buff=0.5).align_to(border, UP).shift(DOWN * 0.1)
         vor_def = MathTex(
@@ -790,7 +800,7 @@ class Background(Base):
         self.play(FadeIn(cells_mob), FadeIn(steps[0]), Write(vor_def))
         self.bring_to_front(site_dots)
         self.play(FadeIn(steps[1]))
-        it_label = Text("iteration 0", font_size=20, color=GREY_A).next_to(border, DOWN, buff=0.15)
+        it_label = Text("iteração 0", font_size=20, color=GREY_A).next_to(border, DOWN, buff=0.15)
         self.add(it_label)
         for it in range(1, 9):
             crosses = VGroup(*[Cross(scale_factor=0.08, stroke_width=3, stroke_color=YELLOW).move_to(to_screen(c)) for c in cents])
@@ -800,7 +810,7 @@ class Background(Base):
             sites = cents
             new_cells, new_cents = draw_cells(sites)
             new_dots = VGroup(*[Dot(to_screen(s), color=WHITE, radius=0.07) for s in sites])
-            new_label = Text(f"iteration {it}", font_size=20, color=GREY_A).next_to(border, DOWN, buff=0.15)
+            new_label = Text(f"iteração {it}", font_size=20, color=GREY_A).next_to(border, DOWN, buff=0.15)
             anims = [Transform(site_dots, new_dots), Transform(cells_mob, new_cells), Transform(it_label, new_label)]
             if it <= 2:
                 anims.append(FadeOut(crosses))
@@ -822,7 +832,7 @@ class Background(Base):
                 edges.add((i, j))
         edge_mob = VGroup(*[Line(to_screen(sites[i]), to_screen(sites[j]), color=YELLOW, stroke_width=2.5) for i, j in edges])
         dual_txt = Text(
-            "Neighbours = agents sharing a Voronoi edge\n(Delaunay triangulation → spatial network)",
+            "Vizinhos = agentes com aresta de Voronoi comum\n(triangulação de Delaunay → rede espacial)",
             font_size=21,
             color=YELLOW,
             line_spacing=0.8,
@@ -841,7 +851,7 @@ class Background(Base):
             *[DecimalNumber(x[k], num_decimal_places=2, font_size=24, color=WHITE).next_to(to_screen(sites[k]), UR, buff=0.02) for k in range(8)]
         )
         cons_txt = VGroup(
-            Text("Consensus on the target estimate:", font_size=22),
+            Text("Consenso na estimativa do alvo:", font_size=22),
             MathTex(r"\hat{\mathbf{p}}_{T,i}\leftarrow \hat{\mathbf{p}}_{T,i}+\varepsilon\sum_{j\in\mathcal{N}_i}(\hat{\mathbf{p}}_{T,j}-\hat{\mathbf{p}}_{T,i})", font_size=30),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.15)
         cons_txt.next_to(dual_txt, DOWN, buff=0.4).align_to(steps, LEFT)
@@ -857,13 +867,13 @@ class Background(Base):
         self.clear_body()
 
         # --- safety toolbox -------------------------------------------------
-        self.new_title("5. Background: collision-avoidance toolbox")
-        header = ["Method", "Constrains", "Prediction", "Formal safety", "In thesis"]
+        self.new_title("5. Fundamentos: métodos de prevenção de colisões")
+        header = ["Método", "Restringe", "Predição", "Segurança formal", "Na tese"]
         rows = [
-            ["APF", "reference (potential)", "current state", "no invariance guarantee", "Ch. 4-5"],
-            ["CBF-QP", "control input", "current state", "forward invariance", "not used"],
-            ["MPC", "predicted positions + v, a", "finite horizon", "constraint/penalty based", "Ch. 6"],
-            ["CBF-MPC", "trajectory + barrier", "finite horizon", "MPC + CBF safety", "future work"],
+            ["APF", "referência (potencial)", "estado atual", "sem invariância", "Cap. 4-5"],
+            ["CBF-QP", "entrada de controlo", "estado atual", "invariância positiva", "não usado"],
+            ["MPC", "posições previstas + v, a", "horiz. finito", "restrições/penalizações", "Cap. 6"],
+            ["CBF-MPC", "trajetória + barreira", "horiz. finito", "segurança MPC + CBF", "trabalho futuro"],
         ]
         widths = [2.0, 3.4, 2.2, 3.2, 1.8]
         table = VGroup()
@@ -889,7 +899,7 @@ class Background(Base):
             for r in (1, 3)
         ])
         cbf = MathTex(r"\mathcal{C}=\{\mathbf{x}: h(\mathbf{x})\ge 0\},\qquad L_f h+L_g h\,\mathbf{u}+\alpha(h)\ge 0", font_size=32)
-        cbf_t = Text("CBF: keeps the safe set forward-invariant", font_size=22, color=GREY_A)
+        cbf_t = Text("CBF: mantém o conjunto seguro positivamente invariante", font_size=22, color=GREY_A)
         cbfg = VGroup(cbf_t, cbf).arrange(DOWN, buff=0.2).next_to(table, DOWN, buff=0.5)
         self.play(FadeIn(table[0]), Create(sep))
         self.play(LaggedStart(*[FadeIn(l, shift=UP * 0.1) for l in table[1:]], lag_ratio=0.25))
@@ -902,10 +912,10 @@ class Background(Base):
 # 6. Centralized - point distribution
 # =============================================================================
 class CentralizedDistribution(Base):
-    SECTION = "Centralized"
+    SECTION = "Centralizado"
 
     def construct(self):
-        self.header("6. Centralized: where should each agent go?")
+        self.header("6. Centralizado: para onde deve ir cada agente?")
         proj = Proj(phi=68 * DEGREES, theta=-60 * DEGREES, scale=2.3, center=np.array([-3.4, -0.35, 0]))
         n = ValueTracker(5)
         rot = ValueTracker(-60 * DEGREES)
@@ -926,13 +936,13 @@ class CentralizedDistribution(Base):
         counter.move_to(np.array([-3.4, -3.15, 0]))
         counter[1].add_updater(lambda m: m.set_value(int(round(n.get_value())) | 1))
 
-        title = Text("Fibonacci lattice", font_size=30, color=YELLOW)
+        title = Text("Rede de Fibonacci", font_size=30, color=YELLOW)
         eq = MathTex(
             r"\text{lat}_i=\arcsin\!\left(\tfrac{2i}{2n+1}\right),\quad \text{lon}_i=2\pi i\,\varphi^{-1}",
             font_size=34,
         )
         eq2 = MathTex(r"i=-n,\dots,n,\qquad P=2n+1,\qquad \varphi=\tfrac{1+\sqrt5}{2}", font_size=30)
-        golden = MathTex(r"360^\circ(1-\varphi^{-1})\simeq 137.5^\circ\ \text{(golden angle)}", font_size=30)
+        golden = MathTex(r"360^\circ(1-\varphi^{-1})\simeq 137.5^\circ\ \text{(ângulo de ouro)}", font_size=30)
         right = VGroup(title, eq, eq2, golden).arrange(DOWN, buff=0.3, aligned_edge=LEFT).move_to(UP * 1.75).to_edge(RIGHT, buff=0.45)
 
         self.play(FadeIn(sphere), FadeIn(counter))
@@ -942,12 +952,12 @@ class CentralizedDistribution(Base):
         self.next_slide()
 
         # comparison table (thesis appendix, ~1000 points)
-        head = ["", "Lat-Lon", "Fibonacci", "Poisson disk"]
+        head = ["", "Lat-Lon", "Fibonacci", "Disco de Poisson"]
         rows = [
-            ["mean runtime", "$1.6\\times10^{-3}$ s", "$1.075\\times10^{-4}$ s", "$7.51\\times10^{-2}$ s"],
+            ["tempo médio", "$1.6\\times10^{-3}$ s", "$1.075\\times10^{-4}$ s", "$7.51\\times10^{-2}$ s"],
             ["$CV(d_{NN})$", "0.0068", "0.0105", "0.2533"],
-            ["Riesz energy", "553 166", "483 587", "515 388"],
-            ["any $P$?", "grid only", "odd $P$", "yes"],
+            ["Energia de Riesz", "553 166", "483 587", "515 388"],
+            ["qualquer $P$?", "só em grelha", "$P$ ímpar", "sim"],
         ]
         widths = [1.85, 1.35, 1.5, 1.6]
         tab = VGroup()
@@ -967,9 +977,9 @@ class CentralizedDistribution(Base):
             y -= 0.48
         tab.next_to(right, DOWN, buff=0.4).to_edge(RIGHT, buff=0.4)
         box_f = SurroundingRectangle(VGroup(*[tab[r][2] for r in range(5)]), color=YELLOW, buff=0.08, corner_radius=0.06)
-        verdict = Text("$\\approx 700\\times$ faster than Poisson disk,\nnear-uniform spacing", font_size=21, color=YELLOW, line_spacing=0.8)
+        verdict = Text("$\\approx 700\\times$ mais rápido que o disco de Poisson,\nespaçamento quase uniforme", font_size=21, color=YELLOW, line_spacing=0.8)
         verdict.next_to(tab, DOWN, buff=0.3).align_to(tab, LEFT)
-        src = Text("(thesis appendix, ~1000 points, 100 trials)", font_size=16, color=GREY_B).next_to(verdict, DOWN, buff=0.1).align_to(verdict, LEFT)
+        src = Text("(apêndice da tese, ~1000 pontos, 100 ensaios)", font_size=16, color=GREY_B).next_to(verdict, DOWN, buff=0.1).align_to(verdict, LEFT)
         self.play(FadeIn(tab), n.animate.set_value(13), run_time=1.2)
         self.play(Create(box_f), FadeIn(verdict), FadeIn(src))
         self.next_slide(auto_next=True)
@@ -999,10 +1009,10 @@ def simulate_geometric(q0, r0, qd, rd, k_geo=1.2, k_r=0.6, dt=0.02, T=12.0):
 
 
 class CentralizedControl(Base):
-    SECTION = "Centralized"
+    SECTION = "Centralizado"
 
     def construct(self):
-        self.header("7. Centralized: Lyapunov-based geometric control")
+        self.header("7. Centralizado: controlo geométrico baseado em Lyapunov")
 
         decomp = MathTex(r"\mathbf{p}_i-\mathbf{p}_T", r"=", r"r_i", r"\,\mathbf{q}_i", r",\qquad \mathbf{q}_i\in\mathbb{S}^2", font_size=40)
         decomp[2].set_color(GREEN_C)
@@ -1011,7 +1021,7 @@ class CentralizedControl(Base):
         goals[0].set_color(GREEN_C)
         goals[2].set_color(YELLOW)
         top = VGroup(decomp, goals).arrange(DOWN, buff=0.3).move_to(UP * 2.3)
-        sub = Text("radial and angular objectives are decoupled", font_size=22, color=GREY_A).next_to(top, DOWN, buff=0.2)
+        sub = Text("os objetivos radial e angular são desacoplados", font_size=22, color=GREY_A).next_to(top, DOWN, buff=0.2)
         # sketch: target, unit sphere, agent, direction q_i and distance r_i
         sk = Proj(phi=70 * DEGREES, theta=-50 * DEGREES, scale=1.25, center=np.array([0.0, -1.5, 0]))
         pa = np.array([2.3, -0.4, 1.4])
@@ -1051,17 +1061,17 @@ class CentralizedControl(Base):
         classic = axes.plot(lambda t: np.sin(t), color=GREY_B, x_range=[0, PI])
         proposed = axes.plot(lambda t: np.sin(t / 2), color=YELLOW, x_range=[0, PI])
         lab_c = VGroup(
-            Text("classical error", font_size=20, color=GREY_B),
+            Text("erro clássico", font_size=20, color=GREY_B),
             MathTex(r"\mathbf{e}_r=S(\mathbf{q}^\star)\,\mathbf{q}=\mathbf{q}^\star\times\mathbf{q}", font_size=30, color=GREY_B),
             MathTex(r"\|\mathbf{e}_r\|=\sin\theta", font_size=30, color=GREY_B),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.1)
         lab_p = VGroup(
-            Text("proposed error [Ramp 2015]", font_size=20, color=YELLOW),
+            Text("erro proposto [Ramp 2015]", font_size=20, color=YELLOW),
             MathTex(r"\mathbf{e}_q=\frac{S(\mathbf{q}^\star)\,\mathbf{q}}{\sqrt{2(1+\mathbf{q}^\top\mathbf{q}^\star)}}", font_size=30, color=YELLOW),
             MathTex(r"\|\mathbf{e}_q\|=\sin\tfrac{\theta}{2}", font_size=30, color=YELLOW),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.1)
-        warn = Text("classical error vanishes near\nthe antipode: false convergence", font_size=20, color=RED_C, line_spacing=0.8)
-        mono = Text("monotonic in $\\theta$: no false convergence", font_size=20, color=YELLOW)
+        warn = Text("o erro clássico anula-se junto\nao antípoda: falsa convergência", font_size=20, color=RED_C, line_spacing=0.8)
+        mono = Text(r"monótono em $\theta$: sem falsa convergência", font_size=20, color=YELLOW)
         # right column: classical error, its problem, proposed error, its property
         labs = VGroup(lab_c, warn, lab_p, mono).arrange(DOWN, aligned_edge=LEFT, buff=0.2)
         labs.next_to(axes, RIGHT, buff=0.4).align_to(axes, UP).shift(UP * 0.75)
@@ -1080,13 +1090,13 @@ class CentralizedControl(Base):
         # --- control laws + theorem ------------------------------------------
         law1 = MathTex(r"\dot{\mathbf{q}}_i=-k_{geo}\,S(\mathbf{e}_{q_i})\,\mathbf{q}_i", font_size=36)
         law2 = MathTex(r"\dot r_i=k_r\,e^{-\|\mathbf{e}_{q_i}\|^2}\,(r^\star-r_i)", font_size=36)
-        gate = Text("align first, then close in", font_size=20, color=GREEN_C)
+        gate = Text("primeiro alinhar, depois aproximar", font_size=20, color=GREEN_C)
         thm = VGroup(
-            Text("Theorem (thesis Ch. 4)", font_size=22, color=YELLOW),
+            Text("Teorema (Cap. 4 da tese)", font_size=22, color=YELLOW),
             MathTex(r"V=\Psi(\mathbf{q},\mathbf{q}^\star),\quad \dot V=-k_{geo}\|\mathbf{e}_q\|^2\le 0", font_size=30),
-            Text("$(\\mathbf{q}^\\star, r^\\star)$ asymptotically stable on", font_size=20),
+            Text(r"$(\mathbf{q}^\star, r^\star)$ assintoticamente estável em", font_size=20),
             MathTex(r"(\mathbb{S}^2\setminus\{-\mathbf{q}^\star\})\times\mathbb{R}_{>0}", font_size=30),
-            Text("radial error: exponential, rate $\\ge k_r/e$", font_size=20),
+            Text(r"erro radial: exponencial, taxa $\ge k_r/e$", font_size=20),
         ).arrange(DOWN, buff=0.15, aligned_edge=LEFT)
         thm_box = SurroundingRectangle(thm, color=YELLOW, buff=0.2, corner_radius=0.1)
         laws = VGroup(law1, law2, gate, VGroup(thm_box, thm)).arrange(DOWN, buff=0.3, aligned_edge=LEFT)
@@ -1137,20 +1147,20 @@ class CentralizedControl(Base):
 # 8. Centralized - safety, estimation, results
 # =============================================================================
 class CentralizedResults(Base):
-    SECTION = "Centralized"
+    SECTION = "Centralizado"
 
     def construct(self):
-        self.header("8. Centralized: collision safeguard & results")
+        self.header("8. Centralizado: salvaguarda de colisões e resultados")
 
-        a1 = captioned(plot_panel(ASSETS + "apf_inactive.png", height=2.6), "APF inactive")
-        a2 = captioned(plot_panel(ASSETS + "apf_active.png", height=2.6), "APF active")
+        a1 = captioned(plot_panel(ASSETS + "apf_inactive.png", height=2.6), "APF inativo")
+        a2 = captioned(plot_panel(ASSETS + "apf_active.png", height=2.6), "APF ativo")
         apf_imgs = Group(a1, a2).arrange(RIGHT, buff=0.35).to_edge(LEFT, buff=0.4).shift(UP * 0.5)
         apf_txt = VGroup(
-            Text("APF safeguard on the sphere", font_size=26, color=YELLOW),
-            Text("• acts on the reference only", font_size=20),
-            Text("• tangential repulsion if $d_{ij}<d_{min}$", font_size=20),
-            Text("• bounded, re-projected on the sphere", font_size=20),
-            Text("• $d_{min}$ = half the lattice spacing", font_size=20),
+            Text("Salvaguarda APF na esfera", font_size=26, color=YELLOW),
+            Text("• atua apenas na referência", font_size=20),
+            Text("• repulsão tangencial se $d_{ij}<d_{min}$", font_size=20),
+            Text("• limitada, reprojetada na esfera", font_size=20),
+            Text("• $d_{min}$ = metade do espaçamento da rede", font_size=20),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.18)
         apf_txt.next_to(apf_imgs, RIGHT, buff=0.4)
         apf_txt.align_to(apf_imgs, UP)
@@ -1162,7 +1172,7 @@ class CentralizedResults(Base):
         self.play(FadeIn(a2), LaggedStart(*[FadeIn(t) for t in apf_txt[1:]], lag_ratio=0.2))
         self.play(Write(f))
         other = Text(
-            "+ Munkres assignment of lattice points (min. total geodesic cost)",
+            "+ atribuição de Munkres dos pontos da rede (custo geodésico total mínimo)",
             font_size=21,
             color=GREY_A,
         ).next_to(apf_imgs, DOWN, buff=0.45).align_to(apf_imgs, LEFT)
@@ -1171,32 +1181,37 @@ class CentralizedResults(Base):
         self.clear_body()
 
         # --- complete architecture (Ch. 4 sub-diagrams merged) ----------------
-        self.architecture("8. Centralized: complete architecture", "centralized")
+        self.architecture("8. Centralizado: arquitetura completa", "centralized")
         self.next_slide()
         self.clear_body()
 
         # --- results 31 agents, moving target ------------------------------
-        self.new_title("8. Centralized: 31 agents, moving target")
-        p1 = captioned(plot_panel(ASSETS + "c31dyn_trajectory.png", height=4.3), "trajectories")
-        p2 = captioned(plot_panel(ASSETS + "c31dyn_radial_hist.png", height=2.55), "distance to target ($r^\\star = 2$ m)")
-        p3 = captioned(plot_panel(ASSETS + "c31dyn_inter_agent_dist.png", height=2.55), "inter-agent distance")
+        self.new_title("8. Centralizado: 31 agentes, alvo móvel")
+        # fill the body (between the title and the section bar): the stacked pair sets the height
+        TOP, BOT, CAP = 3.1, -3.45, 0.42                  # body limits, caption + its gap
+        r2, r3 = 1580 / 980, 1780 / 980                   # aspect ratios of the two right plots
+        W = (TOP - BOT - 2 * CAP - 0.2 - 0.24) / (1 / r2 + 1 / r3)
+        p1 = captioned(plot_panel(ASSETS + "c31dyn_trajectory.png", height=TOP - BOT - CAP - 0.12), "trajetórias")
+        p2 = captioned(plot_panel(ASSETS + "c31dyn_radial_hist.png", width=W), r"distância ao alvo ($r^\star = 2$ m)")
+        p3 = captioned(plot_panel(ASSETS + "c31dyn_inter_agent_dist.png", width=W), "distância entre agentes")
         right = Group(p2, p3).arrange(DOWN, buff=0.2)
-        layout = Group(p1, right).arrange(RIGHT, buff=0.35).to_edge(LEFT, buff=0.35).shift(DOWN * 0.2)
+        layout = Group(p1, right).arrange(RIGHT, buff=0.4, aligned_edge=UP)
+        layout.move_to(np.array([0, (TOP + BOT) / 2, 0]))
         self.play(FadeIn(p1))
         self.play(FadeIn(right))
         self.next_slide()
         self.clear_body()
 
         # --- real-world test -------------------------------------------------
-        self.new_title("8. Real-world test: Fibonacci lattice + geometric controller")
+        self.new_title("8. Teste real: rede de Fibonacci + controlador geométrico")
         self.flight(
             "flight_geometric.mp4",
             [
-                "3 Crazyflies, virtual target on a circle (radius 1.5 m, 0.25 m/s), formation radius 0.8 m",
-                "real vs simulated trajectories: about 10-11 cm RMS in the main phase",
+                "3 Crazyflies, alvo virtual numa circunferência (raio 1.5 m, 0.25 m/s), raio da formação 0.8 m",
+                "trajetórias reais vs simuladas: cerca de 10-11 cm RMS na fase principal",
             ],
-            speed="main phase in real time, the rest at 3x",
-            extra=[("#E63CE6", "target (sim)")],
+            speed="fase principal em tempo real, o resto a 3x",
+            extra=[("#E63CE6", "alvo (simulado)")],
         )
         self.next_slide(auto_next=True)
         self.clear_all()
@@ -1206,14 +1221,14 @@ class CentralizedResults(Base):
 # 9. Decentralized
 # =============================================================================
 class Decentralized(Base):
-    SECTION = "Decentralized"
+    SECTION = "Descentralizado"
 
     def construct(self):
-        self.header("9. Decentralized: local Lloyd on the sphere")
+        self.header("9. Descentralizado: Lloyd local na esfera")
         why = VGroup(
-            Text("Fibonacci lattice needs the total number of agents", font_size=22),
-            Text("Munkres assignment needs every agent's position", font_size=22),
-            Text("→ each agent: own Voronoi cell from neighbours → move to its centroid", font_size=22, color=YELLOW),
+            Text("A rede de Fibonacci precisa do número total de agentes", font_size=22),
+            Text("A atribuição de Munkres precisa da posição de todos os agentes", font_size=22),
+            Text("→ cada agente: a sua célula de Voronoi a partir dos vizinhos → mover para o centroide", font_size=22, color=YELLOW),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.15).to_edge(UP, buff=0.95)
         self.play(FadeIn(why[0]), FadeIn(why[1]))
         self.play(FadeIn(why[2]))
@@ -1242,10 +1257,10 @@ class Decentralized(Base):
         cl = cloud(sites, ids)
         sm = site_mob(sites, ids)
         cv_label = VGroup(MathTex(r"CV(d_{NN}) =", font_size=28), DecimalNumber(nn_cv(sites), num_decimal_places=3, font_size=32)).arrange(RIGHT, buff=0.15)
-        n_label = VGroup(Text("agents:", font_size=22), Integer(12, font_size=32)).arrange(RIGHT, buff=0.15)
+        n_label = VGroup(Text("agentes:", font_size=22), Integer(12, font_size=32)).arrange(RIGHT, buff=0.15)
         info = VGroup(n_label, cv_label).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
         info.next_to(outline, RIGHT, buff=0.35).align_to(outline, UP)
-        illu = Text("illustrative re-implementation", font_size=16, color=GREY_B).next_to(outline, DOWN, buff=0.08)
+        illu = Text("reimplementação ilustrativa", font_size=16, color=GREY_B).next_to(outline, DOWN, buff=0.08)
         self.play(Create(outline), FadeIn(cl), FadeIn(sm), FadeIn(info), FadeIn(illu))
 
         def lloyd_iters(sites, ids, n_it, rt):
@@ -1265,7 +1280,7 @@ class Decentralized(Base):
         dfront = sites @ proj.basis()[2]
         drop = list(np.argsort(-dfront)[:4])
         crosses = VGroup(*[Cross(scale_factor=0.13, stroke_color=RED, stroke_width=5).move_to(proj(sites[d])) for d in drop])
-        lost = Text("4 agents lost", font_size=22, color=RED).next_to(info, DOWN, buff=0.3).align_to(info, LEFT)
+        lost = Text("4 agentes perdidos", font_size=22, color=RED).next_to(info, DOWN, buff=0.3).align_to(info, LEFT)
         self.play(FadeIn(crosses), FadeIn(lost))
         keep = [i for i in range(12) if i not in drop]
         gone = VGroup(*[sm[d] for d in drop])
@@ -1279,13 +1294,13 @@ class Decentralized(Base):
         self.next_slide()
 
         # --- two implementations ---------------------------------------------
-        head = ["", "Convex hull", "Half-plane"]
+        head = ["", "Inv. convexo", "Semiplano"]
         rows = [
             ["$CV(d_{NN})$", "0.120", "0.073"],
             ["$d_{NN,min}/d_{NN,avg}$", "0.859", "0.849"],
-            ["mean run time", "0.033 s", "1.367 s"],
-            ["converged / 100", "100", "93"],
-            ["degenerate configs", "possible", "no"],
+            ["tempo médio", "0.033 s", "1.367 s"],
+            ["convergiu / 100", "100", "93"],
+            ["config. degeneradas", "possíveis", "não"],
         ]
         widths = [2.6, 1.7, 1.6]
         tab = VGroup()
@@ -1301,7 +1316,7 @@ class Decentralized(Base):
             tab.add(line)
             y -= 0.45
         tab.move_to(RIGHT * 3.6 + DOWN * 1.2)
-        tab_t = Text("30 agents, 100 runs (thesis appendix)", font_size=18, color=GREY_B).next_to(tab, DOWN, buff=0.2)
+        tab_t = Text("30 agentes, 100 execuções (apêndice da tese)", font_size=18, color=GREY_B).next_to(tab, DOWN, buff=0.2)
         good = [tab[1][2], tab[5][2]]
         bad = [tab[3][2], tab[4][2]]
         self.play(FadeIn(tab), FadeIn(tab_t))
@@ -1310,24 +1325,24 @@ class Decentralized(Base):
         self.clear_body()
 
         # --- complete architecture -------------------------------------------
-        self.architecture("9. Decentralized: complete architecture", "decentralized")
+        self.architecture("9. Descentralizado: arquitetura completa", "decentralized")
         self.next_slide()
         self.clear_body()
 
         # --- results ---------------------------------------------------------
-        self.new_title("9. Decentralized: moving target, loss of 4 agents (half-plane)")
-        p1 = captioned(plot_panel(ASSETS + "hp_ddrop_radial_hist.png", height=3.05), "distance to target ($r^\\star = 2$ m)")
-        p2 = captioned(plot_panel(ASSETS + "hp_ddrop_qd_separation.png", height=3.05), "spacing of desired points")
-        p3 = captioned(plot_panel(ASSETS + "hp_ddrop_inter_agent_dist.png", height=3.05), "inter-agent distance")
+        self.new_title("9. Descentralizado: alvo móvel, perda de 4 agentes (semiplano)")
+        p1 = captioned(plot_panel(ASSETS + "hp_ddrop_radial_hist.png", height=3.05), r"distância ao alvo ($r^\star = 2$ m)")
+        p2 = captioned(plot_panel(ASSETS + "hp_ddrop_qd_separation.png", height=3.05), "espaçamento dos pontos desejados")
+        p3 = captioned(plot_panel(ASSETS + "hp_ddrop_inter_agent_dist.png", height=3.05), "distância entre agentes")
         row = Group(p1, p2, p3).arrange(RIGHT, buff=0.3).move_to(UP * 0.75)
         if row.width > 13.2:
             row.set(width=13.2)
         facts = VGroup(
-            Text("moving target, desired radius $r^\\star = 2$ m, $k_{geo}=100,\\ k_r=0.7$", font_size=20, color=GREY_A),
-            Text("approach slower than with a static target: mean distance still ~4.3 m at 30 s", font_size=22),
-            Text("desired points stay uniform: $CV(d_{NN})\\lesssim 0.1$, $d_{NN}$ 2.0 → 2.2 m after the loss", font_size=22),
-            Text("min. distance ~1.7 m at the loss, no near-collisions", font_size=22),
-            Text("no redesign needed when the formation size changes", font_size=22, color=YELLOW),
+            Text(r"alvo móvel, raio desejado $r^\star = 2$ m, $k_{geo}=100,\ k_r=0.7$", font_size=20, color=GREY_A),
+            Text("aproximação mais lenta do que com o alvo estático: distância média ainda ~4.3 m aos 30 s", font_size=22),
+            Text(r"os pontos desejados mantêm-se uniformes: $CV(d_{NN})\lesssim 0.1$, $d_{NN}$ 2.0 → 2.2 m após a perda", font_size=22),
+            Text("distância mín. ~1.7 m na perda, sem quase-colisões", font_size=22),
+            Text("não é preciso reprojetar quando o tamanho da formação muda", font_size=22, color=YELLOW),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
         if facts.width > 13.0:
             facts.set(width=13.0)
@@ -1342,28 +1357,22 @@ class Decentralized(Base):
 # 9. Decentralized (thesis Ch. 6, generalized) - arbitrary meshes and mesh controller
 # =============================================================================
 class GeneralizedMesh(Base):
-    SECTION = "Decentralized"
+    SECTION = "Descentralizado"
 
     def construct(self):
-        self.header("9. Decentralized: any surface, barrier or enclosure")
-        b = captioned(plot_panel(ASSETS + "dijkstra_bust.png", height=3.0), "bust mesh, 8 sites")
-        f = captioned(plot_panel(ASSETS + "dijkstra_frog.png", height=3.0), "frog mesh, 8 sites")
+        self.header("9. Descentralizado: qualquer superfície, barreira ou envolvimento")
+        W = (13.7 - 0.35) / 2                             # two figures across the whole width
+        b = captioned(plot_panel(ASSETS + "dijkstra_bust.png", width=W), "malha de busto, 8 sítios")
+        f = captioned(plot_panel(ASSETS + "dijkstra_frog.png", width=W), "malha de sapo, 8 sítios")
         imgs = Group(b, f).arrange(RIGHT, buff=0.35)
-        txt = VGroup(
-            Text("Lloyd + Dijkstra", font_size=28, color=YELLOW),
-            Text("mesh = weighted graph", font_size=22),
-            Text("geodesic ≈ shortest path", font_size=22),
-            Text("vertex → closest site", font_size=22),
-            Text("works on any well-defined", font_size=22),
-            Text("mesh (Thingi10K examples)", font_size=22),
-        ).arrange(DOWN, aligned_edge=LEFT, buff=0.18)
-        Group(imgs, txt).arrange(RIGHT, buff=0.45).move_to(DOWN * 0.1)
-        self.play(FadeIn(imgs), LaggedStart(*[FadeIn(t) for t in txt], lag_ratio=0.15))
+        head = Text("Lloyd + Dijkstra", font_size=32, color=YELLOW)
+        Group(head, imgs).arrange(DOWN, buff=0.25).move_to(np.array([0, (3.1 - 3.45) / 2, 0]))
+        self.play(FadeIn(head), FadeIn(imgs))
         self.next_slide()
         self.clear_body()
 
         # --- mesh controller animation ---------------------------------------
-        self.new_title("9. Decentralized: mesh controller")
+        self.new_title("9. Descentralizado: controlador de malha")
         R = 5.0
         meshes = precompute_meshes(320, R)
         # as the thesis figure (fig_mesh): seen from the restricted side, the wall normal pointing
@@ -1380,8 +1389,8 @@ class GeneralizedMesh(Base):
         plane_pts = np.array([[0, -L, -L], [0, L, -L], [0, L, L], [0, -L, L]], float)
         plane = Polygon(*proj(plane_pts), stroke_color=GREY_B, stroke_width=1.5, fill_color=GREY, fill_opacity=0.18)
         n_arrow = Arrow(proj(np.array([0, 0, -L])), proj(np.array([4.0, 0, -L])), buff=0, color=RED_C, stroke_width=3, max_tip_length_to_length_ratio=0.25)
-        side_in = Text("restricted airspace", font_size=22, color=RED_C).next_to(n_arrow, RIGHT, buff=0.1)
-        side_out = Text("outside", font_size=22, color=GREY_A).next_to(plane, LEFT, buff=0.15).align_to(side_in, DOWN)
+        side_in = Text("espaço aéreo restrito", font_size=22, color=RED_C).next_to(n_arrow, RIGHT, buff=0.1)
+        side_out = Text("exterior", font_size=22, color=GREY_A).next_to(plane, LEFT, buff=0.15).align_to(side_in, DOWN)
 
         def world():
             tgt = np.array([x_t.get_value(), 0.0, 0.0])
@@ -1402,13 +1411,13 @@ class GeneralizedMesh(Base):
             tgt = np.array([x_t.get_value(), 0.0, 0.0])
             _, u1, u2 = mesh_state(tgt, meshes, R)
             if u1 < 1e-3:
-                s = "planar disc (barrier)"
+                s = "disco plano (barreira)"
             elif u2 <= 0:
-                s = "disc → cone"
+                s = "disco → cone"
             elif u2 < 1:
-                s = "cone → sphere"
+                s = "cone → esfera"
             else:
-                s = "closed sphere (enclosure)"
+                s = "esfera fechada (envolvimento)"
             t = VGroup(
                 Text(s, font_size=26, color=YELLOW),
                 MathTex(rf"i_1={u1:.2f},\quad i_2={u2:.2f}", font_size=30),
@@ -1421,8 +1430,8 @@ class GeneralizedMesh(Base):
             r"\mathbf{V}=(1-i_2)\big[(1-i_1)\mathbf{V}_{\mathrm{disc}}+i_1\mathbf{V}_{\mathrm{cone}}\big]+i_2\mathbf{V}_{\mathrm{sphere}}",
             font_size=28,
         )
-        d_txt = Tex(r"$i_1, i_2$: from the signed distance of the target\\to the boundary, normalised by the mesh radius $R$", font_size=28, color=GREY_A)
-        why = Text("Agents warn before entry, enclose after it", font_size=22, color=GREEN_C)
+        d_txt = Tex(r"$i_1, i_2$: obtidos da distância com sinal do alvo\\à fronteira, normalizada pelo raio da malha $R$", font_size=28, color=GREY_A)
+        why = Text("Os agentes avisam antes da entrada, envolvem depois dela", font_size=22, color=GREEN_C)
         rgt = VGroup(formula, d_txt, why).arrange(DOWN, aligned_edge=LEFT, buff=0.3)
         if rgt.width > 5.4:
             rgt.set(width=5.4)
@@ -1449,16 +1458,16 @@ class GeneralizedMesh(Base):
 # 10. Decentralized (thesis Ch. 6, generalized) - Bernstein MPC & velocity weighting
 # =============================================================================
 class GeneralizedMPC(Base):
-    SECTION = "Decentralized"
+    SECTION = "Descentralizado"
 
     def construct(self):
-        self.header("10. Decentralized: collision-aware MPC")
+        self.header("10. Descentralizado: MPC com prevenção de colisões")
         cost = MathTex(
             r"\min_{\mathbf{c}}\ w_g\sum_{k}\|\mathbf{p}_i[k]-\mathbf{p}_i^\star\|^2+w_s\sum_k\|\ddot{\mathbf{p}}_i[k]\|^2",
             font_size=32,
         )
         cons = MathTex(
-            r"\text{s.t.}\ \ \mathbf{p}_i^{(l)}[0]=\mathbf{p}_i^{(l)},\ \ \|\dot{\mathbf{p}}_i[k]\|\le\bar v,\ \ \|\ddot{\mathbf{p}}_i[k]\|\le\bar a",
+            r"\text{s.a.}\ \ \mathbf{p}_i^{(l)}[0]=\mathbf{p}_i^{(l)},\ \ \|\dot{\mathbf{p}}_i[k]\|\le\bar v,\ \ \|\ddot{\mathbf{p}}_i[k]\|\le\bar a",
             font_size=30,
         )
         col = MathTex(
@@ -1519,13 +1528,13 @@ class GeneralizedMPC(Base):
         self.play(Transform(curve, bez(bent)), Transform(cp, ctrl_poly(bent)), Transform(hz, horizon(bent)), run_time=1.5)
 
         side = VGroup(
-            Text("Bernstein polynomial, degree 5", font_size=21),
-            Text("→ v, a are linear in the control points", font_size=21),
-            Text("horizon 5, $\\|\\mathbf{v}\\|\\le 3$ m/s, $\\|\\mathbf{a}\\|\\le 5$ m/s², $\\Theta$: 1 m", font_size=21),
-            Text("neighbours share predicted horizons", font_size=21),
-            Text("receding horizon: apply 1st step, re-solve", font_size=21),
-            Text("collision = high penalty ($\\rho=100$), not a", font_size=21, color=ORANGE),
-            Text("hard constraint → no formal guarantee", font_size=21, color=ORANGE),
+            Text("Polinómio de Bernstein, grau 5", font_size=21),
+            Text("→ v, a são lineares nos pontos de controlo", font_size=21),
+            Text(r"horizonte 5, $\|\mathbf{v}\|\le 3$ m/s, $\|\mathbf{a}\|\le 5$ m/s², $\Theta$: 1 m", font_size=21),
+            Text("os vizinhos partilham os horizontes previstos", font_size=21),
+            Text("horizonte deslizante: aplicar 1.º passo, repetir", font_size=21),
+            Text(r"colisão = penalização ($\rho=100$), não uma", font_size=21, color=ORANGE),
+            Text("restrição rígida → sem garantia formal", font_size=21, color=ORANGE),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
         if side.width > 5.8:  # keep the right edge inside the frame (Portuguese is longer)
             side.set(width=5.8)
@@ -1557,7 +1566,7 @@ class GeneralizedMPC(Base):
         # --- velocity weighting ----------------------------------------------
         # 12 sites on a sphere mesh (1000 vertices): uniform CVT first, then Lloyd with the
         # velocity-weighted Dijkstra cells once the target velocity is known
-        self.new_title("10. Decentralized: using the target velocity")
+        self.new_title("10. Descentralizado: usar a velocidade do alvo")
         mesh = SphereMesh(1000)
         vel = np.array([1.0, 0.0, 0.0])
         w_uni = mesh.velocity_weights(None)
@@ -1598,16 +1607,16 @@ class GeneralizedMPC(Base):
         tgt = Dot(proj(ORIGIN), radius=0.11, color=TARGET_COLOR).set_z_index(1.5)
         agent_g = agents(uni)
 
-        cap = Text("target velocity unknown: uniform CVT", font_size=22, color=GREY_A)
+        cap = Text("velocidade do alvo desconhecida: CVT uniforme", font_size=22, color=GREY_A)
         cap.move_to(np.array([-6.6, 2.55, 0]), aligned_edge=LEFT)
         w = MathTex(r"w_i=\exp\!\Big(\frac{\theta_i^2}{2\sigma^2}\Big),\ \ \sigma=1.2", font_size=32)
-        wt = Text("$\\theta_i$: angle from the direction\nbehind the target\n→ more weight in front", font_size=20, color=GREY_A, line_spacing=0.8)
+        wt = Text("$\\theta_i$: ângulo desde a direção\natrás do alvo\n→ mais peso à frente", font_size=20, color=GREY_A, line_spacing=0.8)
         st = stats(uni)
         st_lab = VGroup(
-            Text("mean directional alignment\n(≈ 0 for a symmetric formation)", font_size=18, color=GREY_A, line_spacing=0.8),
-            Text("agents in front of the target", font_size=18, color=GREY_A),
+            Text("alinhamento direcional médio\n(≈ 0 para uma formação simétrica)", font_size=18, color=GREY_A, line_spacing=0.8),
+            Text("agentes à frente do alvo", font_size=18, color=GREY_A),
         )
-        it_lab = Text("iteration 0", font_size=22, color=GREY_B)
+        it_lab = Text("iteração 0", font_size=22, color=GREY_B)
         rcol_x = 1.25
 
         # right column: weight (top), iteration, A + label, F_fwd + label
@@ -1637,12 +1646,12 @@ class GeneralizedMPC(Base):
         v_arrow = Arrow(proj(ORIGIN), tip, buff=0, color=TARGET_COLOR, stroke_width=7,
                         max_tip_length_to_length_ratio=0.12).set_z_index(3)
         v_lab = MathTex(r"\mathbf{v}", font_size=40, color=TARGET_COLOR).next_to(tip, UP, buff=0.12).set_z_index(3)
-        cap2 = Text("target velocity known: weighted CVT (Lloyd)", font_size=22, color=YELLOW).move_to(cap, aligned_edge=LEFT)
+        cap2 = Text("velocidade do alvo conhecida: CVT ponderada (Lloyd)", font_size=22, color=YELLOW).move_to(cap, aligned_edge=LEFT)
         self.play(GrowArrow(v_arrow), FadeIn(v_lab), Transform(cap, cap2), run_time=1.0)
         self.play(Write(w), FadeIn(wt), FadeIn(it_lab), run_time=1.2)
         for k, s in enumerate(hist, start=1):
             new_st = place_stats(stats(s))
-            new_it = Text(f"iteration {k}", font_size=22, color=GREY_B).move_to(it_lab, aligned_edge=LEFT)
+            new_it = Text(f"iteração {k}", font_size=22, color=GREY_B).move_to(it_lab, aligned_edge=LEFT)
             self.play(
                 Transform(agent_g, agents(s)),
                 Transform(st, new_st),
@@ -1653,7 +1662,7 @@ class GeneralizedMPC(Base):
         self.clear_body()
 
         # --- complete architecture, before the results -----------------------
-        self.architecture("10. Decentralized: complete architecture", "generalized")
+        self.architecture("10. Descentralizado: arquitetura completa", "generalized")
         self.next_slide(auto_next=True)
         self.clear_all()
 
@@ -1662,10 +1671,10 @@ class GeneralizedMPC(Base):
 # 11. Results - generalized simulation replay + plots
 # =============================================================================
 class Results(Base):
-    SECTION = "Results"
+    SECTION = "Resultados"
 
     def construct(self):
-        self.header("11. Results: 12 agents, moving target, 4 lost at t = 10 s")
+        self.header("11. Resultados: 12 agentes, alvo móvel, 4 perdidos em t = 10 s")
         data = np.load(DATA + "generalized_sim_12agents.npz")
         t = data["t"]
         P = data["P"]  # (12, 3, T)
@@ -1683,7 +1692,7 @@ class Results(Base):
             *[DashedLine(proj(np.array([x, -20, 0])), proj(np.array([x, 20, 0])), color=GREY_D, stroke_width=1) for x in (-20, -10, 10)],
             *[DashedLine(proj(np.array([-22, y, 0])), proj(np.array([12, y, 0])), color=GREY_D, stroke_width=1) for y in (-20, -10, 0, 10, 20)],
         )
-        lab_in = Text("restricted ($x>0$)", font_size=20, color=RED_C).move_to(proj(np.array([6, 22, 13])))
+        lab_in = Text("restrito ($x>0$)", font_size=20, color=RED_C).move_to(proj(np.array([6, 22, 13])))
         k = ValueTracker(0)
 
         def world():
@@ -1717,21 +1726,21 @@ class Results(Base):
             .move_to(RIGHT * 2.5 + UP * 2.4, aligned_edge=LEFT)
         )
         leg = VGroup(
-            legend_entry(RED, "target"),
-            legend_entry(WHITE, "agents"),
-            VGroup(Square(side_length=0.12, color=BLUE, fill_opacity=1).rotate(PI / 4), Text("Lloyd goals", font_size=24, color=BLUE)).arrange(RIGHT, buff=0.15),
-            legend_entry(BLUE_E, "mesh", font_size=24, radius=0.04),
+            legend_entry(RED, "alvo"),
+            legend_entry(WHITE, "agentes"),
+            VGroup(Square(side_length=0.12, color=BLUE, fill_opacity=1).rotate(PI / 4), Text("objetivos de Lloyd", font_size=24, color=BLUE)).arrange(RIGHT, buff=0.15),
+            legend_entry(BLUE_E, "malha", font_size=24, radius=0.04),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.15)
         leg.move_to(RIGHT * 2.5 + UP * 1.25, aligned_edge=LEFT)
         events = VGroup(
-            Text("$t\\approx 1$ s: disc at the boundary", font_size=20),
+            Text(r"$t\approx 1$ s: disco na fronteira", font_size=20),
             Text("$t\\approx 2.5$ s: cone", font_size=20),
-            Text("$t\\approx 4$ s: closed sphere", font_size=20),
-            Text("$t=10$ s: 4 agents lose power", font_size=20, color=RED_C),
-            Text("$t\\approx 13$ s: back to planar barrier", font_size=20),
+            Text(r"$t\approx 4$ s: esfera fechada", font_size=20),
+            Text("$t=10$ s: 4 agentes sem energia", font_size=20, color=RED_C),
+            Text(r"$t\approx 13$ s: regresso à barreira plana", font_size=20),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
         events.next_to(leg, DOWN, buff=0.4).align_to(leg, LEFT)
-        src = Text("Ch. 6 scenario, Python simulation with the thesis mesh controller, 2x speed", font_size=16, color=GREY_B).to_edge(DOWN, buff=0.55).to_edge(LEFT, buff=0.4)
+        src = Text("cenário do Cap. 6, simulação em Python com o controlador de malha da tese, velocidade 2x", font_size=16, color=GREY_B).to_edge(DOWN, buff=0.55).to_edge(LEFT, buff=0.4)
 
         self.play(FadeIn(plane), FadeIn(ground), FadeIn(lab_in), FadeIn(w), FadeIn(clock), FadeIn(leg), FadeIn(src))
         # one key press per phase: the replay stops at every event
@@ -1752,25 +1761,25 @@ class Results(Base):
         self.clear_body()
 
         # --- plots ------------------------------------------------------------
-        self.new_title("11. Results: quantitative view")
-        p1 = captioned(plot_panel(ASSETS + "g_radial_hist_4_dropped_agents.png", height=2.4), "distance to target ($R=5$ m)", 18)
-        p2 = captioned(plot_panel(ASSETS + "g_inter_agent_dist_12_agents.png", height=2.4), "inter-agent distance (threshold 1 m)", 18)
-        p3 = captioned(plot_panel(ASSETS + "g_velocity_12_agents.png", height=2.4), "velocity components ($\\|\\mathbf{v}\\|\\le 3$ m/s)", 18)
-        p4 = captioned(plot_panel(ASSETS + "g_low_level_tracking_error_12_agents.png", height=2.4), "distance to Lloyd goal", 18)
+        self.new_title("11. Resultados: análise quantitativa")
+        p1 = captioned(plot_panel(ASSETS + "g_radial_hist_4_dropped_agents.png", height=2.4), "distância ao alvo ($R=5$ m)", 18)
+        p2 = captioned(plot_panel(ASSETS + "g_inter_agent_dist_12_agents.png", height=2.4), "distância entre agentes (limiar 1 m)", 18)
+        p3 = captioned(plot_panel(ASSETS + "g_velocity_12_agents.png", height=2.4), r"componentes da velocidade ($\|\mathbf{v}\|\le 3$ m/s)", 18)
+        p4 = captioned(plot_panel(ASSETS + "g_low_level_tracking_error_12_agents.png", height=2.4), "distância ao objetivo de Lloyd", 18)
         grid = Group(p1, p2, p3, p4).arrange_in_grid(rows=2, cols=2, buff=(0.3, 0.2)).move_to(LEFT * 2.3 + DOWN * 0.2)
         if grid.height > 6.2:
             grid.set(height=6.2)
         facts = VGroup(
-            Text("+ min. distance 3-4 m after", font_size=21, color=GREEN_C),
-            Text("   the initial transient", font_size=21, color=GREEN_C),
-            Text("+ velocity bounds respected", font_size=21, color=GREEN_C),
-            Text("+ recovers after losing 4 agents", font_size=21, color=GREEN_C),
-            Text("- one agent passes close to", font_size=21, color=RED_C),
-            Text("   the target (2-5 s): no", font_size=21, color=RED_C),
-            Text("   agent-target constraint", font_size=21, color=RED_C),
-            Text("- goal error up to ~4 m when", font_size=21, color=RED_C),
-            Text("   velocity-limited; 1 Hz", font_size=21, color=RED_C),
-            Text("   Voronoi update → staircase", font_size=21, color=RED_C),
+            Text("+ dist. mín. 3-4 m após o", font_size=21, color=GREEN_C),
+            Text("   transitório inicial", font_size=21, color=GREEN_C),
+            Text("+ limites de v respeitados", font_size=21, color=GREEN_C),
+            Text("+ recupera após 4 perdas", font_size=21, color=GREEN_C),
+            Text("- um agente passa perto do", font_size=21, color=RED_C),
+            Text("   alvo (2-5 s): sem restrição", font_size=21, color=RED_C),
+            Text("   agente-alvo", font_size=21, color=RED_C),
+            Text("- erro ao objetivo até ~4 m", font_size=21, color=RED_C),
+            Text("   com v limitada; Voronoi", font_size=21, color=RED_C),
+            Text("   a 1 Hz → perfil em escada", font_size=21, color=RED_C),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.1)
         facts.next_to(grid, RIGHT, buff=0.35)
         self.play(LaggedStart(*[FadeIn(p) for p in grid], lag_ratio=0.25))
@@ -1779,21 +1788,21 @@ class Results(Base):
         self.clear_body()
 
         # --- real-world test -------------------------------------------------
-        self.new_title("11. Real-world test: geodesic CVT + Bernstein MPC")
+        self.new_title("11. Teste real: CVT geodésica + MPC de Bernstein")
         self.flight(
             "flight_mpc.mp4",
             [
-                "4 Crazyflies, virtual target on a circle (radius 1.6 m), 1001-vertex mesh, CVT every 0.1 s",
-                "real vs simulated trajectories: about 3-7 cm RMS in the formation phase",
+                "4 Crazyflies, alvo virtual numa circunferência (raio 1.6 m), malha de 1001 vértices, CVT a cada 0.1 s",
+                "trajetórias reais vs simuladas: cerca de 3-7 cm RMS na fase de formação",
             ],
-            speed="main phase in real time, the rest at 3x",
-            extra=[("#E63CE6", "target (sim)"), ("#5ABEEB", "formation mesh")],
+            speed="fase principal em tempo real, o resto a 3x",
+            extra=[("#E63CE6", "alvo (simulado)"), ("#5ABEEB", "malha da formação")],
         )
         self.next_slide()
         self.clear_body()
 
         # --- Lisbon airport scenario (simulation) ----------------------------
-        self.new_title("11. Lisbon airport: intrusion across the prohibited zone (simulation)")
+        self.new_title("11. Aeroporto de Lisboa: intrusão na zona proibida (simulação)")
         self.lisbon()
         self.next_slide(auto_next=True)
         self.clear_all()
@@ -1818,8 +1827,8 @@ class Results(Base):
             *[DashedLine(proj(np.array([x, y0, 0])), proj(np.array([x, y1, 0])), color=GREY_D, stroke_width=1) for x in (-20, -10, 10, 20, 40)],
             *[DashedLine(proj(np.array([-24, y, 0])), proj(np.array([42, y, 0])), color=GREY_D, stroke_width=1) for y in (y0, -12, 0, 12, y1)],
         )
-        lab_wall = Text("wall (30 m outside)", font_size=18, color=GREY_A).next_to(proj(np.array([0, y1, zt])), UP, buff=0.08)
-        lab_red = Text("prohibited zone", font_size=18, color=RED_C).next_to(proj(np.array([x_red, y1, zt])), UP, buff=0.08)
+        lab_wall = Text("parede (30 m fora)", font_size=18, color=GREY_A).next_to(proj(np.array([0, y1, zt])), UP, buff=0.08)
+        lab_red = Text("zona proibida", font_size=18, color=RED_C).next_to(proj(np.array([x_red, y1, zt])), UP, buff=0.08)
         k = ValueTracker(0)
 
         def world():
@@ -1841,7 +1850,7 @@ class Results(Base):
             return g
 
         w = always_redraw(world)
-        air = captioned(plot_panel(ASSETS + "g_lisbon_airspace.png", width=3.3), "Lisbon airport (LPPT), ANAC zones", 16)
+        air = captioned(plot_panel(ASSETS + "g_lisbon_airspace.png", width=3.3), "Aeroporto de Lisboa (LPPT), zonas da ANAC", 16)
         air.move_to(RIGHT * 0.9 + UP * 1.85, aligned_edge=LEFT)
         clock = always_redraw(
             lambda: VGroup(MathTex("t =", font_size=36), DecimalNumber(t[int(round(k.get_value()))], num_decimal_places=1, font_size=36), Text("s", font_size=28))
@@ -1849,21 +1858,21 @@ class Results(Base):
             .move_to(LEFT * 6.7 + UP * 2.65, aligned_edge=LEFT)
         )
         events = VGroup(
-            Text("barrier on the wall, slides with the target", font_size=19),
-            Text("$t=13.9$ s: target crosses the wall → sphere", font_size=19),
-            Text("$t=25$ s: 4 of 12 chasers lose power", font_size=19, color=RED_C),
-            Text("$t=34.1$ s: target enters → barrier on the border", font_size=19),
-            Text("8 chasers hold 1.00 m from the border", font_size=19, color=GREEN_C),
+            Text("barreira na parede, desliza com o alvo", font_size=19),
+            Text("$t=13.9$ s: o alvo atravessa a parede → esfera", font_size=19),
+            Text("$t=25$ s: 4 de 12 perseguidores ficam sem energia", font_size=19, color=RED_C),
+            Text("$t=34.1$ s: o alvo entra → barreira na fronteira", font_size=19),
+            Text("8 perseguidores mantêm-se a 1.00 m da fronteira", font_size=19, color=GREEN_C),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
         if events.width > 6.0:
             events.set(width=6.0)
         events.move_to(RIGHT * 0.9 + DOWN * 0.75, aligned_edge=LEFT)
         facts = VGroup(
-            Text("min. inter-agent distance 1.43 m (envelope 1 m)", font_size=17, color=GREY_A),
-            Text("peak speed 3.09 m/s (limit 3 m/s) · X500 model", font_size=17, color=GREY_A),
+            Text("distância mín. entre agentes 1.43 m (envelope 1 m)", font_size=17, color=GREY_A),
+            Text("velocidade máx. 3.09 m/s (limite 3 m/s) · modelo X500", font_size=17, color=GREY_A),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.1)
         facts.next_to(events, DOWN, buff=0.25).align_to(events, LEFT)
-        src = Text(f"thesis simulation data (Ch. 6, trajectory 5), {speed}x speed", font_size=16, color=GREY_B).to_edge(DOWN, buff=0.55).shift(LEFT * 3.4)
+        src = Text(f"dados de simulação da tese (Cap. 6, trajetória 5), velocidade {speed}x", font_size=16, color=GREY_B).to_edge(DOWN, buff=0.55).shift(LEFT * 3.4)
 
         self.play(FadeIn(ground), FadeIn(red), FadeIn(wall), FadeIn(lab_wall), FadeIn(lab_red), FadeIn(w), FadeIn(clock), FadeIn(air), FadeIn(src), FadeIn(events[0]))
         prev = 0.0
@@ -1885,31 +1894,31 @@ class Results(Base):
 # 12. Conclusions
 # =============================================================================
 class Conclusions(Base):
-    SECTION = "Conclusions"
+    SECTION = "Conclusões"
 
     def construct(self):
-        self.header("12. Conclusions")
+        self.header("12. Conclusões")
         items = VGroup(
             VGroup(
-                Text("Centralized", font_size=26, color=YELLOW),
-                Text("Fibonacci lattice + Lyapunov geometric controller: simplest, scales to 31 agents,", font_size=21),
-                Text("almost-global convergence proof (all initial conditions except the antipode)", font_size=21),
+                Text("Centralizado", font_size=26, color=YELLOW),
+                Text("Rede de Fibonacci + controlador geométrico de Lyapunov: o mais simples, escala até 31 agentes,", font_size=21),
+                Text("prova de convergência quase global (todas as condições iniciais exceto o antípoda)", font_size=21),
             ),
             VGroup(
-                Text("Decentralized", font_size=26, color=YELLOW),
-                Text("Lloyd + Dijkstra on any mesh: barrier and enclosure; velocity weighting biases", font_size=21),
-                Text("agents forward; one Bernstein MPC enforces $v$, $a$ limits, penalizes collisions;", font_size=21),
-                Text("consensus over the Delaunay network: formation recovers after losing 4 of 12 agents", font_size=21),
+                Text("Descentralizado", font_size=26, color=YELLOW),
+                Text("Lloyd + Dijkstra em qualquer malha: barreira e envolvimento; a ponderação pela velocidade", font_size=21),
+                Text("desloca os agentes para a frente; um MPC de Bernstein impõe limites de $v$, $a$ e penaliza colisões;", font_size=21),
+                Text("consenso na rede de Delaunay: a formação recupera após perder 4 de 12 agentes", font_size=21),
             ),
         )
         for it in items:
             it.arrange(DOWN, aligned_edge=LEFT, buff=0.1)
         items.arrange(DOWN, aligned_edge=LEFT, buff=0.35).move_to(UP * 0.55)
         lim = VGroup(
-            Text("Limitations", font_size=24, color=RED_C),
-            Text("indoor flights only (Crazyflies, virtual target) · instantaneous communication ·", font_size=20, color=GREY_A),
-            Text("ground-truth target + noise · collisions penalized, not formally excluded ·", font_size=20, color=GREY_A),
-            Text("lost agents ignored, not obstacles", font_size=20, color=GREY_A),
+            Text("Limitações", font_size=24, color=RED_C),
+            Text("voos reais só em interior (Crazyflies, alvo virtual) · comunicação instantânea ·", font_size=20, color=GREY_A),
+            Text("posição real do alvo + ruído · colisões penalizadas, não excluídas formalmente ·", font_size=20, color=GREY_A),
+            Text("agentes perdidos ignorados, não são obstáculos", font_size=20, color=GREY_A),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.08)
         lim.next_to(items, DOWN, buff=0.4).align_to(items, LEFT)
         for it in items:
@@ -1920,24 +1929,24 @@ class Conclusions(Base):
 
 
 class FutureWork(Base):
-    SECTION = "Conclusions"
+    SECTION = "Conclusões"
 
     def construct(self):
-        self.header("13. Future work")
+        self.header("13. Trabalho futuro")
         left = VGroup(
-            Text("System maturity", font_size=26, color=YELLOW),
-            Text("• real UAVs: PX4, ROS 2, Gazebo, Pixhawk", font_size=21),
-            Text("• realistic communication (latency, loss)", font_size=21),
-            Text("• real perception: detection, LiDAR / RGB-D", font_size=21),
-            Text("• regulatory framework, authorities", font_size=21),
+            Text("Maturidade do sistema", font_size=26, color=YELLOW),
+            Text("• UAV reais: PX4, ROS 2, Gazebo, Pixhawk", font_size=21),
+            Text("• comunicação realista (latência, perdas)", font_size=21),
+            Text("• perceção real: deteção, LiDAR / RGB-D", font_size=21),
+            Text("• enquadramento regulamentar, autoridades", font_size=21),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.15)
         right = VGroup(
-            Text("New functionality", font_size=26, color=YELLOW),
-            Text("• match target velocity inside the MPC", font_size=21),
-            Text("• velocity-/shape-aware mesh deformation", font_size=21),
-            Text("• reachability-set based formations", font_size=21),
-            Text("• CBF-MPC: formal safety guarantees", font_size=21),
-            Text("• cheaper obstacle avoidance", font_size=21),
+            Text("Novas funcionalidades", font_size=26, color=YELLOW),
+            Text("• igualar a velocidade do alvo no MPC", font_size=21),
+            Text("• malha deformada pela velocidade / forma", font_size=21),
+            Text("• formações baseadas em conjuntos alcançáveis", font_size=21),
+            Text("• CBF-MPC: garantias formais de segurança", font_size=21),
+            Text("• desvio de obstáculos menos dispendioso", font_size=21),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.15)
         cols = VGroup(left, right).arrange(RIGHT, buff=1.0, aligned_edge=UP).move_to(UP * 0.3)
         if cols.width > 12.8:
@@ -1963,7 +1972,7 @@ class ThankYou(Base):
             )
 
         w = always_redraw(world)
-        thanks = Text("Thank you!", font_size=56).shift(DOWN * 1.7)
+        thanks = Text("Obrigado!", font_size=56).shift(DOWN * 1.7)
         self.play(FadeIn(w), Write(thanks))
         self.play(rot.animate.set_value(PI), run_time=3, rate_func=linear)
         self.next_slide(loop=True)
@@ -1978,15 +1987,15 @@ class ThankYou(Base):
 # =============================================================================
 class BackupLyapunov(Base):
     def construct(self):
-        self.header("Backup: stability of the geometric controller")
+        self.header("Extra: estabilidade do controlador geométrico")
         lines = VGroup(
             MathTex(r"\Psi(\mathbf{q},\mathbf{q}^\star)=2-\sqrt{2(1+\mathbf{q}^\top\mathbf{q}^\star)},\qquad \mathbf{e}_q=\frac{S(\mathbf{q}^\star)\mathbf{q}}{\sqrt{2(1+\mathbf{q}^\top\mathbf{q}^\star)}}", font_size=34),
             MathTex(r"\Psi(\mathbf{q}^\star)=0,\quad \Psi(-\mathbf{q}^\star)=2,\quad 0\le\Psi\le 2", font_size=32),
             MathTex(r"\dot{\mathbf{q}}=S(\boldsymbol\omega)\mathbf{q},\ \ \boldsymbol\omega=-k_{geo}\mathbf{e}_q\ \Rightarrow\ \dot V=\dot\Psi=\mathbf{e}_q^\top\boldsymbol\omega=-k_{geo}\|\mathbf{e}_q\|^2\le 0", font_size=32),
-            MathTex(r"D_c=\{\mathbf{q}:\Psi\le c\},\ c<2:\ \text{compact, positively invariant, excludes }-\mathbf{q}^\star", font_size=32),
-            MathTex(r"\text{LaSalle on }D_c:\ \mathbf{e}_q=0\iff\mathbf{q}=\mathbf{q}^\star;\ \ D_c\uparrow\mathbb{S}^2\setminus\{-\mathbf{q}^\star\}\ \text{as}\ c\to2", font_size=32),
+            MathTex(r"D_c=\{\mathbf{q}:\Psi\le c\},\ c<2:\ \text{compacto, positivamente invariante, exclui }-\mathbf{q}^\star", font_size=32),
+            MathTex(r"\text{LaSalle em }D_c:\ \mathbf{e}_q=0\iff\mathbf{q}=\mathbf{q}^\star;\ \ D_c\uparrow\mathbb{S}^2\setminus\{-\mathbf{q}^\star\}\ \text{quando}\ c\to2", font_size=32),
             MathTex(r"\dot e_r=-\lambda(t)e_r,\ \ \lambda=k_r e^{-\|\mathbf{e}_q\|^2}\ge k_r e^{-1}\ \ (\|\mathbf{e}_q\|^2=\sin^2\tfrac{\theta}{2}<1)", font_size=32),
-            MathTex(r"\Rightarrow |e_r(t)|\le|e_r(0)|e^{-\lambda_{min}t}\ \ \text{(cascade: attitude independent of } r)", font_size=32),
+            MathTex(r"\Rightarrow |e_r(t)|\le|e_r(0)|e^{-\lambda_{min}t}\ \ \text{(cascata: atitude independente de } r)", font_size=32),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.32)
         if lines.width > 13:
             lines.set(width=13)
@@ -1998,14 +2007,14 @@ class BackupLyapunov(Base):
 
 class BackupControllers(Base):
     def construct(self):
-        self.header("Backup: path-planning comparison (3 agents, $r^\\star = 2$ m, 30 s)")
-        head = ["Metric", "fmincon (SQP)", "APF", "Lyapunov"]
+        self.header(r"Extra: comparação de planeamento de trajetórias (3 agentes, $r^\star = 2$ m, 30 s)")
+        head = ["Métrica", "fmincon (SQP)", "APF", "Lyapunov"]
         rows = [
-            ["time to goal (all < 0.1 m)", "> 30 s", "4.460 s", "17.610 s"],
-            ["final goal error, max [m]", "1.0459", "$9.1\\times10^{-14}$", "0.0024"],
-            ["final ref. tracking error, max [m]", "1.1673", "$1.5\\times10^{-11}$", "$7.4\\times10^{-5}$"],
-            ["mean pairwise distance [m]", "4.7923", "3.3397", "3.4645"],
-            ["total computation time [s]", "14.761", "9.249", "7.826"],
+            ["tempo até ao objetivo (todos < 0.1 m)", "> 30 s", "4.460 s", "17.610 s"],
+            ["erro final ao objetivo, máx. [m]", "1.0459", "$9.1\\times10^{-14}$", "0.0024"],
+            ["erro final de seguimento, máx. [m]", "1.1673", "$1.5\\times10^{-11}$", "$7.4\\times10^{-5}$"],
+            ["distância média entre pares [m]", "4.7923", "3.3397", "3.4645"],
+            ["tempo total de computação [s]", "14.761", "9.249", "7.826"],
         ]
         widths = [4.4, 2.4, 2.0, 2.0]
         tab = VGroup()
@@ -2021,9 +2030,7 @@ class BackupControllers(Base):
             y -= 0.6
         tab.move_to(UP * 0.4)
         note = Text(
-            "Lyapunov chosen: near-zero tracking error, least computation, stability proof;\n"
-            "slower because it aligns the direction before closing the radius.\n"
-            "APF as a distribution method needs N known in advance (kept only as a safeguard).",
+            "Lyapunov escolhido: erro quase nulo, menor computação, prova de estabilidade;\nmais lento porque alinha a direção antes de fechar o raio.\nAPF como distribuição exige N conhecido à partida (fica só como salvaguarda).",
             font_size=21,
             color=GREY_A,
             line_spacing=0.85,
@@ -2066,18 +2073,18 @@ def sphere_row(items, height=2.3):
 
 class BackupDirect(Base):
     def construct(self):
-        self.header("Backup: direct computation methods (about 1000 points, 100 trials)")
-        spheres = sphere_row([("dir_latlon.png", "Lat-Lon, $K=29$ (1070 points)"),
-                              ("dir_fibonacci.png", "Fibonacci (1001 points)"),
-                              ("dir_poisson.png", "Poisson disk (1012 points)")])
-        head = ["", "Lat-Lon", "Fibonacci", "Poisson disk"]
+        self.header("Extra: métodos de cálculo direto (cerca de 1000 pontos, 100 ensaios)")
+        spheres = sphere_row([("dir_latlon.png", "Lat-Lon, $K=29$ (1070 pontos)"),
+                              ("dir_fibonacci.png", "Fibonacci (1001 pontos)"),
+                              ("dir_poisson.png", "Disco de Poisson (1012 pontos)")])
+        head = ["", "Lat-Lon", "Fibonacci", "Disco de Poisson"]
         rows = [
-            ["mean run time [s]", "$1.6\\times10^{-3}$", "$1.075\\times10^{-4}$", "$7.51\\times10^{-2}$"],
-            ["std. deviation [s]", "$7.69\\times10^{-4}$", "$3.66\\times10^{-5}$", "$1.4\\times10^{-3}$"],
+            ["tempo médio [s]", "$1.6\\times10^{-3}$", "$1.075\\times10^{-4}$", "$7.51\\times10^{-2}$"],
+            ["desvio padrão [s]", "$7.69\\times10^{-4}$", "$3.66\\times10^{-5}$", "$1.4\\times10^{-3}$"],
             ["$d_{NN,min}/d_{NN,avg}$", "0.9712", "0.9171", "0.0640"],
             ["$CV(d_{NN})$", "0.0068", "0.0105", "0.2533"],
-            ["Riesz energy ($s=1$)", "553166", "483587", "515388"],
-            ["number of points", "grid only", "odd $P$", "any"],
+            ["Energia de Riesz ($s=1$)", "553166", "483587", "515388"],
+            ["número de pontos", "só em grelha", "$P$ ímpar", "qualquer"],
         ]
         tab = table_grid(head, rows, [3.6, 2.4, 2.4, 2.4], font_size=19, row_h=0.42, highlight=2)
         g = Group(spheres, tab).arrange(DOWN, buff=0.35).move_to(DOWN * 0.2)
@@ -2087,9 +2094,9 @@ class BackupDirect(Base):
         self.play(FadeIn(tab))
         self.next_slide()
         self.clear_body()
-        self.new_title("Backup: direct computation methods, run time (100 trials)")
+        self.new_title("Extra: métodos de cálculo direto, tempo de execução (100 ensaios)")
         box = captioned(plot_panel(ASSETS + "dir_runtime.png", height=5.4),
-                        "Fibonacci $\\approx 700\\times$ faster than Poisson disk, with a smaller spread", 20)
+                        r"Fibonacci $\approx 700\times$ mais rápido que o disco de Poisson, com menor dispersão", 20)
         box.move_to(DOWN * 0.15)
         self.play(FadeIn(box))
         self.next_slide(auto_next=True)
@@ -2098,18 +2105,18 @@ class BackupDirect(Base):
 
 class BackupIterative(Base):
     def construct(self):
-        self.header("Backup: iterative computation methods (30 points, 100 runs)")
-        spheres = sphere_row([("it_thomson.png", "Thomson, minimum energy"),
-                              ("it_convex.png", "Lloyd, convex hull"),
-                              ("it_halfplane.png", "Lloyd, half-plane")])
-        head = ["", "Thomson", "Lloyd (convex hull)", "Lloyd (half-plane)"]
+        self.header("Extra: métodos de cálculo iterativo (30 pontos, 100 execuções)")
+        spheres = sphere_row([("it_thomson.png", "Thomson, energia mínima"),
+                              ("it_convex.png", "Lloyd, invólucro convexo"),
+                              ("it_halfplane.png", "Lloyd, semiplano")])
+        head = ["", "Thomson", "Lloyd (invólucro convexo)", "Lloyd (semiplano)"]
         rows = [
-            ["mean run time [s]", "0.085", "0.033", "1.367"],
-            ["mean iterations to converge", "–", "20.47", "29.11"],
-            ["converged / 100", "0", "100", "93"],
+            ["tempo médio [s]", "0.085", "0.033", "1.367"],
+            ["iterações médias até convergir", "–", "20.47", "29.11"],
+            ["convergiu / 100", "0", "100", "93"],
             ["$d_{NN,min}/d_{NN,avg}$", "0.3246", "0.8585", "0.8486"],
             ["$CV(d_{NN})$", "0.6950", "0.1202", "0.0728"],
-            ["Riesz energy ($s=1$)", "461.79", "363.06", "360.77"],
+            ["Energia de Riesz ($s=1$)", "461.79", "363.06", "360.77"],
         ]
         tab = table_grid(head, rows, [4.0, 2.2, 3.0, 3.0], font_size=19, row_h=0.42)
         g = Group(spheres, tab).arrange(DOWN, buff=0.35).move_to(DOWN * 0.2)
@@ -2119,9 +2126,9 @@ class BackupIterative(Base):
         self.play(FadeIn(tab))
         self.next_slide()
         self.clear_body()
-        self.new_title("Backup: iterative computation methods, run time (100 runs)")
+        self.new_title("Extra: métodos de cálculo iterativo, tempo de execução (100 execuções)")
         box = captioned(plot_panel(ASSETS + "it_runtime.png", height=5.4),
-                        "half-plane: most uniform, but about 40 times slower than the convex hull", 20)
+                        "semiplano: o mais uniforme, mas cerca de 40 vezes mais lento que o invólucro convexo", 20)
         box.move_to(DOWN * 0.15)
         self.play(FadeIn(box))
         self.next_slide(auto_next=True)
@@ -2130,8 +2137,8 @@ class BackupIterative(Base):
 
 class BackupDecentralized(Base):
     def construct(self):
-        self.header("Backup: convex-hull failure on the sphere")
-        a = captioned(plot_panel(ASSETS + "convex_problem.png", height=5.2), "convex hull picks the short arc: wrong Voronoi cell")
+        self.header("Extra: falha do invólucro convexo na esfera")
+        a = captioned(plot_panel(ASSETS + "convex_problem.png", height=5.2), "o invólucro convexo escolhe o arco curto: célula de Voronoi errada")
         a.move_to(DOWN * 0.15)
         self.play(FadeIn(a))
         self.next_slide(auto_next=True)
@@ -2140,15 +2147,15 @@ class BackupDecentralized(Base):
 
 class BackupParameters(Base):
     def construct(self):
-        self.header("Backup: decentralized simulation parameters")
+        self.header("Extra: parâmetros da simulação do Cap. 6")
         params = VGroup(
-            Text("12 agents, 30 s, $\\Delta t=0.01$ s, $R=5$ m", font_size=26),
-            Text("4 agents lost at 10 s, EMA $\\alpha=0.2$, noise $\\pm 5\\%$", font_size=26),
-            Text("Bernstein degree 5, horizon 5", font_size=26),
+            Text(r"12 agentes, 30 s, $\Delta t=0.01$ s, $R=5$ m", font_size=26),
+            Text(r"4 agentes perdidos aos 10 s, EMA $\alpha=0.2$, ruído $\pm 5\%$", font_size=26),
+            Text("Bernstein de grau 5, horizonte 5", font_size=26),
             Text("$\\rho_{obs}=100,\\ \\rho_{ineq}=20,\\ w_g=1000,\\ w_s=1$", font_size=26),
             Text("$\\|\\mathbf{v}\\|\\le 3$ m/s, $\\|\\mathbf{a}\\|\\le 5$ m/s², $\\Theta=1$ m", font_size=26),
-            Text("SQP $\\le 100$ iterations, $\\sigma=1.2$", font_size=26),
-            Text("Voronoi update every 100 steps (1 Hz)", font_size=26),
+            Text(r"SQP $\le 100$ iterações, $\sigma=1.2$", font_size=26),
+            Text("atualização de Voronoi a cada 100 passos (1 Hz)", font_size=26),
             Text("Mellinger: $m=5$ kg, $K_p=150\\,I$, $K_v=15\\,I$", font_size=26),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.22).move_to(DOWN * 0.15)
         self.play(FadeIn(params))

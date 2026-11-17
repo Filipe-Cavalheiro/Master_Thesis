@@ -24,7 +24,6 @@ per-slide script and timing budget.
 | `assets/videos/*.mp4` | real-flight clips shown at the end of the `CentralizedResults` and `Results` scenes, cut from `../Results/*/overlay/overlay.mp4` by `assets/videos/make_clips.sh` |
 | `assets/images/lisbon_map.png`, `assets/data/lisbon_zones.npz` | Motivation airspace slide: dark top view of the Lisbon OSM meshes of the Gazebo world, LPPT ANAC zones (clipped to the map) and infrastructure points, ENU frame; made by `tools/make_lisbon_map.py` |
 | `assets/data/lisbon_traj5.npz` | thesis Ch. 6 Lisbon-airport simulation (trajectory 5, 12 chasers, 4 lost at 25 s) in the wall frame, exported by `assets/data/make_lisbon_data.py` |
-| `i18n_pt.py` | text shown on the slides (pt-PT), looked up from the key strings in `slides.py` |
 | `SPEAKER_NOTES.md` | speaker script (pt-PT) + timing |
 
 ## Setup
@@ -99,11 +98,7 @@ before `BackupParameters`) and revert the titles, roadmap, conclusions and secti
 
 ## Language
 
-The scene code in `slides.py` keeps its text in English; those strings are only keys. Every
-`Text` / `MathTex` / `Tex` string is replaced by its Portuguese entry in `i18n_pt.py` (see `tr`
-in `helpers.py`). When adding slide text, add the key and its translation to `i18n_pt.py`: a
-string without an entry is shown as written and listed in `i18n_missing.txt` after the render.
-Text inside the thesis figures and in the flight videos is in English, and numbers keep the
+The slide text is written in Portuguese (pt-PT) directly in `slides.py`. Text inside the thesis figures and in the flight videos is in English, and numbers keep the
 decimal point of the figures.
 
 ## Notes / provenance

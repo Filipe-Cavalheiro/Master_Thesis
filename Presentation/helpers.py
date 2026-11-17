@@ -13,7 +13,6 @@ control depth cues (back-faces dimmed) explicitly.
 """
 from __future__ import annotations
 
-import atexit
 import os
 
 import numpy as np
@@ -21,40 +20,13 @@ from manim import *
 import re
 
 # ----------------------------------------------------------------------------
-# language: the presentation is in Portuguese (pt-PT)
+# text: the slide text is written in Portuguese (pt-PT) directly in slides.py
 # ----------------------------------------------------------------------------
-# The scene code keeps its text in English, used only as lookup keys: every Text / MathTex / Tex
-# string goes through tr(), which returns its translation from i18n_pt.py. A string without a
-# translation is shown as is and listed in i18n_missing.txt at exit.
-LANG = "pt"
 _ManimText, _ManimMathTex, _ManimTex = Text, MathTex, Tex
 # Pin the font: an empty font name means the system default (Noto Serif on the Linux machine the
 # slides were designed on), which differs on other systems, e.g. Windows. Noto Serif has no →≈≤≥:
 # Linux takes them from DejaVu Serif by fallback, Windows does not fall back, so name it per glyph.
 _ManimText.set_default(font="Noto Serif", t2f={c: "DejaVu Serif" for c in "→≈≤≥"})
-_MISSING: set[str] = set()
-if LANG == "pt":
-    from i18n_pt import PT, PT_PATTERNS
-
-    @atexit.register
-    def _dump_missing():
-        if _MISSING:
-            with open("i18n_missing.txt", "w", encoding="utf-8") as f:
-                f.write("\n".join(repr(s) for s in sorted(_MISSING)) + "\n")
-
-
-def tr(s):
-    """Translate a slide string (identity in English)."""
-    if LANG != "pt" or not isinstance(s, str):
-        return s
-    if s in PT:
-        return PT[s]
-    for pat, rep in PT_PATTERNS:
-        if pat.fullmatch(s):
-            return pat.sub(rep, s)
-    if any(c.isalpha() for c in re.sub(r"\$[^$]*\$", "", s)):   # LaTeX-only strings need no translation
-        _MISSING.add(s)
-    return s
 
 
 def Text(text, *args, **kwargs):  # noqa: F811
@@ -63,12 +35,9 @@ def Text(text, *args, **kwargs):  # noqa: F811
     with the rest, e.g. Text("radial error rate $\\ge k_r/e$"); a string with
     newlines gives one line per row, left aligned.
     """
-    s = tr(text)
-    if isinstance(s, str) and "$" in s:
-        return mixed_text(s, **kwargs)
-    if LANG == "pt" and kwargs.get("t2c"):
-        kwargs["t2c"] = {tr(k): v for k, v in kwargs["t2c"].items()}
-    return _ManimText(s, *args, **kwargs)
+    if isinstance(text, str) and "$" in text:
+        return mixed_text(text, **kwargs)
+    return _ManimText(text, *args, **kwargs)
 
 
 MATH_SCALE = 1.3   # MathTex next to Text of the same font_size looks smaller
@@ -108,20 +77,10 @@ def mixed_text(s, font_size=48, color=WHITE, line_spacing=1.0, **_ignored):
 
 
 def MathTex(*strings, **kwargs):  # noqa: F811
-    if LANG == "pt":
-        strings = tuple(PT.get(s, s) if isinstance(s, str) else s for s in strings)
-        for s in strings:
-            if isinstance(s, str) and "\\text" in s and s not in PT.values():
-                _MISSING.add(s)
     return _ManimMathTex(*strings, **kwargs)
 
 
 def Tex(*strings, **kwargs):  # noqa: F811
-    if LANG == "pt":
-        for s in strings:
-            if isinstance(s, str) and s not in PT:
-                _MISSING.add(s)
-        strings = tuple(PT.get(s, s) if isinstance(s, str) else s for s in strings)
     return _ManimTex(*strings, **kwargs)
 
 
@@ -137,13 +96,13 @@ MUTED = GREY_B
 GREEN_OK = GREEN_C
 
 SECTIONS = [
-    "Motivation",
-    "Problem",
-    "Background",
-    "Centralized",
-    "Decentralized",
-    "Results",
-    "Conclusions",
+    "Motivação",
+    "Problema",
+    "Fundamentos",
+    "Centralizado",
+    "Descentralizado",
+    "Resultados",
+    "Conclusões",
 ]
 
 GOLDEN_ANGLE = np.pi * (3.0 - np.sqrt(5.0))
@@ -155,7 +114,7 @@ GOLDEN_ANGLE = np.pi * (3.0 - np.sqrt(5.0))
 def section_title(text: str) -> Text:
     """Upper-left section title, same as in the paper presentation."""
     t = Text(text, font_size=28)
-    if t.width > 13.2:                      # long (translated) titles stay inside the frame
+    if t.width > 13.2:                      # long titles stay inside the frame
         t.set(width=13.2)
     return t.to_corner(UL)
 
@@ -238,7 +197,7 @@ def arch_block(label, pos, w=2.4, h=0.85, new=False, font_size=20):
     rect = RoundedRectangle(corner_radius=0.14, width=w, height=h,
                             stroke_color=HIGHLIGHT if new else ARCH_STROKE, stroke_width=3 if new else 2,
                             fill_color=ARCH_FILL, fill_opacity=1)
-    lines = VGroup(*[_ManimText(s, font_size=font_size, color=WHITE) for s in tr(label).split("\n")])
+    lines = VGroup(*[_ManimText(s, font_size=font_size, color=WHITE) for s in label.split("\n")])
     lines.arrange(DOWN, buff=0.06)
     if lines.width > w - 0.2:
         lines.set(width=w - 0.2)

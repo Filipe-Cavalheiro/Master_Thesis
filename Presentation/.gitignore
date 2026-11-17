@@ -3,6 +3,5 @@ slides/
 media/
 presentation.html
 presentation_*.html
-i18n_missing.txt
 __pycache__/
 .venv/

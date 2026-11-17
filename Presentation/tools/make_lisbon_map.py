@@ -44,7 +44,7 @@ PX_PER_M = 0.12                                   # 1490 x 2520 px
 POIS = [
     ("Hospital de Santa Maria", 38.7488, -9.1606),
     ("Hospital Pulido Valente", 38.7662, -9.1567),
-    ("University of Lisbon", 38.7527, -9.1580),
+    ("Cidade Universitária", 38.7527, -9.1580),
     ("Estádio José Alvalade", 38.7612, -9.1609),
     ("Estádio da Luz", 38.7527, -9.1847),
     ("Gare do Oriente", 38.7678, -9.0991),
