@@ -91,6 +91,14 @@ class Base(Slide):
         t = section_title(text)
         self.play(Transform(self._title, t), run_time=0.5)
 
+    def architecture(self, title, kind):
+        """Sub-slide with the complete control architecture of a chapter (see arch_diagram)."""
+        self.new_title(title)
+        d = arch_diagram(kind)
+        groups, body = d
+        self.play(FadeIn(body), run_time=0.8)
+        self.play(FadeIn(groups), run_time=0.6)
+
     def flight(self, clip, facts, speed, extra=()):
         """Play a real-flight clip (camera + simulation overlay) with a legend and facts below."""
         video = VideoMobject(VIDEOS + clip).set(width=10.6).move_to(UP * 0.5)
@@ -99,7 +107,7 @@ class Base(Slide):
             legend_entry(GREEN, "real (OptiTrack)", font_size=20, radius=0.07),
             legend_entry(ORANGE, "simulation of the same flight", font_size=20, radius=0.07),
             *[legend_entry(c, lab, font_size=20, radius=0.07) for c, lab in extra],
-            Text("real time" if speed == 1 else f"{speed}x speed", font_size=20, color=GREY_B),
+            Text(speed if isinstance(speed, str) else ("real time" if speed == 1 else f"{speed}x speed"), font_size=20, color=GREY_B),
         ).arrange(RIGHT, buff=0.45)
         if leg.width > 12.8:
             leg.set(width=12.8)
@@ -112,6 +120,117 @@ class Base(Slide):
         video.start()
         self.wait(video.duration)
         video.stop()
+
+
+# =============================================================================
+# Control architectures (one per chapter, shown before its simulation results)
+# =============================================================================
+def arch_diagram(kind: str) -> VGroup:
+    """Complete control architecture of one chapter: 'centralized', 'decentralized' or 'generalized'.
+
+    Merges the thesis figures into one diagram per chapter (Ch. 4: path planning + Mellinger +
+    target estimation sub-diagrams; Ch. 5 and 6: complete architectures), with the Mellinger
+    controller drawn as its position and attitude loops. Blocks introduced in that chapter are yellow.
+    """
+    TOP, XL, XR = 3.75, -7.4, 6.6
+    yC, yE, yS, yL = -1.15, -2.55, -1.75, -3.85   # consensus/network row, EMA/measurement row, source block, L route
+    xG, xA = -4.7, -1.8                      # path-planning columns; xA is also the consensus/EMA column
+    B, W, J = arch_block, arch_wire, junction
+    g = VGroup()
+
+    # low level (every agent): Mellinger controller + quadrotor, state feedback
+    pos = B("Position controller", (2.0, 2.4))
+    att = B("Attitude controller", (2.0, 0.9))
+    ruav = B("Quadrotor model", (5.0, 1.65), w=2.0)
+    g.add(pos, att, ruav)
+    g.add(
+        W(port(pos, DOWN), port(att, UP), label=r"\mathbf{F}^\star", side=RIGHT),
+        W(port(pos, RIGHT, -0.15), (3.65, 2.25), (3.65, 1.85), port(ruav, LEFT, 0.2), label="f", seg=2),
+        W(port(att, RIGHT), (3.5, 0.9), (3.5, 1.45), port(ruav, LEFT, -0.2), label=r"\boldsymbol{\tau}", seg=2, side=DOWN),
+        W(port(ruav, RIGHT), (XR, 1.65), label=r"\mathbf{x}", tip=False),
+        W((XR, yC), (XR, TOP), (XL, TOP), tip=False),                                       # state bus
+        W((XR, 2.65), port(pos, RIGHT, 0.25)),
+        W((XR, 0.25), (2.0, 0.25), port(att, DOWN), label=r"R,\boldsymbol{\omega}", seg=0, side=DOWN, at=0.4),
+        J((XR, 1.65)), J((XR, 2.65)), J((XR, 0.25)),
+    )
+
+    # target estimation (every agent): noisy measurement -> EMA -> consensus over the Delaunay graph
+    cons = B("Consensus", (xA, yC))
+    ema = B("Exponential moving\naverage (EMA)", (xA, yE))
+    net = B("Spatial network\n(Delaunay)", (2.0, yC))
+    noisy = B("Noisy measurement", (2.0, yE))
+    g.add(cons, ema, net, noisy)
+    g.add(
+        W((XR, yC), port(net, RIGHT), label=r"\mathbf{p}_i"),
+        W(port(net, LEFT), port(cons, RIGHT), label="L"),
+        W((4.5, yE), port(noisy, RIGHT), label=r"\mathbf{p}_T", color=TARGET_COLOR),
+        W(port(noisy, LEFT), port(ema, RIGHT), label=r"\hat{\mathbf{p}}_T", at=0.75),
+        W(port(ema, UP), port(cons, DOWN), label=r"\hat{\mathbf{p}}_T", side=RIGHT),
+    )
+    groups = VGroup(
+        arch_group([pos, att], "Mellinger controller", BLUE_C),
+        arch_group([cons, ema, net, noisy], "Target estimation", ORANGE, label_at=DL),
+    )
+
+    def p_into(block, y, label=r"\mathbf{p}_i"):    # state from the left trunk into a block
+        return VGroup(W((XL, y), (block[0].get_left()[0], y), label=label, at=0.45), J((XL, y)))
+
+    def neighbours_into(*route):              # L from the spatial network, under the estimation group
+        return VGroup(W((0.45, yC), (0.45, yL), *route, label="L", seg=1, side=DOWN, at=0.1), J((0.45, yC)))
+
+    if kind in ("centralized", "decentralized"):
+        geom = B("Geometric controller", (xG, 2.4))
+        apf = B("Safeguard (APF)", (xA, 2.4))
+        radii = B("Radii control", (xG, 0.9))
+        src = (B("Fibonacci lattice\n+ Munkres", (-5.2, yS)) if kind == "centralized"
+               else B("Lloyd's algorithm\n(Voronoi on the sphere)", (-5.2, yS), new=True))
+        g.add(geom, apf, radii, src)
+        y_est = 0.0
+        g.add(
+            W(port(radii, UP), port(geom, DOWN), label=r"\mathbf{q}_i^\star", side=RIGHT),
+            W(port(geom, RIGHT), port(apf, LEFT), label=r"\bar{\mathbf{q}}_i"),
+            W(port(apf, RIGHT), port(pos, LEFT), label=r"\tilde{\mathbf{q}}_i"),
+            W((src[0].get_top()[0], src[0].get_top()[1]), (src[0].get_top()[0], radii[0].get_bottom()[1]),
+              label=r"\mathbf{p}_i^\star", side=RIGHT),
+            W(port(cons, UP), (xA, y_est), (-4.0, y_est), (-4.0, radii[0].get_bottom()[1]),
+              label=r"\hat{\mathbf{p}}_T", seg=1, side=DOWN),
+            W((-3.55, y_est), (-3.55, yE), port(ema, LEFT)), J((-3.55, y_est)),     # EMA uses the estimate
+            W((XL, TOP), (XL, yS), tip=False),                                     # left trunk
+            p_into(geom, 2.4), p_into(radii, 0.9),
+        )
+        if kind == "centralized":
+            g.add(W((XL, yS), port(src, LEFT), label=r"\mathbf{p}_{1..N}", at=0.4))
+            groups.add(arch_group([src], "Central node", GREY_B, label_at=DL))
+        else:
+            g.add(p_into(src, yS), neighbours_into((-5.2, yL), port(src, DOWN)))
+        groups.add(arch_group([geom, apf, radii], "Path planning", RED_C))
+    else:
+        mpc = B("MPC (Bernstein)", (xG, 2.4), new=True)
+        lloyd = B("Lloyd's algorithm\n(geodesic CVT\non the mesh)", (xG, 0.85), h=1.05, new=True)
+        mesh = B("Mesh controller", (-1.2, 0.85), new=True)
+        g.add(mpc, lloyd, mesh)
+        g.add(
+            W(port(mpc, RIGHT), port(pos, LEFT), label=r"\mathbf{p}_d"),
+            W(port(lloyd, UP), port(mpc, DOWN), label=r"\mathbf{p}_i^\star", side=RIGHT),
+            W(port(mesh, LEFT), port(lloyd, RIGHT), label=r"V,F"),
+            W(port(cons, UP), (xA, mesh[0].get_bottom()[1]), label=r"\hat{\mathbf{p}}_T,\hat{\mathbf{v}}_T", side=RIGHT, at=0.6),
+            W((xA, 0.0), (-3.55, 0.0), (-3.55, yE), port(ema, LEFT)), J((xA, 0.0)),
+            p_into(mpc, 2.4, r"\mathbf{p}_i,\mathbf{v}_i"),
+            W((XL, TOP), (XL, 1.05), port(lloyd, LEFT, 0.2), label=r"\mathbf{p}_i", seg=1, at=0.3),   # left trunk
+            neighbours_into((-6.6, yL), (-6.6, 0.65), port(lloyd, LEFT, -0.2)),
+        )
+        groups.add(arch_group([mpc, lloyd, mesh], "Path planning", RED_C))
+    if kind != "centralized":
+        leg = VGroup(RoundedRectangle(corner_radius=0.08, width=0.45, height=0.28, stroke_color=HIGHLIGHT,
+                                      stroke_width=3, fill_color=ARCH_FILL, fill_opacity=1),
+                     Text("new in this chapter", font_size=20, color=HIGHLIGHT)).arrange(RIGHT, buff=0.15)
+        leg.move_to(np.array([5.0, -3.55, 0]))
+        groups.add(leg)
+    d = VGroup(groups, g)
+    d.scale_to_fit_width(13.3)
+    if d.height > 6.35:
+        d.scale_to_fit_height(6.35)
+    return d.move_to(DOWN * 0.2)
 
 
 # =============================================================================
@@ -233,6 +352,10 @@ class Motivation(Base):
         self.play(LaggedStart(*[FadeIn(r, shift=LEFT * 0.2) for r in impact], lag_ratio=0.25))
         self.next_slide()
 
+        self.play(FadeOut(Group(news, axes, bars, labels, chart_title, impact)))
+        self.airspace()
+        self.next_slide()
+
         question = Text(
             "How can a drone entering restricted airspace be surrounded\n"
             "safely, visibly, and without destructive means?",
@@ -241,10 +364,113 @@ class Motivation(Base):
             line_spacing=0.9,
         )
         frame = SurroundingRectangle(question, color=YELLOW, buff=0.3, corner_radius=0.15)
-        self.play(FadeOut(Group(news, axes, bars, labels, chart_title, impact)))
+        self.clear_body()
         self.play(Write(question), Create(frame), run_time=1.5)
         self.next_slide(auto_next=True)
         self.clear_all()
+
+    def airspace(self):
+        """Lisbon airport (LPPT) zones over the city map, then why the usual countermeasures do not fit."""
+        from itertools import permutations
+
+        def fit(m, w):
+            return m.set(width=w) if m.width > w else m
+
+        d = np.load(DATA + "lisbon_zones.npz")
+        x0, x1, y0, y1 = d["extent"]
+        H = 6.3
+        k = H / (y1 - y0)
+        c = np.array([-4.4, -0.27, 0])
+
+        def P(e, n):                                   # ENU [m] -> frame
+            return c + np.array([(e - (x0 + x1) / 2) * k, (n - (y0 + y1) / 2) * k, 0])
+
+        city = ImageMobject(ASSETS + "lisbon_map.png").set(height=H).move_to(c)
+        border = SurroundingRectangle(city, color=GREY_D, stroke_width=1.5, buff=0)
+
+        def zone(poly, col, op):
+            return Polygon(*[P(*q) for q in poly], stroke_color=col, stroke_width=2, fill_color=col, fill_opacity=op)
+
+        area1 = VGroup(*[zone(d[f], ORANGE, 0.22) for f in sorted(d.files) if f.startswith("orange")])
+        red = zone(d["red"], RED, 0.38)
+        arp = Dot(P(0, 0), radius=0.05, color=WHITE)
+        arp_lab = Text("airport", font_size=16).next_to(arp, RIGHT, buff=0.08)
+        X = border.get_right()[0] + 0.45               # left edge of everything right of the map
+        msg = VGroup(
+            Text("Restricted airspace is not just the airport:", font_size=24, color=HIGHLIGHT),
+            Text("the approach corridors cross the city", font_size=24),
+            Text("hospitals, stadiums, a university, the main rail hub, dense housing", font_size=19, color=GREY_A),
+        ).arrange(DOWN, aligned_edge=LEFT, buff=0.1)
+        fit(msg, 6.9 - X).move_to(np.array([X, 2.4, 0]), aligned_edge=LEFT)
+
+        # infrastructure under the zones: dots on the map, labels stacked right of the map; the
+        # label order is the one whose leader lines do not cross (and are shortest)
+        names = VGroup(*[Text(str(s), font_size=18) for s in d["poi_names"]])
+        col = VGroup(*[n.copy() for n in names]).arrange(DOWN, aligned_edge=LEFT, buff=0.2)
+        col.move_to(np.array([X, 0.1, 0]), aligned_edge=LEFT)
+        slots = [m.get_left() + LEFT * 0.08 for m in col]
+        pts = [P(*q) for q in d["poi_xy"]]
+
+        def side(a, b, u):                             # sign of the 2D cross product (b - a) x (u - a)
+            return np.sign((b[0] - a[0]) * (u[1] - a[1]) - (b[1] - a[1]) * (u[0] - a[0]))
+
+        def crossings(perm):
+            segs = [(pts[i], slots[s]) for i, s in enumerate(perm)]
+            n = 0
+            for a in range(len(segs)):
+                for b in range(a + 1, len(segs)):
+                    (p, q), (r, s) = segs[a], segs[b]
+                    o = [side(p, q, r), side(p, q, s), side(r, s, p), side(r, s, q)]
+                    n += o[0] != o[1] and o[2] != o[3]
+            return n
+
+        best = min(permutations(range(len(pts))), key=lambda pm: (crossings(pm), sum(np.linalg.norm(pts[i] - slots[s]) for i, s in enumerate(pm))))
+        for i, s in enumerate(best):
+            names[i].move_to(col[s], aligned_edge=LEFT)
+        dots = VGroup(*[Dot(p, radius=0.045, color=HIGHLIGHT) for p in pts])
+        leaders = VGroup(*[Line(pts[i], slots[s], stroke_width=1, color=HIGHLIGHT).set_opacity(0.55) for i, s in enumerate(best)])
+        key = VGroup(
+            VGroup(Square(0.22, stroke_color=RED, fill_color=RED, fill_opacity=0.5), Text("Prohibited area", font_size=17)).arrange(RIGHT, buff=0.15),
+            VGroup(Square(0.22, stroke_color=ORANGE, fill_color=ORANGE, fill_opacity=0.35), Text("Area 1 (height-limited)", font_size=17)).arrange(RIGHT, buff=0.15),
+        ).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
+        key.next_to(col, DOWN, buff=0.45).align_to(col, LEFT)
+        src = Text("Lisbon airport (LPPT) drone zones, ANAC · map © OpenStreetMap contributors", font_size=13, color=GREY_B)
+        fit(src, 6.9 - X).move_to(np.array([X, border.get_bottom()[1] + 0.08, 0]), aligned_edge=LEFT)
+
+        self.play(FadeIn(city), FadeIn(border), FadeIn(src), run_time=0.8)
+        self.play(FadeIn(area1), FadeIn(red), FadeIn(arp), FadeIn(arp_lab), FadeIn(key), run_time=1.0)
+        self.play(FadeIn(msg, shift=LEFT * 0.2), run_time=0.6)
+        self.play(LaggedStart(*[AnimationGroup(GrowFromCenter(dots[i]), Create(leaders[i]), FadeIn(names[i], shift=LEFT * 0.1))
+                                for i in np.argsort([-p[1] for p in pts])], lag_ratio=0.3), run_time=2.0)
+        self.next_slide()
+
+        # --- countermeasures used for restricted airspace (thesis Ch. 1, Lykou et al. 2020) --
+        RX, W = 1.75, 6.9 - 1.75
+
+        def counter(head, effect):
+            return VGroup(
+                Text(head, font_size=20),
+                VGroup(Text("→", font_size=20, color=RED_C), Text(effect, font_size=17, color=GREY_A, line_spacing=0.8)).arrange(RIGHT, buff=0.15, aligned_edge=UP),
+            ).arrange(DOWN, aligned_edge=LEFT, buff=0.1)
+
+        cm_title = Text("Usual counter-drone measures", font_size=22, color=HIGHLIGHT)
+        cite = Text("Lykou et al. (2020)", font_size=13, color=GREY_B)
+        head = VGroup(cm_title, cite).arrange(RIGHT, buff=0.2, aligned_edge=DOWN)
+        cms = VGroup(
+            counter("Jamming / spoofing", "drone falls or flies away uncontrolled;\ninterferes with landing aids and radio"),
+            counter("Interception: nets, interceptor drones", "capture or collision over the city:\nfalling drone and debris"),
+        ).arrange(DOWN, aligned_edge=LEFT, buff=0.3)
+        cm = fit(VGroup(head, cms).arrange(DOWN, aligned_edge=LEFT, buff=0.25), W)
+        cm.move_to(np.array([RX, 1.4, 0]), aligned_edge=UL)
+        verdict = fit(Text("Over people and infrastructure:\nno jamming, no collision.\nContain the intruder at a safe distance.",
+                           font_size=22, color=HIGHLIGHT, line_spacing=0.8), W - 0.3)
+        verdict.next_to(cm, DOWN, buff=0.45).align_to(cm, LEFT).shift(RIGHT * 0.15)
+        verdict_box = SurroundingRectangle(verdict, color=HIGHLIGHT, buff=0.15, corner_radius=0.1)
+
+        self.play(FadeIn(head), run_time=0.4)
+        for row in cms:
+            self.play(FadeIn(row, shift=LEFT * 0.2), run_time=0.6)
+        self.play(FadeIn(verdict), Create(verdict_box), run_time=0.8)
 
 
 # =============================================================================
@@ -371,19 +597,21 @@ class Problem(Base):
 # 3. Roadmap / contributions
 # =============================================================================
 def roadmap_grid(font_size=19):
-    cols = ["Centralized", "Decentralized", "Generalized"]
+    # the sphere-only decentralized stage (thesis Ch. 5) is left out of the talk: the generalized
+    # stage (Ch. 6), decentralized as well, is presented as "Decentralized"
+    cols = ["Centralized", "Decentralized"]
     rows = ["Where to go?\n(distribution)", "How to get there?\n(path planning)", "Safely?\n(collisions)"]
     cells = [
-        ["Fibonacci lattice\n+ Munkres assignment", "Lloyd / Voronoi on $\\mathbb{S}^2$\n(convex hull, half-plane)", "Lloyd + Dijkstra on any mesh\n+ velocity weighting"],
-        ["Lyapunov geometric\n+ radial controller", "Lyapunov geometric\n+ radial controller", "Bernstein-polynomial MPC\n(v, a limits)"],
-        ["APF safeguard\non the sphere", "APF safeguard\non the sphere", "MPC collision cost\n(ellipsoidal envelope)"],
+        ["Fibonacci lattice\n+ Munkres assignment", "Lloyd + Dijkstra on any mesh\n+ velocity weighting"],
+        ["Lyapunov geometric\n+ radial controller", "Bernstein-polynomial MPC\n(v, a limits)"],
+        ["APF safeguard\non the sphere", "MPC collision cost\n(ellipsoidal envelope)"],
     ]
-    W, H = 3.55, 1.05
+    W, H, X0 = 5.0, 1.05, -1.85
     grid = VGroup()
     head = VGroup()
     for j, c in enumerate(cols):
         t = Text(c, font_size=24, color=YELLOW)
-        t.move_to(np.array([-2.55 + j * (W + 0.15), 2.15, 0]))
+        t.move_to(np.array([X0 + j * (W + 0.15), 2.15, 0]))
         head.add(t)
     row_labels = VGroup()
     body = VGroup()
@@ -392,9 +620,9 @@ def roadmap_grid(font_size=19):
         lab = Text(r, font_size=18, color=GREY_A, line_spacing=0.8).move_to(np.array([-5.85, y, 0]))
         row_labels.add(lab)
         row = VGroup()
-        for j in range(3):
+        for j in range(len(cols)):
             rect = RoundedRectangle(corner_radius=0.1, width=W, height=H, color=GREY_C, stroke_width=1.5)
-            rect.move_to(np.array([-2.55 + j * (W + 0.15), y, 0]))
+            rect.move_to(np.array([X0 + j * (W + 0.15), y, 0]))
             txt = Text(cells[i][j], font_size=font_size, line_spacing=0.8)
             if txt.width > W - 0.2:
                 txt.set(width=W - 0.2)
@@ -415,11 +643,11 @@ class Roadmap(Base):
     SECTION = "Problem"
 
     def construct(self):
-        self.header("3. Proposed solution: three stages")
+        self.header("3. Proposed solution: two stages")
         g = roadmap_grid()
         head, row_labels, body, est = g
         self.play(FadeIn(row_labels))
-        for j in range(3):
+        for j in range(len(head)):
             self.play(FadeIn(head[j]), *[FadeIn(body[i][j], shift=DOWN * 0.1) for i in range(3)], run_time=0.8)
         self.play(FadeIn(est))
         self.next_slide(auto_next=True)
@@ -632,7 +860,7 @@ class Background(Base):
         rows = [
             ["APF", "reference (potential)", "current state", "no invariance guarantee", "Ch. 4-5"],
             ["CBF-QP", "control input", "current state", "forward invariance", "not used"],
-            ["MPC (thesis)", "predicted positions + v, a", "finite horizon", "constraint/penalty based", "Ch. 6"],
+            ["MPC", "predicted positions + v, a", "finite horizon", "constraint/penalty based", "Ch. 6"],
             ["CBF-MPC", "trajectory + barrier", "finite horizon", "MPC + CBF safety", "future work"],
         ]
         widths = [2.0, 3.4, 2.2, 3.2, 1.8]
@@ -940,6 +1168,11 @@ class CentralizedResults(Base):
         self.next_slide()
         self.clear_body()
 
+        # --- complete architecture (Ch. 4 sub-diagrams merged) ----------------
+        self.architecture("8. Centralized: complete architecture", "centralized")
+        self.next_slide()
+        self.clear_body()
+
         # --- results 31 agents, moving target ------------------------------
         self.new_title("8. Centralized: 31 agents, moving target")
         p1 = captioned(plot_panel(ASSETS + "c31dyn_trajectory.png", height=4.3), "trajectories")
@@ -947,21 +1180,8 @@ class CentralizedResults(Base):
         p3 = captioned(plot_panel(ASSETS + "c31dyn_inter_agent_dist.png", height=2.55), "inter-agent distance")
         right = Group(p2, p3).arrange(DOWN, buff=0.2)
         layout = Group(p1, right).arrange(RIGHT, buff=0.35).to_edge(LEFT, buff=0.35).shift(DOWN * 0.2)
-        notes = VGroup(
-            Text("desired radius $r^\\star = 2$ m", font_size=20, color=GREY_A),
-            Text("$k_{geo}=5,\\ k_r=0.3$", font_size=20, color=GREY_A),
-            Text("noise $\\pm 5\\%$ on $\\mathbf{p}_T$", font_size=20, color=GREY_A),
-            Text("Moving target:", font_size=22, color=YELLOW),
-            Text("bounded oscillation", font_size=21),
-            Text("around $r^\\star$", font_size=21),
-            Text("tracking error ≈ 1 m", font_size=21),
-            Text("(no target velocity)", font_size=21),
-            Text("Always above $d_{min}$", font_size=22, color=GREEN_C),
-        ).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
-        notes.next_to(layout, RIGHT, buff=0.4)
         self.play(FadeIn(p1))
         self.play(FadeIn(right))
-        self.play(LaggedStart(*[FadeIn(n) for n in notes], lag_ratio=0.1))
         self.next_slide()
         self.clear_body()
 
@@ -973,7 +1193,7 @@ class CentralizedResults(Base):
                 "3 Crazyflies, virtual target on a circle (radius 1.5 m, 0.25 m/s), formation radius 0.8 m",
                 "real vs simulated trajectories: about 10-11 cm RMS in the main phase",
             ],
-            speed=1,
+            speed="main phase in real time, the rest at 3x",
             extra=[("#E63CE6", "target (sim)")],
         )
         self.next_slide(auto_next=True)
@@ -1087,6 +1307,11 @@ class Decentralized(Base):
         self.next_slide()
         self.clear_body()
 
+        # --- complete architecture -------------------------------------------
+        self.architecture("9. Decentralized: complete architecture", "decentralized")
+        self.next_slide()
+        self.clear_body()
+
         # --- results ---------------------------------------------------------
         self.new_title("9. Decentralized: moving target, loss of 4 agents (half-plane)")
         p1 = captioned(plot_panel(ASSETS + "hp_ddrop_radial_hist.png", height=3.05), "distance to target ($r^\\star = 2$ m)")
@@ -1112,13 +1337,13 @@ class Decentralized(Base):
 
 
 # =============================================================================
-# 10. Generalized - arbitrary meshes and mesh controller
+# 9. Decentralized (thesis Ch. 6, generalized) - arbitrary meshes and mesh controller
 # =============================================================================
 class GeneralizedMesh(Base):
-    SECTION = "Generalized"
+    SECTION = "Decentralized"
 
     def construct(self):
-        self.header("10. Generalized: any surface, barrier or enclosure")
+        self.header("9. Decentralized: any surface, barrier or enclosure")
         b = captioned(plot_panel(ASSETS + "dijkstra_bust.png", height=3.0), "bust mesh, 8 sites")
         f = captioned(plot_panel(ASSETS + "dijkstra_frog.png", height=3.0), "frog mesh, 8 sites")
         imgs = Group(b, f).arrange(RIGHT, buff=0.35)
@@ -1136,7 +1361,7 @@ class GeneralizedMesh(Base):
         self.clear_body()
 
         # --- mesh controller animation ---------------------------------------
-        self.new_title("10. Generalized: mesh controller")
+        self.new_title("9. Decentralized: mesh controller")
         R = 5.0
         meshes = precompute_meshes(320, R)
         # as the thesis figure (fig_mesh): seen from the restricted side, the wall normal pointing
@@ -1219,13 +1444,13 @@ class GeneralizedMesh(Base):
 
 
 # =============================================================================
-# 11. Generalized - Bernstein MPC & velocity weighting
+# 10. Decentralized (thesis Ch. 6, generalized) - Bernstein MPC & velocity weighting
 # =============================================================================
 class GeneralizedMPC(Base):
-    SECTION = "Generalized"
+    SECTION = "Decentralized"
 
     def construct(self):
-        self.header("11. Generalized: collision-aware MPC")
+        self.header("10. Decentralized: collision-aware MPC")
         cost = MathTex(
             r"\min_{\mathbf{c}}\ w_g\sum_{k}\|\mathbf{p}_i[k]-\mathbf{p}_i^\star\|^2+w_s\sum_k\|\ddot{\mathbf{p}}_i[k]\|^2",
             font_size=32,
@@ -1330,7 +1555,7 @@ class GeneralizedMPC(Base):
         # --- velocity weighting ----------------------------------------------
         # 12 sites on a sphere mesh (1000 vertices): uniform CVT first, then Lloyd with the
         # velocity-weighted Dijkstra cells once the target velocity is known
-        self.new_title("11. Generalized: using the target velocity")
+        self.new_title("10. Decentralized: using the target velocity")
         mesh = SphereMesh(1000)
         vel = np.array([1.0, 0.0, 0.0])
         w_uni = mesh.velocity_weights(None)
@@ -1422,18 +1647,23 @@ class GeneralizedMPC(Base):
                 Transform(it_lab, new_it),
                 run_time=0.7,
             )
+        self.next_slide()
+        self.clear_body()
+
+        # --- complete architecture, before the results -----------------------
+        self.architecture("10. Decentralized: complete architecture", "generalized")
         self.next_slide(auto_next=True)
         self.clear_all()
 
 
 # =============================================================================
-# 12. Results - generalized simulation replay + plots
+# 11. Results - generalized simulation replay + plots
 # =============================================================================
 class Results(Base):
     SECTION = "Results"
 
     def construct(self):
-        self.header("12. Results: 12 agents, moving target, 4 lost at t = 10 s")
+        self.header("11. Results: 12 agents, moving target, 4 lost at t = 10 s")
         data = np.load(DATA + "generalized_sim_12agents.npz")
         t = data["t"]
         P = data["P"]  # (12, 3, T)
@@ -1520,7 +1750,7 @@ class Results(Base):
         self.clear_body()
 
         # --- plots ------------------------------------------------------------
-        self.new_title("12. Results: quantitative view")
+        self.new_title("11. Results: quantitative view")
         p1 = captioned(plot_panel(ASSETS + "g_radial_hist_4_dropped_agents.png", height=2.4), "distance to target ($R=5$ m)", 18)
         p2 = captioned(plot_panel(ASSETS + "g_inter_agent_dist_12_agents.png", height=2.4), "inter-agent distance (threshold 1 m)", 18)
         p3 = captioned(plot_panel(ASSETS + "g_velocity_12_agents.png", height=2.4), "velocity components ($\\|\\mathbf{v}\\|\\le 3$ m/s)", 18)
@@ -1547,21 +1777,21 @@ class Results(Base):
         self.clear_body()
 
         # --- real-world test -------------------------------------------------
-        self.new_title("12. Real-world test: geodesic CVT + Bernstein MPC")
+        self.new_title("11. Real-world test: geodesic CVT + Bernstein MPC")
         self.flight(
             "flight_mpc.mp4",
             [
                 "4 Crazyflies, virtual target on a circle (radius 1.6 m), 1001-vertex mesh, CVT every 0.1 s",
                 "real vs simulated trajectories: about 3-7 cm RMS in the formation phase",
             ],
-            speed=1,
+            speed="main phase in real time, the rest at 3x",
             extra=[("#E63CE6", "target (sim)"), ("#5ABEEB", "formation mesh")],
         )
         self.next_slide()
         self.clear_body()
 
         # --- Lisbon airport scenario (simulation) ----------------------------
-        self.new_title("12. Lisbon airport: intrusion across the prohibited zone (simulation)")
+        self.new_title("11. Lisbon airport: intrusion across the prohibited zone (simulation)")
         self.lisbon()
         self.next_slide(auto_next=True)
         self.clear_all()
@@ -1650,13 +1880,13 @@ class Results(Base):
 
 
 # =============================================================================
-# 13. Conclusions
+# 12. Conclusions
 # =============================================================================
 class Conclusions(Base):
     SECTION = "Conclusions"
 
     def construct(self):
-        self.header("13. Conclusions")
+        self.header("12. Conclusions")
         items = VGroup(
             VGroup(
                 Text("Centralized", font_size=26, color=YELLOW),
@@ -1665,13 +1895,9 @@ class Conclusions(Base):
             ),
             VGroup(
                 Text("Decentralized", font_size=26, color=YELLOW),
-                Text("consensus + local Lloyd: half-plane more uniform ($CV$ 0.073 vs 0.120) but slower", font_size=21),
-                Text("(1.37 s vs 0.03 s); formation recovers after losing agents mid-chase", font_size=21),
-            ),
-            VGroup(
-                Text("Generalized", font_size=26, color=YELLOW),
                 Text("Lloyd + Dijkstra on any mesh: barrier and enclosure; velocity weighting biases", font_size=21),
-                Text("agents forward; one Bernstein MPC enforces $v$, $a$ limits, penalizes collisions", font_size=21),
+                Text("agents forward; one Bernstein MPC enforces $v$, $a$ limits, penalizes collisions;", font_size=21),
+                Text("consensus over the Delaunay network: formation recovers after losing 4 of 12 agents", font_size=21),
             ),
         )
         for it in items:
@@ -1695,7 +1921,7 @@ class FutureWork(Base):
     SECTION = "Conclusions"
 
     def construct(self):
-        self.header("14. Future work")
+        self.header("13. Future work")
         left = VGroup(
             Text("System maturity", font_size=26, color=YELLOW),
             Text("• real UAVs: PX4, ROS 2, Gazebo, Pixhawk", font_size=21),
@@ -1910,39 +2136,19 @@ class BackupDecentralized(Base):
         self.clear_all()
 
 
-class BackupArchitectures(Base):
+class BackupParameters(Base):
     def construct(self):
-        self.header("Backup: centralized control architecture")
-        c = plot_panel(ASSETS + "arch_centralized.png", width=12.6)
-        if c.height > 6.2:
-            c.set(height=6.2)
-        c.move_to(DOWN * 0.2)
-        self.play(FadeIn(c))
-        self.next_slide()
-        self.clear_body()
-
-        self.new_title("Backup: decentralized control architecture")
-        d = plot_panel(ASSETS + "arch_decentralized.png", height=6.2).move_to(DOWN * 0.2)
-        self.play(FadeIn(d))
-        self.next_slide()
-        self.clear_body()
-
-        self.new_title("Backup: generalized control architecture & simulation parameters")
-        a = plot_panel(ASSETS + "arch_generalized.png", height=5.6)
+        self.header("Backup: decentralized simulation parameters")
         params = VGroup(
-            Text("Ch. 6 simulation parameters", font_size=24, color=YELLOW),
-            Text("12 agents, 30 s, $\\Delta t=0.01$ s, $R=5$ m", font_size=20),
-            Text("4 agents lost at 10 s, EMA $\\alpha=0.2$, noise $\\pm 5\\%$", font_size=20),
-            Text("Bernstein degree 5, horizon 5", font_size=20),
-            Text("$\\rho_{obs}=100,\\ \\rho_{ineq}=20,\\ w_g=1000,\\ w_s=1$", font_size=20),
-            Text("$\\|\\mathbf{v}\\|\\le 3$ m/s, $\\|\\mathbf{a}\\|\\le 5$ m/s², $\\Theta=1$ m", font_size=20),
-            Text("SQP $\\le 100$ iterations, $\\sigma=1.2$", font_size=20),
-            Text("Voronoi update every 100 steps (1 Hz)", font_size=20),
-            Text("Mellinger: $m=5$ kg, $K_p=150\\,I$, $K_v=15\\,I$", font_size=20),
-        ).arrange(DOWN, aligned_edge=LEFT, buff=0.15)
-        g = Group(a, params).arrange(RIGHT, buff=0.6).move_to(DOWN * 0.15)
-        if g.width > 13.2:
-            g.set(width=13.2)
-        self.play(FadeIn(g))
+            Text("12 agents, 30 s, $\\Delta t=0.01$ s, $R=5$ m", font_size=26),
+            Text("4 agents lost at 10 s, EMA $\\alpha=0.2$, noise $\\pm 5\\%$", font_size=26),
+            Text("Bernstein degree 5, horizon 5", font_size=26),
+            Text("$\\rho_{obs}=100,\\ \\rho_{ineq}=20,\\ w_g=1000,\\ w_s=1$", font_size=26),
+            Text("$\\|\\mathbf{v}\\|\\le 3$ m/s, $\\|\\mathbf{a}\\|\\le 5$ m/s², $\\Theta=1$ m", font_size=26),
+            Text("SQP $\\le 100$ iterations, $\\sigma=1.2$", font_size=26),
+            Text("Voronoi update every 100 steps (1 Hz)", font_size=26),
+            Text("Mellinger: $m=5$ kg, $K_p=150\\,I$, $K_v=15\\,I$", font_size=26),
+        ).arrange(DOWN, aligned_edge=LEFT, buff=0.22).move_to(DOWN * 0.15)
+        self.play(FadeIn(params))
         self.next_slide(auto_next=True)
         self.clear_all()

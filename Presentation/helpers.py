@@ -142,7 +142,6 @@ SECTIONS = [
     "Background",
     "Centralized",
     "Decentralized",
-    "Generalized",
     "Results",
     "Conclusions",
 ]
@@ -223,6 +222,72 @@ def legend_entry(color, label, font_size=24, radius=0.08):
     return VGroup(Dot(radius=radius, color=color), Text(label, font_size=font_size, color=color)).arrange(
         RIGHT, buff=0.15
     )
+
+
+# ----------------------------------------------------------------------------
+# Block diagrams (control architectures), drawn in design coordinates and then
+# scaled to the frame by the caller
+# ----------------------------------------------------------------------------
+ARCH_FILL = "#1E3A2E"     # dark version of the green of the thesis drawio figures
+ARCH_STROKE = GREEN_C
+ARCH_WIRE = GREY_A
+
+
+def arch_block(label, pos, w=2.4, h=0.85, new=False, font_size=20):
+    """Rounded block; `new` marks a block introduced in this chapter (yellow)."""
+    rect = RoundedRectangle(corner_radius=0.14, width=w, height=h,
+                            stroke_color=HIGHLIGHT if new else ARCH_STROKE, stroke_width=3 if new else 2,
+                            fill_color=ARCH_FILL, fill_opacity=1)
+    lines = VGroup(*[_ManimText(s, font_size=font_size, color=WHITE) for s in tr(label).split("\n")])
+    lines.arrange(DOWN, buff=0.06)
+    if lines.width > w - 0.2:
+        lines.set(width=w - 0.2)
+    b = VGroup(rect, lines).move_to(np.array([pos[0], pos[1], 0.0]))
+    return b
+
+
+def port(block, side, off=0.0):
+    """Point on the edge of a block: side in LEFT/RIGHT/UP/DOWN, `off` along that edge."""
+    along = UP if abs(side[0]) > 0 else RIGHT
+    return block[0].get_edge_center(side) + along * off
+
+
+def arch_wire(*pts, label=None, seg=0, side=UP, buff=0.1, color=ARCH_WIRE, tip=True, font_size=26, at=0.5):
+    """Orthogonal wire through the points (arrow at the end); `label` (LaTeX) next to segment `seg`."""
+    pts = [np.array([p[0], p[1], 0.0]) for p in pts]
+    g = VGroup()
+    path = VMobject(stroke_color=color, stroke_width=2.2).set_points_as_corners(pts)
+    g.add(path)
+    if tip:
+        d = pts[-1] - pts[-2]
+        d /= np.linalg.norm(d)
+        tri = Triangle(fill_color=color, fill_opacity=1, stroke_width=0).set(height=0.16, width=0.16)
+        tri.rotate(np.arctan2(d[1], d[0]) - PI / 2).move_to(pts[-1] - d * 0.07)
+        g.add(tri)
+    if label is not None:
+        a, b = pts[seg], pts[seg + 1]
+        lab = MathTex(label, font_size=font_size, color=WHITE if color == ARCH_WIRE else color)
+        lab.next_to(a + (b - a) * at, side, buff=buff)
+        g.add(lab)
+    return g
+
+
+def junction(p, color=ARCH_WIRE):
+    return Dot(np.array([p[0], p[1], 0.0]), radius=0.055, color=color)
+
+
+def arch_group(mobs, label, color, pad=0.22, label_at=UL, label_buff=0.08, font_size=20):
+    """Dashed rounded frame around some blocks, labelled at a corner (outside, above or below)."""
+    g = VGroup(*mobs)
+    rect = DashedVMobject(RoundedRectangle(corner_radius=0.2, width=g.width + 2 * pad, height=g.height + 2 * pad,
+                                           stroke_color=color, stroke_width=1.8), num_dashes=70).move_to(g)
+    lab = Text(label, font_size=font_size, color=color)
+    if np.allclose(label_at, UL) or np.allclose(label_at, UR):
+        lab.next_to(rect, UP, buff=label_buff)
+    else:
+        lab.next_to(rect, DOWN, buff=label_buff)
+    lab.align_to(rect, LEFT if label_at[0] < 0 else RIGHT)
+    return VGroup(rect, lab)
 
 
 # ----------------------------------------------------------------------------

@@ -9,30 +9,31 @@ orador). Manter o formato dos títulos ao editar o texto.
 | # | Cena | Sub-slides | Tempo | Acumulado |
 |---|---|---|---|---|
 | 1 | TitleCard | 1 | 0:25 | 0:25 |
-| 2 | Motivation | 3 | 1:10 | 1:35 |
-| 3 | Problem | 3 | 1:15 | 2:50 |
-| 4 | Roadmap | 1 | 0:35 | 3:25 |
-| 5 | StateOfTheArt | 1 | 0:45 | 4:10 |
-| 6 | Background | 4 | 1:30 | 5:40 |
-| 7 | CentralizedDistribution | 2 | 1:05 | 6:45 |
-| 8 | CentralizedControl | 3 | 1:50 | 8:35 |
-| 9 | CentralizedResults | 3 | 2:00 | 10:35 |
-| 10 | Decentralized | 4 | 1:50 | 12:25 |
-| 11 | GeneralizedMesh | 5 | 1:30 | 13:55 |
-| 12 | GeneralizedMPC | 3 | 1:30 | 15:25 |
-| 13 | Results | 12 | 3:40 | 19:05 |
-| 14 | Conclusions | 1 | 0:55 | 20:00 |
-| 15 | FutureWork | 1 | 0:30 | 20:30 |
-| 16 | ThankYou | 1 | 0:10 | 20:40 |
-| — | Extra (só nas questões) | 11 | — | — |
+| 2 | Motivation | 5 | 1:50 | 2:15 |
+| 3 | Problem | 3 | 1:15 | 3:30 |
+| 4 | Roadmap | 1 | 0:35 | 4:05 |
+| 5 | StateOfTheArt | 1 | 0:45 | 4:50 |
+| 6 | Background | 4 | 1:30 | 6:20 |
+| 7 | CentralizedDistribution | 2 | 1:05 | 7:25 |
+| 8 | CentralizedControl | 3 | 1:50 | 9:15 |
+| 9 | CentralizedResults | 4 | 2:20 | 11:35 |
+| 10 | GeneralizedMesh | 5 | 1:30 | 13:05 |
+| 11 | GeneralizedMPC | 4 | 2:00 | 15:05 |
+| 12 | Results | 12 | 3:10 | 18:15 |
+| 13 | Conclusions | 1 | 0:55 | 19:10 |
+| 14 | FutureWork | 1 | 0:30 | 19:40 |
+| 15 | ThankYou | 1 | 0:10 | 19:50 |
+| — | Extra (só nas questões) | 8 | — | — |
 
-≈ 20:40 de fala: **acima do limite de 20 min**. Os dois vídeos dos testes reais passam em tempo
-real e completos (46 s e 72 s). Para caber, avançar os vídeos com a tecla de seguinte assim que a
-ideia estiver dita (a cena seguinte começa logo), ou encurtar a análise quantitativa dos
-Resultados e a ponderação pela velocidade (uma frase cada). Se estiver atrasado no slide
-**Decentralized** (objetivo: 12:25), encurtar também a tabela invólucro convexo vs semiplano.
+≈ 19:50 de fala, abaixo do limite de 20 min mas sem folga. A etapa descentralizada na esfera
+(cap. 5, cena `Decentralized`) está fora da apresentação; a etapa generalizada (cap. 6), também
+descentralizada, é apresentada como "Descentralizado". Os vídeos dos testes reais passam a fase
+principal em tempo real e o resto (descolagem, aproximação, regresso, aterragem) a 3x: 36 s e
+44 s. Se estiver atrasado, avançar os vídeos com a tecla de seguinte assim que a ideia estiver
+dita, ou encurtar a análise quantitativa dos Resultados e a ponderação pela velocidade (uma frase
+cada).
 
-Pontos de controlo: Roadmap concluído por ~3:30, Centralizado por ~10:35, Resultados por ~19:05.
+Pontos de controlo: Roadmap concluído por ~4:05, Centralizado por ~11:35, Resultados por ~18:15.
 
 ---
 
@@ -44,7 +45,7 @@ Bom dia. O meu nome é Filipe Cavalheiro e vou apresentar a minha dissertação 
 Em resumo: como é que um enxame de drones pode circundar um drone intruso em 3D, em segurança e
 sem o destruir.
 
-## 2. Motivação (1:10)
+## 2. Motivação (1:50)
 
 #### [Motivation.1] Notícias
 Os drones já não são apenas uma ferramenta de investigação ou militar — qualquer pessoa pode
@@ -58,7 +59,23 @@ desviados ou cancelados e, junto a heliportos hospitalares, pode atrasar o trans
 emergência. Muitas destas incursões são não intencionais: o operador simplesmente não conhece as
 regras ou a zona restrita.
 
-#### [Motivation.3] Pergunta
+#### [Motivation.3] Espaço aéreo restrito sobre Lisboa
+E o espaço aéreo restrito não é só a pista. Este é o aeroporto de Lisboa, com as zonas de drones da
+ANAC sobre o mapa da cidade: a vermelho a área proibida, que segue os corredores de aproximação das
+duas pistas, e a laranja a Área 1, onde a altura de voo é limitada. Estes corredores atravessam a
+cidade: o Hospital de Santa Maria e a Cidade Universitária estão dentro da área proibida, e o
+Pulido Valente, os estádios de Alvalade e da Luz e a Gare do Oriente dentro da Área 1 — para além
+de bairros residenciais densos em toda a zona.
+
+#### [Motivation.4] Porque não as contramedidas habituais
+As contramedidas habituais para um drone em espaço aéreo restrito são de dois tipos. A interferência
+nas ligações de comando e de navegação, o jamming ou spoofing, deixa o drone a cair ou a fugir sem
+controlo e, junto a um aeroporto, interfere com as ajudas à aterragem, os radares e as comunicações.
+A interceção, com redes ou drones intercetores, termina numa captura ou colisão. Sobre esta cidade,
+qualquer uma delas pode fazer cair o drone, ou os destroços, sobre pessoas e infraestruturas. Por
+isso, aqui o intruso não deve ser derrubado: deve ser contido, a uma distância segura.
+
+#### [Motivation.5] Pergunta
 A pergunta desta tese é então: como circundar um drone que entra em espaço aéreo restrito de
 forma segura e visível, e sem meios destrutivos, para que o operador perceba que tem de sair?
 
@@ -84,13 +101,12 @@ física, e o procedimento legal que se segue ao circundamento.
 
 ## 4. Roadmap (0:35)
 
-#### [Roadmap.1] Três etapas
-O trabalho está construído em três etapas, cada uma assente na anterior. Cada etapa responde a
+#### [Roadmap.1] Duas etapas
+O trabalho está construído em duas etapas, a segunda assente na primeira. Cada etapa responde a
 três perguntas: para onde deve ir cada agente, como lá chega e como o mantemos seguro.
 Centralizado: rede de Fibonacci, controlador geométrico de Lyapunov e uma salvaguarda APF.
-Descentralizado: a rede é substituída por um algoritmo de Lloyd/Voronoi local na esfera.
-Generalizado: qualquer malha de superfície e um único MPC com polinómios de Bernstein para o
-planeamento de trajetórias. Em todas, a estimativa do alvo vem de medições com ruído, de uma
+Descentralizado: sem nó central, um algoritmo de Lloyd em qualquer malha de superfície e um único
+MPC com polinómios de Bernstein para o planeamento de trajetórias. Em todas, a estimativa do alvo vem de medições com ruído, de uma
 média móvel e de consenso.
 
 ## 5. Estado da arte (0:45)
@@ -109,8 +125,8 @@ atribuem os agentes a setores predefinidos.
 A ferramenta que preciso que tenham presente é o algoritmo de Lloyd. Dados os sítios, divide-se
 o domínio de modo que cada ponto pertença ao sítio mais próximo — as células de Voronoi. Depois
 move-se cada sítio para o centroide da sua célula, e repete-se. Converge para uma tesselação
-centroidal de Voronoi: uma configuração uniformemente distribuída. As etapas descentralizada e
-generalizada assentam ambas nisto.
+centroidal de Voronoi: uma configuração uniformemente distribuída. A etapa descentralizada assenta
+nisto.
 
 #### [Background.2] Vizinhos de Delaunay
 O dual do diagrama de Voronoi é a triangulação de Delaunay: dois agentes são vizinhos se
@@ -174,20 +190,29 @@ do que d_min, metade do espaçamento da rede, é adicionada uma repulsão tangen
 reprojetado na esfera. À esquerda sem, à direita com: os agentes desviam-se um do outro. Os
 pontos da rede são atribuídos com o algoritmo de Munkres, minimizando a distância geodésica total.
 
-#### [CentralizedResults.2] 31 agentes, alvo móvel
+#### [CentralizedResults.2] Arquitetura completa
+Antes dos resultados, a arquitetura completa do método centralizado. Um nó central gera a rede de
+Fibonacci e atribui os pontos com o Munkres, a partir da posição de todos os agentes. Em cada
+agente, o controlador radial e o geométrico levam a direção até ao ponto atribuído, a salvaguarda
+APF corrige a referência e o controlador de Mellinger — posição e atitude — segue-a. A estimativa
+do alvo vem da medição com ruído, filtrada pela média móvel exponencial e partilhada por consenso
+na rede de Delaunay.
+
+#### [CentralizedResults.3] 31 agentes, alvo móvel
 Resultados com 31 agentes e um alvo móvel com 5 % de ruído de medição. A formação constitui-se e
 segue o alvo. Com o alvo móvel há uma oscilação limitada em torno de r-estrela (2 m) e um erro de
 seguimento de cerca de um metro, porque o controlador não usa a velocidade do alvo. A distância
 entre agentes mantém-se sempre acima do mínimo.
 
-#### [CentralizedResults.3] Teste real
+#### [CentralizedResults.4] Teste real
 Este método foi também testado em voo com Crazyflies e OptiTrack. Aqui, três drones executam o
 método centralizado, rede de Fibonacci mais controlador geométrico, em torno de um alvo virtual
 — a magenta — que se move numa circunferência. A verde está o drone real e a laranja a simulação
-do mesmo voo desenhada sobre a imagem da câmara; diferem cerca de 10 centímetros RMS. O vídeo
-está em tempo real, da descolagem à aterragem (46 s); a tecla seguinte avança quando quiser.
+do mesmo voo desenhada sobre a imagem da câmara; diferem cerca de 10 centímetros RMS. A fase do
+controlador está em tempo real; a descolagem, o regresso e a aterragem passam a 3x (36 s no total);
+a tecla seguinte avança quando quiser.
 
-## 10. Descentralizado (1:50)
+## — Descentralizado na esfera (cap. 5): fora da apresentação (cena `Decentralized` fora de `scenes.txt`)
 
 #### [Decentralized.1] Lloyd local na esfera
 Descentralizar quebra duas coisas: a rede de Fibonacci precisa do número total de agentes, e o
@@ -207,7 +232,12 @@ criar células degeneradas. A versão de semiplano constrói cada célula a part
 bissetriz: mais uniforme, CV 0,073 contra 0,120, sem casos degenerados, mas mais lenta — 1,37 s —
 e convergiu em 93 de 100 execuções.
 
-#### [Decentralized.4] Resultados
+#### [Decentralized.4] Arquitetura completa
+A arquitetura descentralizada é a mesma, exceto num bloco: desaparece o nó central, e a rede de
+Fibonacci com o Munkres dá lugar ao algoritmo de Lloyd, que cada agente corre com as posições dos
+vizinhos dados pela rede de Delaunay.
+
+#### [Decentralized.5] Resultados
 12 agentes, alvo móvel, raio desejado de 2 m, 4 perdidos aos 10 segundos, semiplano. Com o alvo
 em movimento, os agentes aproximam-se da esfera mais devagar do que com o alvo estático: aos 30 s a
 distância média ainda é cerca de 4,3 m, porque o controlador não usa a velocidade do alvo. Mas a
@@ -215,10 +245,12 @@ distribuição dos pontos desejados mantém-se uniforme — o CV fica abaixo de 
 passa de 2,0 para 2,2 m depois da perda — e a distância mínima entre agentes fica em cerca de
 1,7 m, sem quase-colisões. Não é preciso reprojetar nada quando o tamanho da formação muda.
 
-## 11. Generalizado — malhas e controlador de malha (1:30)
+## 10. Descentralizado — malhas e controlador de malha (1:30)
 
 #### [GeneralizedMesh.1] Qualquer malha
-Uma esfera é apenas uma forma. Tratando a malha como um grafo pesado, o Dijkstra dá geodésicas
+Descentralizar quebra duas coisas: a rede de Fibonacci precisa do número total de agentes, e o
+Munkres precisa da posição de todos. Assim, cada agente corre o algoritmo de Lloyd só com os
+vizinhos da rede de Delaunay. E não tem de ser numa esfera: tratando a malha como um grafo pesado, o Dijkstra dá geodésicas
 por caminho mais curto, e o Lloyd funciona em qualquer malha bem definida — aqui um busto e um
 sapo do conjunto de dados Thingi10K, com 8 sítios cada.
 
@@ -240,7 +272,7 @@ raio para lá da fronteira; a partir daí a esfera segue o alvo.
 #### [GeneralizedMesh.5] O alvo sai
 E se o alvo sair, o processo inverte-se e a formação regressa à barreira.
 
-## 12. Generalizado — MPC e velocidade (1:30)
+## 11. Descentralizado — MPC e velocidade (2:00)
 
 #### [GeneralizedMPC.1] MPC de Bernstein
 Os pontos já não estão numa esfera, pelo que o controlador geométrico é substituído por um MPC.
@@ -263,7 +295,13 @@ agentes deslocam-se para a frente e o algoritmo de Lloyd volta a convergir em po
 1,2 e 12 agentes, o alinhamento sobe para cerca de 0,32 e 8 de 12 agentes ficam no hemisfério da
 frente, como na tese.
 
-## 13. Resultados (3:40)
+#### [GeneralizedMPC.4] Arquitetura completa
+Juntando tudo: a estimação do alvo mantém-se; o controlador de malha posiciona e deforma a malha a
+partir da estimativa do alvo; o Lloyd, uma CVT geodésica na malha e ponderada pela velocidade,
+substitui a rede de Fibonacci e o Munkres do nó central e dá o objetivo de cada agente; e o MPC de Bernstein substitui os controladores
+geométrico e radial, gerando a referência do controlador de Mellinger.
+
+## 12. Resultados (3:10)
 
 #### [Results.1] Repetição: disco na fronteira
 Esta é a simulação do cenário do capítulo 6 com o controlador de malha da tese, ao dobro da
@@ -294,12 +332,13 @@ estão limitados em velocidade, com um perfil em escada porque a atualização d
 1 Hz.
 
 #### [Results.8] Teste real
-E aqui quatro drones executam o método generalizado: a CVT geodésica na malha — os pontos azuis —
+E aqui quatro drones executam o método descentralizado: a CVT geodésica na malha — os pontos azuis —
 dá os objetivos em torno do alvo virtual, a magenta, e o MPC de Bernstein planeia as trajetórias.
 Descolagem, aproximação, e depois a formação segue o alvo. As trajetórias reais e simuladas
 coincidem a poucos centímetros. No regresso, o CF02 real cai; a simulação completa o seu voo e o
-anel vermelho marca a última posição registada. O vídeo está em tempo real (72 s); a tecla
-seguinte avança quando quiser.
+anel vermelho marca a última posição registada. A fase de formação está em tempo real; a
+descolagem, a aproximação, o regresso e a aterragem passam a 3x (44 s no total); a tecla seguinte
+avança quando quiser.
 
 #### [Results.9] Aeroporto de Lisboa: barreira na parede
 Por fim, a mesma arquitetura sobre a zona proibida real do aeroporto de Lisboa, a partir dos
@@ -316,26 +355,26 @@ Aos 34,1 s o alvo entra na zona proibida e a formação achata-se numa barreira 
 #### [Results.12] Barreira na fronteira
 E fica a um metro dela até ao fim: os perseguidores nunca entram na zona.
 
-## 14. Conclusões (0:55)
+## 13. Conclusões (0:55)
 
 #### [Conclusions.1] Conclusões
 Para concluir: um enxame consegue circundar um alvo não cooperativo em 3D, em simulação e em
 voos reais com Crazyflies.
 Centralizado: a rede de Fibonacci com o controlador de Lyapunov é a opção mais simples, escala
 até 31 agentes e tem uma prova de convergência quase global. Descentralizado: consenso mais Lloyd
-local funciona sem nó central e sobrevive à perda de agentes. Generalizado: qualquer malha,
-barreira e envolvimento, um único MPC com limites dinâmicos. As limitações são claras: voos reais
+em qualquer malha funciona sem nó central, faz barreira e envolvimento, um único MPC impõe os
+limites dinâmicos, e a formação sobrevive à perda de agentes. As limitações são claras: voos reais
 apenas em interior e com alvo virtual, comunicação instantânea, posição real do alvo mais ruído, e colisões penalizadas em
 vez de formalmente excluídas.
 
-## 15. Trabalho futuro (0:30)
+## 14. Trabalho futuro (0:30)
 
 #### [FutureWork.1] Trabalho futuro
 Próximos passos: passar para hardware real com PX4 e ROS 2, comunicação e perceção realistas; e,
 do lado do método, usar a velocidade do alvo no MPC, formações baseadas em alcançabilidade e um
 CBF-MPC para garantias formais de segurança.
 
-## 16. Obrigado (0:10)
+## 15. Obrigado (0:10)
 
 #### [ThankYou.1] Obrigado
 Obrigado pela vossa atenção. Terei todo o gosto em responder às vossas questões.
@@ -383,15 +422,5 @@ Na esfera fechada, o invólucro convexo pode escolher o arco de círculo máximo
 fronteira de Voronoi verdadeira é o mais longo; o Lloyd move então os sítios para uma partição
 errada e vários sítios podem colapsar juntos. A construção por semiplanos evita isto.
 
-#### [BackupArchitectures.1] Arquitetura centralizada
-Um nó central calcula a rede de Fibonacci, atribui os pontos com o Munkres e envia a cada agente
-o seu ponto; cada agente segue-o com o controlador geométrico e radial e a salvaguarda APF.
-
-#### [BackupArchitectures.2] Arquitetura descentralizada
-Sem nó central: cada agente estima o alvo por consenso na rede de Delaunay, calcula a sua célula
-de Voronoi a partir dos vizinhos e segue o centroide com o mesmo controlador.
-
-#### [BackupArchitectures.3] Arquitetura generalizada e parâmetros
-Medição com ruído → EMA → consenso na rede espacial de Delaunay → controlador de malha → Lloyd
-(Dijkstra) → MPC → controlador de Mellinger → modelo do quadrirrotor. Parâmetros conforme
-listados (tabela da tese, Cap. 6).
+#### [BackupParameters.1] Parâmetros da simulação descentralizada
+Parâmetros da simulação do capítulo 6, conforme a tabela da tese.
