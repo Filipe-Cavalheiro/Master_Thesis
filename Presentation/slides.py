@@ -482,49 +482,51 @@ class Problem(Base):
     def construct(self):
         self.header("2. Problem statement")
 
-        # ---- three notions of "encirclement" ---------------------------------
-        def panel(title, highlight=False):
-            rect = RoundedRectangle(corner_radius=0.15, width=3.9, height=3.6, color=YELLOW if highlight else GREY_C)
-            t = Text(title, font_size=22, color=YELLOW if highlight else WHITE)
-            if t.width > rect.width - 0.3:
-                t.set(width=rect.width - 0.3)
-            t.next_to(rect.get_top(), DOWN, buff=0.2)
-            return VGroup(rect, t)
+        # ---- three notions of "encirclement": left out of the talk for time (uncomment to restore) --
+        # # ---- three notions of "encirclement" ---------------------------------
+        # def panel(title, highlight=False):
+        #     rect = RoundedRectangle(corner_radius=0.15, width=3.9, height=3.6, color=YELLOW if highlight else GREY_C)
+        #     t = Text(title, font_size=22, color=YELLOW if highlight else WHITE)
+        #     if t.width > rect.width - 0.3:
+        #         t.set(width=rect.width - 0.3)
+        #     t.next_to(rect.get_top(), DOWN, buff=0.2)
+        #     return VGroup(rect, t)
 
-        p1 = panel("Convex containment")
-        p2 = panel("Reachable-set overlap")
-        p3 = panel("Visible formation (this thesis)", highlight=True)
-        panels = VGroup(p1, p2, p3).arrange(RIGHT, buff=0.35).shift(DOWN * 0.15)
+        # p1 = panel("Convex containment")
+        # p2 = panel("Reachable-set overlap")
+        # p3 = panel("Visible formation (this thesis)", highlight=True)
+        # panels = VGroup(p1, p2, p3).arrange(RIGHT, buff=0.35).shift(DOWN * 0.15)
 
-        c1 = p1[0].get_center() + DOWN * 0.25
-        tri = [c1 + 1.2 * np.array([np.cos(a), np.sin(a), 0]) for a in (PI / 2 + 0.3, PI + 0.9, -0.4)]
-        poly = Polygon(*tri, color=GREY_B, fill_color=GREY_B, fill_opacity=0.15)
-        d1 = VGroup(poly, *[Dot(p, color=WHITE) for p in tri], Dot(c1 + np.array([0.1, -0.1, 0]), color=RED))
+        # c1 = p1[0].get_center() + DOWN * 0.25
+        # tri = [c1 + 1.2 * np.array([np.cos(a), np.sin(a), 0]) for a in (PI / 2 + 0.3, PI + 0.9, -0.4)]
+        # poly = Polygon(*tri, color=GREY_B, fill_color=GREY_B, fill_opacity=0.15)
+        # d1 = VGroup(poly, *[Dot(p, color=WHITE) for p in tri], Dot(c1 + np.array([0.1, -0.1, 0]), color=RED))
 
-        c2 = p2[0].get_center() + DOWN * 0.25
-        reach_t = Circle(radius=0.85, color=RED, fill_opacity=0.15).move_to(c2)
-        reach_c = VGroup(
-            *[
-                Circle(radius=0.55, color=WHITE, fill_opacity=0.08, stroke_width=2).move_to(c2 + 1.0 * np.array([np.cos(a), np.sin(a), 0]))
-                for a in np.linspace(0, 2 * PI, 5, endpoint=False)
-            ]
-        )
-        d2 = VGroup(reach_t, reach_c, Dot(c2, color=RED), *[Dot(c.get_center(), color=WHITE, radius=0.05) for c in reach_c])
+        # c2 = p2[0].get_center() + DOWN * 0.25
+        # reach_t = Circle(radius=0.85, color=RED, fill_opacity=0.15).move_to(c2)
+        # reach_c = VGroup(
+        #     *[
+        #         Circle(radius=0.55, color=WHITE, fill_opacity=0.08, stroke_width=2).move_to(c2 + 1.0 * np.array([np.cos(a), np.sin(a), 0]))
+        #         for a in np.linspace(0, 2 * PI, 5, endpoint=False)
+        #     ]
+        # )
+        # d2 = VGroup(reach_t, reach_c, Dot(c2, color=RED), *[Dot(c.get_center(), color=WHITE, radius=0.05) for c in reach_c])
 
-        c3 = p3[0].get_center() + DOWN * 0.25
-        ring = Circle(radius=1.1, color=BLUE, stroke_opacity=0.5).move_to(c3)
-        d3 = VGroup(ring, Dot(c3, color=RED), *[Dot(c3 + 1.1 * np.array([np.cos(a), np.sin(a), 0]), color=WHITE) for a in np.linspace(0, 2 * PI, 8, endpoint=False)])
+        # c3 = p3[0].get_center() + DOWN * 0.25
+        # ring = Circle(radius=1.1, color=BLUE, stroke_opacity=0.5).move_to(c3)
+        # d3 = VGroup(ring, Dot(c3, color=RED), *[Dot(c3 + 1.1 * np.array([np.cos(a), np.sin(a), 0]), color=WHITE) for a in np.linspace(0, 2 * PI, 8, endpoint=False)])
 
-        self.play(LaggedStart(*[Create(p) for p in panels], lag_ratio=0.2))
-        self.play(FadeIn(d1), FadeIn(d2), FadeIn(d3))
-        note = Text(
-            "Goal: a visible barrier that warns the operator, not physical capture",
-            font_size=24,
-            color=GREY_A,
-        ).next_to(panels, DOWN, buff=0.35)
-        self.play(FadeIn(note))
-        self.next_slide()
-        self.play(FadeOut(VGroup(panels, d1, d2, d3, note)))
+        # self.play(LaggedStart(*[Create(p) for p in panels], lag_ratio=0.2))
+        # self.play(FadeIn(d1), FadeIn(d2), FadeIn(d3))
+        # note = Text(
+        #     "Goal: a visible barrier that warns the operator, not physical capture",
+        #     font_size=24,
+        #     color=GREY_A,
+        # ).next_to(panels, DOWN, buff=0.35)
+        # self.play(FadeIn(note))
+        # self.next_slide()
+        # self.play(FadeOut(VGroup(panels, d1, d2, d3, note)))
+
 
         # ---- 3D problem: chasers converge to evenly spaced points -----------
         proj = Proj(phi=70 * DEGREES, theta=-50 * DEGREES, scale=1.6, center=np.array([-3.7, -0.35, 0]))

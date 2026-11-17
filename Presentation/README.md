@@ -7,7 +7,7 @@ The visual style (black background, section titles in the upper-left corner, red
 white chasers, blue desired points, yellow highlights) follows the APCA 2026 paper
 presentation, since it is the same research line.
 
-Target length: **~19:50** of talk (the flight videos play their main phase in real time, the rest at 3x), over the 20 min hard limit (see the budget in `SPEAKER_NOTES.md`). See `SPEAKER_NOTES.md` for the
+Target length: **~19:30** of talk (the flight videos play their main phase in real time, the rest at 3x), over the 20 min hard limit (see the budget in `SPEAKER_NOTES.md`). See `SPEAKER_NOTES.md` for the
 per-slide script and timing budget.
 
 ## Files

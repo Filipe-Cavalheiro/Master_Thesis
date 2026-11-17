@@ -10,22 +10,22 @@ orador). Manter o formato dos títulos ao editar o texto.
 |---|---|---|---|---|
 | 1 | TitleCard | 1 | 0:25 | 0:25 |
 | 2 | Motivation | 5 | 1:50 | 2:15 |
-| 3 | Problem | 3 | 1:15 | 3:30 |
-| 4 | Roadmap | 1 | 0:35 | 4:05 |
-| 5 | StateOfTheArt | 1 | 0:45 | 4:50 |
-| 6 | Background | 4 | 1:30 | 6:20 |
-| 7 | CentralizedDistribution | 2 | 1:05 | 7:25 |
-| 8 | CentralizedControl | 3 | 1:50 | 9:15 |
-| 9 | CentralizedResults | 4 | 2:20 | 11:35 |
-| 10 | GeneralizedMesh | 5 | 1:30 | 13:05 |
-| 11 | GeneralizedMPC | 4 | 2:00 | 15:05 |
-| 12 | Results | 12 | 3:10 | 18:15 |
-| 13 | Conclusions | 1 | 0:55 | 19:10 |
-| 14 | FutureWork | 1 | 0:30 | 19:40 |
-| 15 | ThankYou | 1 | 0:10 | 19:50 |
+| 3 | Problem | 2 | 0:55 | 3:10 |
+| 4 | Roadmap | 1 | 0:35 | 3:45 |
+| 5 | StateOfTheArt | 1 | 0:45 | 4:30 |
+| 6 | Background | 4 | 1:30 | 6:00 |
+| 7 | CentralizedDistribution | 2 | 1:05 | 7:05 |
+| 8 | CentralizedControl | 3 | 1:50 | 8:55 |
+| 9 | CentralizedResults | 4 | 2:20 | 11:15 |
+| 10 | GeneralizedMesh | 5 | 1:30 | 12:45 |
+| 11 | GeneralizedMPC | 4 | 2:00 | 14:45 |
+| 12 | Results | 12 | 3:10 | 17:55 |
+| 13 | Conclusions | 1 | 0:55 | 18:50 |
+| 14 | FutureWork | 1 | 0:30 | 19:20 |
+| 15 | ThankYou | 1 | 0:10 | 19:30 |
 | — | Extra (só nas questões) | 8 | — | — |
 
-≈ 19:50 de fala, abaixo do limite de 20 min mas sem folga. A etapa descentralizada na esfera
+≈ 19:30 de fala, abaixo do limite de 20 min. A etapa descentralizada na esfera
 (cap. 5, cena `Decentralized`) está fora da apresentação; a etapa generalizada (cap. 6), também
 descentralizada, é apresentada como "Descentralizado". Os vídeos dos testes reais passam a fase
 principal em tempo real e o resto (descolagem, aproximação, regresso, aterragem) a 3x: 36 s e
@@ -33,7 +33,7 @@ principal em tempo real e o resto (descolagem, aproximação, regresso, aterrage
 dita, ou encurtar a análise quantitativa dos Resultados e a ponderação pela velocidade (uma frase
 cada).
 
-Pontos de controlo: Roadmap concluído por ~4:05, Centralizado por ~11:35, Resultados por ~18:15.
+Pontos de controlo: Roadmap concluído por ~3:45, Centralizado por ~11:15, Resultados por ~17:55.
 
 ---
 
@@ -79,15 +79,15 @@ isso, aqui o intruso não deve ser derrubado: deve ser contido, a uma distância
 A pergunta desta tese é então: como circundar um drone que entra em espaço aéreo restrito de
 forma segura e visível, e sem meios destrutivos, para que o operador perceba que tem de sair?
 
-## 3. Problema (1:15)
+## 3. Problema (0:55)
 
-#### [Problem.1] Três noções de circundamento
+(Slide "Três noções de circundamento" comentado em `slides.py` por falta de tempo; texto antigo:
 "Circundamento" significa coisas diferentes na literatura. Alguns trabalhos exigem que o alvo
 esteja dentro do invólucro convexo dos perseguidores; outros exigem que os conjuntos alcançáveis
 se sobreponham. Aqui queremos a terceira: uma formação visível em torno, ou à frente, do alvo. É
-um aviso e uma barreira, não uma captura.
+um aviso e uma barreira, não uma captura.)
 
-#### [Problem.2] Objetivo 3D
+#### [Problem.1] Objetivo 3D
 O alvo, a vermelho, é não cooperativo — só temos uma medição com ruído da sua posição. Cada
 perseguidor i deve convergir para um ponto desejado p_i-estrela em torno dele. Os requisitos:
 totalmente 3D, alvo estático ou móvel, agentes o mais uniformemente espaçados possível — porque
@@ -95,7 +95,7 @@ não sabemos para onde o alvo vai, e o espaçamento uniforme cobre todas as dire
 movimento com prevenção de colisões e, idealmente, um sistema descentralizado que sobreviva à
 perda de agentes.
 
-#### [Problem.3] Âmbito
+#### [Problem.2] Âmbito
 O que fica fora do âmbito: operadores maliciosos que ignorem a formação, captura ou interceção
 física, e o procedimento legal que se segue ao circundamento.
 
