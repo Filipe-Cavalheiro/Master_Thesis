@@ -574,7 +574,7 @@ class Problem(Base):
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.15)
         legend.move_to(RIGHT * 0.6 + UP * 2.3, aligned_edge=LEFT + UP)
         self.play(FadeIn(world), FadeIn(legend))
-        self.play(s.animate.set_value(1.0), rot.animate.set_value(-10 * DEGREES), run_time=4, rate_func=smooth)
+        self.play(s.animate.set_value(1.0), rot.animate.set_value(-10 * DEGREES), run_time=2, rate_func=smooth)
 
         objective = MathTex(r"\lim_{t\to\infty}\ \mathbf{p}_i(t)=\mathbf{p}_i^\star,\quad \forall i", font_size=40)
         reqs = bullet_list(
@@ -1136,8 +1136,8 @@ class CentralizedControl(Base):
         w = always_redraw(world)
         self.play(FadeIn(w), Write(law1))
         self.play(Write(law2), FadeIn(gate))
-        self.play(k.animate.set_value(Tn - 1), run_time=6, rate_func=linear)
         self.play(Create(thm_box), FadeIn(thm))
+        self.play(k.animate.set_value(Tn - 1), run_time=6, rate_func=linear)
         self.next_slide(auto_next=True)
         w.clear_updaters()
         self.clear_all()
@@ -1427,15 +1427,14 @@ class GeneralizedMesh(Base):
 
         st = always_redraw(stage_text)
         formula = MathTex(
-            r"\mathbf{V}=(1-i_2)\big[(1-i_1)\mathbf{V}_{\mathrm{disc}}+i_1\mathbf{V}_{\mathrm{cone}}\big]+i_2\mathbf{V}_{\mathrm{sphere}}",
-            font_size=28,
+            r"\mathbf{V}=\;&(1-i_2)\big[(1-i_1)\mathbf{V}_{\mathrm{disc}}+i_1\mathbf{V}_{\mathrm{cone}}\big]\\&+i_2\mathbf{V}_{\mathrm{sphere}}",
+            font_size=40,
         )
-        d_txt = Tex(r"$i_1, i_2$: obtidos da distância com sinal do alvo\\à fronteira, normalizada pelo raio da malha $R$", font_size=28, color=GREY_A)
-        why = Text("Os agentes avisam antes da entrada, envolvem depois dela", font_size=22, color=GREEN_C)
-        rgt = VGroup(formula, d_txt, why).arrange(DOWN, aligned_edge=LEFT, buff=0.3)
-        if rgt.width > 5.4:
-            rgt.set(width=5.4)
-        rgt.move_to(RIGHT * 1.3 + DOWN * 1.6, aligned_edge=LEFT)
+        d_txt = Tex(r"$i_1, i_2$: obtidos da distância com sinal do alvo\\à fronteira, normalizada pelo raio da malha $R$", font_size=30, color=GREY_A)
+        rgt = VGroup(formula, d_txt).arrange(DOWN, aligned_edge=LEFT, buff=0.45)
+        if rgt.width > 5.2:
+            rgt.set(width=5.2)
+        rgt.move_to(RIGHT * 1.6 + UP * 1.0, aligned_edge=LEFT + UP)   # below the i_1, i_2 readout
         self.play(FadeIn(plane), FadeIn(n_arrow), FadeIn(side_out), FadeIn(side_in), FadeIn(w), FadeIn(st))
         self.play(FadeIn(formula), FadeIn(d_txt))
         self.next_slide()
@@ -1445,7 +1444,6 @@ class GeneralizedMesh(Base):
         # past the boundary: cone -> sphere (complete at d = R), then the sphere follows the target
         self.play(x_t.animate.set_value(R), run_time=2.5, rate_func=linear)
         self.play(x_t.animate.set_value(8.0), run_time=1.5, rate_func=linear)
-        self.play(FadeIn(why))
         self.next_slide()
         self.play(x_t.animate.set_value(-7.5), run_time=4, rate_func=smooth)
         self.next_slide(auto_next=True)
@@ -1479,9 +1477,10 @@ class GeneralizedMPC(Base):
         self.play(Write(cost))
         self.play(FadeIn(cons))
         self.play(FadeIn(col))
+        self.next_slide()   # the illustration starts on the next key press
 
         # 2D illustration: Bezier (degree 5) from agent to goal, avoiding a neighbour
-        base = np.array([-6.2, -1.8, 0])
+        base = np.array([-3.0, -1.6, 0])   # centred: agent at x=-3, goal at x=+3
         agent = base + np.array([0.0, 0.0, 0])
         goal = base + np.array([6.0, 0.0, 0])
         nb_start = base + np.array([3.2, -1.3, 0])
@@ -1526,20 +1525,6 @@ class GeneralizedMPC(Base):
         self.play(Create(curve), FadeIn(cp), FadeIn(hz))
         self.play(Create(ell), FadeIn(ell_lab))
         self.play(Transform(curve, bez(bent)), Transform(cp, ctrl_poly(bent)), Transform(hz, horizon(bent)), run_time=1.5)
-
-        side = VGroup(
-            Text("Polinómio de Bernstein, grau 5", font_size=21),
-            Text("→ v, a são lineares nos pontos de controlo", font_size=21),
-            Text(r"horizonte 5, $\|\mathbf{v}\|\le 3$ m/s, $\|\mathbf{a}\|\le 5$ m/s², $\Theta$: 1 m", font_size=21),
-            Text("os vizinhos partilham os horizontes previstos", font_size=21),
-            Text("horizonte deslizante: aplicar 1.º passo, repetir", font_size=21),
-            Text(r"colisão = penalização ($\rho=100$), não uma", font_size=21, color=ORANGE),
-            Text("restrição rígida → sem garantia formal", font_size=21, color=ORANGE),
-        ).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
-        if side.width > 5.8:  # keep the right edge inside the frame (Portuguese is longer)
-            side.set(width=5.8)
-        side.move_to(RIGHT * 4.0 + DOWN * 1.5)
-        self.play(LaggedStart(*[FadeIn(s) for s in side], lag_ratio=0.15))
 
         # receding horizon: move agent along, re-solve
         for step in range(3):
@@ -1766,24 +1751,10 @@ class Results(Base):
         p2 = captioned(plot_panel(ASSETS + "g_inter_agent_dist_12_agents.png", height=2.4), "distância entre agentes (limiar 1 m)", 18)
         p3 = captioned(plot_panel(ASSETS + "g_velocity_12_agents.png", height=2.4), r"componentes da velocidade ($\|\mathbf{v}\|\le 3$ m/s)", 18)
         p4 = captioned(plot_panel(ASSETS + "g_low_level_tracking_error_12_agents.png", height=2.4), "distância ao objetivo de Lloyd", 18)
-        grid = Group(p1, p2, p3, p4).arrange_in_grid(rows=2, cols=2, buff=(0.3, 0.2)).move_to(LEFT * 2.3 + DOWN * 0.2)
-        if grid.height > 6.2:
-            grid.set(height=6.2)
-        facts = VGroup(
-            Text("+ dist. mín. 3-4 m após o", font_size=21, color=GREEN_C),
-            Text("   transitório inicial", font_size=21, color=GREEN_C),
-            Text("+ limites de v respeitados", font_size=21, color=GREEN_C),
-            Text("+ recupera após 4 perdas", font_size=21, color=GREEN_C),
-            Text("- um agente passa perto do", font_size=21, color=RED_C),
-            Text("   alvo (2-5 s): sem restrição", font_size=21, color=RED_C),
-            Text("   agente-alvo", font_size=21, color=RED_C),
-            Text("- erro ao objetivo até ~4 m", font_size=21, color=RED_C),
-            Text("   com v limitada; Voronoi", font_size=21, color=RED_C),
-            Text("   a 1 Hz → perfil em escada", font_size=21, color=RED_C),
-        ).arrange(DOWN, aligned_edge=LEFT, buff=0.1)
-        facts.next_to(grid, RIGHT, buff=0.35)
+        grid = Group(p1, p2, p3, p4).arrange_in_grid(rows=2, cols=2, buff=(0.3, 0.2))
+        grid.scale(min(13.7 / grid.width, 6.55 / grid.height))   # fill the body below the title
+        grid.move_to(np.array([0, (3.1 - 3.45) / 2, 0]))
         self.play(LaggedStart(*[FadeIn(p) for p in grid], lag_ratio=0.25))
-        self.play(LaggedStart(*[FadeIn(f) for f in facts], lag_ratio=0.1))
         self.next_slide()
         self.clear_body()
 
