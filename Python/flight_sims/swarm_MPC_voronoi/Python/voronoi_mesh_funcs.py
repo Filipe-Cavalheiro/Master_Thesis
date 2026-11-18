@@ -282,6 +282,13 @@ def pos_based_mesh_transform(
     # --- airspace: no vertex inside the red zone, orange altitude ceiling ---
     vertices = airspace.project(vertices)
 
+    # --- ground / obstacles: no vertex closer than env_clearance above the terrain ---
+    # The setpoint safety filter (safe_setpoint) keeps every drone env_clearance away from
+    # the ground, so a goal below that height is unreachable: a flat disc low on the wall
+    # would leave its bottom agents parked at the clearance height, short of their goals.
+    floor = param.environment.height(vertices[:, :2]) + param.sim.env_clearance
+    vertices[:, 2] = np.maximum(vertices[:, 2], floor)
+
     return vertices, faces, mesh_pos
 
 def buildVertexObjects(vertices, weights, faces):
