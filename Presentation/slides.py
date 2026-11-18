@@ -406,13 +406,6 @@ class Motivation(Base):
         arp = Dot(P(0, 0), radius=0.05, color=WHITE)
         arp_lab = Text("aeroporto", font_size=16).next_to(arp, RIGHT, buff=0.08)
         X = border.get_right()[0] + 0.45               # left edge of everything right of the map
-        msg = VGroup(
-            Text("O espaço aéreo restrito não é só o aeroporto:", font_size=24, color=HIGHLIGHT),
-            Text("os corredores de aproximação atravessam a cidade", font_size=24),
-            Text("hospitais, estádios, a universidade, a Gare do Oriente, habitação densa", font_size=19, color=GREY_A),
-        ).arrange(DOWN, aligned_edge=LEFT, buff=0.1)
-        fit(msg, 6.9 - X).move_to(np.array([X, 2.4, 0]), aligned_edge=LEFT)
-
         # infrastructure under the zones: dots on the map, labels stacked right of the map; the
         # label order is the one whose leader lines do not cross (and are shortest)
         names = VGroup(*[Text(str(s), font_size=18) for s in d["poi_names"]])
@@ -449,7 +442,6 @@ class Motivation(Base):
 
         self.play(FadeIn(city), FadeIn(border), FadeIn(src), run_time=0.8)
         self.play(FadeIn(area1), FadeIn(red), FadeIn(arp), FadeIn(arp_lab), FadeIn(key), run_time=1.0)
-        self.play(FadeIn(msg, shift=LEFT * 0.2), run_time=0.6)
         self.play(LaggedStart(*[AnimationGroup(GrowFromCenter(dots[i]), Create(leaders[i]), FadeIn(names[i], shift=LEFT * 0.1))
                                 for i in np.argsort([-p[1] for p in pts])], lag_ratio=0.3), run_time=2.0)
         self.next_slide()
@@ -472,15 +464,10 @@ class Motivation(Base):
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.3)
         cm = fit(VGroup(head, cms).arrange(DOWN, aligned_edge=LEFT, buff=0.25), W)
         cm.move_to(np.array([RX, 1.4, 0]), aligned_edge=UL)
-        verdict = fit(Text("Sobre pessoas e infraestruturas:\nsem interferência, sem colisão.\nConter o intruso a uma distância segura.",
-                           font_size=22, color=HIGHLIGHT, line_spacing=0.8), W - 0.3)
-        verdict.next_to(cm, DOWN, buff=0.45).align_to(cm, LEFT).shift(RIGHT * 0.15)
-        verdict_box = SurroundingRectangle(verdict, color=HIGHLIGHT, buff=0.15, corner_radius=0.1)
 
         self.play(FadeIn(head), run_time=0.4)
         for row in cms:
             self.play(FadeIn(row, shift=LEFT * 0.2), run_time=0.6)
-        self.play(FadeIn(verdict), Create(verdict_box), run_time=0.8)
 
 
 # =============================================================================
@@ -574,32 +561,11 @@ class Problem(Base):
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.15)
         legend.move_to(RIGHT * 0.6 + UP * 2.3, aligned_edge=LEFT + UP)
         self.play(FadeIn(world), FadeIn(legend))
-        self.play(s.animate.set_value(1.0), rot.animate.set_value(-10 * DEGREES), run_time=2, rate_func=smooth)
+        self.play(s.animate.set_value(1.0), run_time=2, rate_func=smooth)
 
         objective = MathTex(r"\lim_{t\to\infty}\ \mathbf{p}_i(t)=\mathbf{p}_i^\star,\quad \forall i", font_size=40)
-        reqs = bullet_list(
-            [
-                "Totalmente 3D, alvo estático ou móvel",
-                "Agentes uniformemente espaçados",
-                "Movimento com prevenção de colisões",
-                "Só se conhece a posição do alvo, com ruído",
-                "Descentralizado, tolera perda de agentes",
-            ],
-            font_size=21,
-            buff=0.16,
-        )
-        right = VGroup(objective, reqs).arrange(DOWN, buff=0.35, aligned_edge=LEFT)
-        right.next_to(legend, DOWN, buff=0.5).align_to(legend, LEFT)
+        objective.next_to(legend, DOWN, buff=0.6).align_to(legend, LEFT)
         self.play(Write(objective))
-        self.play(LaggedStart(*[FadeIn(r, shift=LEFT * 0.2) for r in reqs], lag_ratio=0.2))
-        self.next_slide()
-
-        scope = Text(
-            "Fora do âmbito: operadores maliciosos, captura / interceção física, seguimento legal",
-            font_size=20,
-            color=GREY_B,
-        ).to_edge(DOWN, buff=0.6)
-        self.play(FadeIn(scope), rot.animate.set_value(20 * DEGREES), run_time=1.5)
         self.next_slide(auto_next=True)
         world.clear_updaters()
         self.clear_all()
@@ -666,88 +632,89 @@ class Roadmap(Base):
         self.clear_all()
 
 
-# =============================================================================
-# 4. State of the art
-# =============================================================================
-class StateOfTheArt(Base):
-    SECTION = "Problema"
-
-    def construct(self):
-        self.header("4. Estado da arte (formações circulares)")
-        centers = [LEFT * 4.4 + UP * 0.9, UP * 0.9, RIGHT * 4.4 + UP * 0.9]
-        names = ["Perseguição cíclica", "Líder-seguidor", "Campos de potencial (APF)"]
-        pros = [
-            "+ comunicação mínima,\n   sem líder",
-            "+ intuitivo, geometria\n   da formação explícita",
-            "+ projeto baseado em Lyapunov,\n   desvio de obstáculos",
-        ]
-        cons = [
-            "- pode colapsar num ponto\n   sem termos adicionais",
-            "- líder = ponto único\n   de falha",
-            "- mínimos locais, afinação;\n   N tem de ser conhecido",
-        ]
-        t = ValueTracker(0.0)
-
-        # cyclic pursuit
-        def cyc():
-            c = centers[0]
-            n = 5
-            a = t.get_value()
-            pts = [c + 1.0 * np.array([np.cos(a + 2 * PI * k / n), np.sin(a + 2 * PI * k / n), 0]) for k in range(n)]
-            g = VGroup(Dot(c, color=RED))
-            for k in range(n):
-                g.add(Arrow(pts[k], pts[(k + 1) % n], buff=0.12, stroke_width=2.5, color=GREY_B, max_tip_length_to_length_ratio=0.2))
-                g.add(Dot(pts[k], color=WHITE))
-            return g
-
-        # leader-follower
-        def lf():
-            c = centers[1] + np.array([0.5 * np.sin(t.get_value()), 0.25 * np.sin(2 * t.get_value()), 0])
-            g = VGroup()
-            lead = Dot(c, color=YELLOW, radius=0.1)
-            for k in range(6):
-                a = 2 * PI * k / 6 + 0.5 * t.get_value()
-                p = c + 0.95 * np.array([np.cos(a), np.sin(a), 0])
-                g.add(Line(c, p, color=GREY_D, stroke_width=1.5), Dot(p, color=WHITE))
-            g.add(lead)
-            return g
-
-        # APF: vector field converging to a ring
-        def apf():
-            c = centers[2]
-            g = VGroup(Circle(radius=0.9, color=BLUE, stroke_opacity=0.6).move_to(c), Dot(c, color=RED))
-            for x in np.linspace(-1.5, 1.5, 7):
-                for y in np.linspace(-1.2, 1.2, 6):
-                    p = np.array([x, y, 0])
-                    r = np.linalg.norm(p)
-                    if r < 0.15:
-                        continue
-                    radial = (0.9 - r) * p / r
-                    tang = 0.4 * np.array([-p[1], p[0], 0]) / r
-                    v = radial + tang
-                    v = 0.28 * v / (np.linalg.norm(v) + 1e-9)
-                    g.add(Arrow(c + p, c + p + v, buff=0, stroke_width=2, color=GREY_B, max_tip_length_to_length_ratio=0.35))
-            return g
-
-        demos = [cyc(), lf(), apf()]   # static diagrams
-        texts = VGroup()
-        for k in range(3):
-            n = Text(names[k], font_size=26, color=YELLOW).move_to(centers[k] + UP * 1.75)
-            pr = Text(pros[k], font_size=19, color=GREEN_C, line_spacing=0.8)
-            co = Text(cons[k], font_size=19, color=RED_C, line_spacing=0.8)
-            pc = VGroup(pr, co).arrange(DOWN, aligned_edge=LEFT, buff=0.15).next_to(centers[k], DOWN, buff=1.5)
-            texts.add(VGroup(n, pc))
-        for k in range(3):
-            self.play(FadeIn(demos[k]), FadeIn(texts[k]), run_time=1.0)
-
-        gap = Text(
-            "Lacuna: a maioria dos métodos é planar (2D); os 3D usam setores predefinidos",
-            font_size=24,
-            color=YELLOW,
-        ).to_edge(DOWN, buff=0.65)
-        self.play(FadeIn(gap), run_time=1.0)
-        self.next_slide()
-        self.clear_all()
+# ---- left out of the talk (also removed from scenes.txt); uncomment to restore ----
+# # =============================================================================
+# # 4. State of the art
+# # =============================================================================
+# class StateOfTheArt(Base):
+#     SECTION = "Problema"
+#
+#     def construct(self):
+#         self.header("4. Estado da arte (formações circulares)")
+#         centers = [LEFT * 4.4 + UP * 0.9, UP * 0.9, RIGHT * 4.4 + UP * 0.9]
+#         names = ["Perseguição cíclica", "Líder-seguidor", "Campos de potencial (APF)"]
+#         pros = [
+#             "+ comunicação mínima,\n   sem líder",
+#             "+ intuitivo, geometria\n   da formação explícita",
+#             "+ projeto baseado em Lyapunov,\n   desvio de obstáculos",
+#         ]
+#         cons = [
+#             "- pode colapsar num ponto\n   sem termos adicionais",
+#             "- líder = ponto único\n   de falha",
+#             "- mínimos locais, afinação;\n   N tem de ser conhecido",
+#         ]
+#         t = ValueTracker(0.0)
+#
+#         # cyclic pursuit
+#         def cyc():
+#             c = centers[0]
+#             n = 5
+#             a = t.get_value()
+#             pts = [c + 1.0 * np.array([np.cos(a + 2 * PI * k / n), np.sin(a + 2 * PI * k / n), 0]) for k in range(n)]
+#             g = VGroup(Dot(c, color=RED))
+#             for k in range(n):
+#                 g.add(Arrow(pts[k], pts[(k + 1) % n], buff=0.12, stroke_width=2.5, color=GREY_B, max_tip_length_to_length_ratio=0.2))
+#                 g.add(Dot(pts[k], color=WHITE))
+#             return g
+#
+#         # leader-follower
+#         def lf():
+#             c = centers[1] + np.array([0.5 * np.sin(t.get_value()), 0.25 * np.sin(2 * t.get_value()), 0])
+#             g = VGroup()
+#             lead = Dot(c, color=YELLOW, radius=0.1)
+#             for k in range(6):
+#                 a = 2 * PI * k / 6 + 0.5 * t.get_value()
+#                 p = c + 0.95 * np.array([np.cos(a), np.sin(a), 0])
+#                 g.add(Line(c, p, color=GREY_D, stroke_width=1.5), Dot(p, color=WHITE))
+#             g.add(lead)
+#             return g
+#
+#         # APF: vector field converging to a ring
+#         def apf():
+#             c = centers[2]
+#             g = VGroup(Circle(radius=0.9, color=BLUE, stroke_opacity=0.6).move_to(c), Dot(c, color=RED))
+#             for x in np.linspace(-1.5, 1.5, 7):
+#                 for y in np.linspace(-1.2, 1.2, 6):
+#                     p = np.array([x, y, 0])
+#                     r = np.linalg.norm(p)
+#                     if r < 0.15:
+#                         continue
+#                     radial = (0.9 - r) * p / r
+#                     tang = 0.4 * np.array([-p[1], p[0], 0]) / r
+#                     v = radial + tang
+#                     v = 0.28 * v / (np.linalg.norm(v) + 1e-9)
+#                     g.add(Arrow(c + p, c + p + v, buff=0, stroke_width=2, color=GREY_B, max_tip_length_to_length_ratio=0.35))
+#             return g
+#
+#         demos = [cyc(), lf(), apf()]   # static diagrams
+#         texts = VGroup()
+#         for k in range(3):
+#             n = Text(names[k], font_size=26, color=YELLOW).move_to(centers[k] + UP * 1.75)
+#             pr = Text(pros[k], font_size=19, color=GREEN_C, line_spacing=0.8)
+#             co = Text(cons[k], font_size=19, color=RED_C, line_spacing=0.8)
+#             pc = VGroup(pr, co).arrange(DOWN, aligned_edge=LEFT, buff=0.15).next_to(centers[k], DOWN, buff=1.5)
+#             texts.add(VGroup(n, pc))
+#         for k in range(3):
+#             self.play(FadeIn(demos[k]), FadeIn(texts[k]), run_time=1.0)
+#
+#         gap = Text(
+#             "Lacuna: a maioria dos métodos é planar (2D); os 3D usam setores predefinidos",
+#             font_size=24,
+#             color=YELLOW,
+#         ).to_edge(DOWN, buff=0.65)
+#         self.play(FadeIn(gap), run_time=1.0)
+#         self.next_slide()
+#         self.clear_all()
 
 
 # =============================================================================
@@ -785,21 +752,14 @@ class Background(Base):
         cells_mob, cents = draw_cells(sites)
         site_dots = VGroup(*[Dot(to_screen(s), color=WHITE, radius=0.07) for s in sites])
 
-        steps = VGroup(
-            Text("1. Partição: cada ponto → sítio mais próximo", font_size=21),
-            Text("2. Mover cada sítio para o centroide da sua célula", font_size=21),
-            Text("3. Repetir → tesselação centroidal de Voronoi", font_size=21),
-        ).arrange(DOWN, aligned_edge=LEFT, buff=0.25)
-        steps.next_to(border, RIGHT, buff=0.5).align_to(border, UP).shift(DOWN * 0.1)
         vor_def = MathTex(
             r"V_i=\{x : d(x,\mathbf{s}_i)\le d(x,\mathbf{s}_j)\ \forall j\neq i\}",
-            font_size=32,
-        ).next_to(steps, DOWN, buff=0.45).align_to(steps, LEFT)
+            font_size=36,
+        ).next_to(border, RIGHT, buff=0.5).align_to(border, UP).shift(DOWN * 0.3)
 
         self.play(Create(border), FadeIn(site_dots))
-        self.play(FadeIn(cells_mob), FadeIn(steps[0]), Write(vor_def))
+        self.play(FadeIn(cells_mob), Write(vor_def))
         self.bring_to_front(site_dots)
-        self.play(FadeIn(steps[1]))
         it_label = Text("iteração 0", font_size=20, color=GREY_A).next_to(border, DOWN, buff=0.15)
         self.add(it_label)
         for it in range(1, 9):
@@ -817,8 +777,6 @@ class Background(Base):
             self.play(*anims, run_time=rt)
             self.bring_to_front(site_dots)
             cents = new_cents
-            if it == 2:
-                self.play(FadeIn(steps[2]), run_time=0.4)
         self.next_slide()
 
         # --- Delaunay neighbours + consensus ----------------------------------
@@ -831,12 +789,7 @@ class Background(Base):
                 i, j = sorted((simp[a], simp[(a + 1) % 3]))
                 edges.add((i, j))
         edge_mob = VGroup(*[Line(to_screen(sites[i]), to_screen(sites[j]), color=YELLOW, stroke_width=2.5) for i, j in edges])
-        dual_txt = Text(
-            "Vizinhos = agentes com aresta de Voronoi comum\n(triangulação de Delaunay → rede espacial)",
-            font_size=21,
-            color=YELLOW,
-            line_spacing=0.8,
-        ).next_to(vor_def, DOWN, buff=0.5).align_to(steps, LEFT)
+        dual_txt = Text("Triangulação de Delaunay", font_size=24, color=YELLOW).next_to(vor_def, DOWN, buff=0.6).align_to(vor_def, LEFT)
         self.play(cells_mob.animate.set_fill(opacity=0.12), Create(edge_mob), FadeIn(dual_txt), run_time=1.2)
         self.bring_to_front(site_dots)
         self.next_slide()
@@ -854,7 +807,7 @@ class Background(Base):
             Text("Consenso na estimativa do alvo:", font_size=22),
             MathTex(r"\hat{\mathbf{p}}_{T,i}\leftarrow \hat{\mathbf{p}}_{T,i}+\varepsilon\sum_{j\in\mathcal{N}_i}(\hat{\mathbf{p}}_{T,j}-\hat{\mathbf{p}}_{T,i})", font_size=30),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.15)
-        cons_txt.next_to(dual_txt, DOWN, buff=0.4).align_to(steps, LEFT)
+        cons_txt.next_to(dual_txt, DOWN, buff=0.5).align_to(vor_def, LEFT)
         self.play(FadeIn(vals), FadeIn(cons_txt))
         eps = 0.12
         for _ in range(8):
@@ -977,11 +930,8 @@ class CentralizedDistribution(Base):
             y -= 0.48
         tab.next_to(right, DOWN, buff=0.4).to_edge(RIGHT, buff=0.4)
         box_f = SurroundingRectangle(VGroup(*[tab[r][2] for r in range(5)]), color=YELLOW, buff=0.08, corner_radius=0.06)
-        verdict = Text("$\\approx 700\\times$ mais rápido que o disco de Poisson,\nespaçamento quase uniforme", font_size=21, color=YELLOW, line_spacing=0.8)
-        verdict.next_to(tab, DOWN, buff=0.3).align_to(tab, LEFT)
-        src = Text("(apêndice da tese, ~1000 pontos, 100 ensaios)", font_size=16, color=GREY_B).next_to(verdict, DOWN, buff=0.1).align_to(verdict, LEFT)
         self.play(FadeIn(tab), n.animate.set_value(13), run_time=1.2)
-        self.play(Create(box_f), FadeIn(verdict), FadeIn(src))
+        self.play(Create(box_f))
         self.next_slide(auto_next=True)
         sphere.clear_updaters()
         counter[1].clear_updaters()
@@ -1021,7 +971,6 @@ class CentralizedControl(Base):
         goals[0].set_color(GREEN_C)
         goals[2].set_color(YELLOW)
         top = VGroup(decomp, goals).arrange(DOWN, buff=0.3).move_to(UP * 2.3)
-        sub = Text("os objetivos radial e angular são desacoplados", font_size=22, color=GREY_A).next_to(top, DOWN, buff=0.2)
         # sketch: target, unit sphere, agent, direction q_i and distance r_i
         sk = Proj(phi=70 * DEGREES, theta=-50 * DEGREES, scale=1.25, center=np.array([0.0, -1.5, 0]))
         pa = np.array([2.3, -0.4, 1.4])
@@ -1038,7 +987,7 @@ class CentralizedControl(Base):
             MathTex(r"r_i", font_size=30, color=GREEN_C).next_to(sk(0.75 * pa), DOWN, buff=0.12),
         )
         self.play(Write(decomp), FadeIn(sketch))
-        self.play(Write(goals), FadeIn(sub))
+        self.play(Write(goals))
         self.next_slide()
         self.play(FadeOut(sketch), run_time=0.4)
 
@@ -1061,7 +1010,6 @@ class CentralizedControl(Base):
         classic = axes.plot(lambda t: np.sin(t), color=GREY_B, x_range=[0, PI])
         proposed = axes.plot(lambda t: np.sin(t / 2), color=YELLOW, x_range=[0, PI])
         lab_c = VGroup(
-            Text("erro clássico", font_size=20, color=GREY_B),
             MathTex(r"\mathbf{e}_r=S(\mathbf{q}^\star)\,\mathbf{q}=\mathbf{q}^\star\times\mathbf{q}", font_size=30, color=GREY_B),
             MathTex(r"\|\mathbf{e}_r\|=\sin\theta", font_size=30, color=GREY_B),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.1)
@@ -1070,10 +1018,9 @@ class CentralizedControl(Base):
             MathTex(r"\mathbf{e}_q=\frac{S(\mathbf{q}^\star)\,\mathbf{q}}{\sqrt{2(1+\mathbf{q}^\top\mathbf{q}^\star)}}", font_size=30, color=YELLOW),
             MathTex(r"\|\mathbf{e}_q\|=\sin\tfrac{\theta}{2}", font_size=30, color=YELLOW),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.1)
-        warn = Text("o erro clássico anula-se junto\nao antípoda: falsa convergência", font_size=20, color=RED_C, line_spacing=0.8)
         mono = Text(r"monótono em $\theta$: sem falsa convergência", font_size=20, color=YELLOW)
         # right column: classical error, its problem, proposed error, its property
-        labs = VGroup(lab_c, warn, lab_p, mono).arrange(DOWN, aligned_edge=LEFT, buff=0.2)
+        labs = VGroup(lab_c, lab_p, mono).arrange(DOWN, aligned_edge=LEFT, buff=0.2)
         labs.next_to(axes, RIGHT, buff=0.4).align_to(axes, UP).shift(UP * 0.75)
         if labs.get_bottom()[1] < -3.25:
             labs.set(height=labs.height - (-3.25 - labs.get_bottom()[1]))
@@ -1081,16 +1028,15 @@ class CentralizedControl(Base):
         dot_bad = Dot(axes.c2p(PI * 0.97, np.sin(PI * 0.97)), color=RED_C)
         self.play(Create(axes), FadeIn(ticks), FadeIn(xl))
         self.play(Create(classic), FadeIn(lab_c))
-        self.play(FadeIn(dot_bad), FadeIn(warn))
+        self.play(FadeIn(dot_bad))
         self.play(Create(proposed), FadeIn(lab_p))
         self.play(FadeIn(mono))
         self.next_slide()
-        self.play(FadeOut(VGroup(axes, xl, ticks, classic, proposed, labs, warn, dot_bad, mono, sub, top)))
+        self.play(FadeOut(VGroup(axes, xl, ticks, classic, proposed, labs, dot_bad, top)))
 
         # --- control laws + theorem ------------------------------------------
         law1 = MathTex(r"\dot{\mathbf{q}}_i=-k_{geo}\,S(\mathbf{e}_{q_i})\,\mathbf{q}_i", font_size=36)
         law2 = MathTex(r"\dot r_i=k_r\,e^{-\|\mathbf{e}_{q_i}\|^2}\,(r^\star-r_i)", font_size=36)
-        gate = Text("primeiro alinhar, depois aproximar", font_size=20, color=GREEN_C)
         thm = VGroup(
             Text("Teorema (Cap. 4 da tese)", font_size=22, color=YELLOW),
             MathTex(r"V=\Psi(\mathbf{q},\mathbf{q}^\star),\quad \dot V=-k_{geo}\|\mathbf{e}_q\|^2\le 0", font_size=30),
@@ -1099,7 +1045,7 @@ class CentralizedControl(Base):
             Text(r"erro radial: exponencial, taxa $\ge k_r/e$", font_size=20),
         ).arrange(DOWN, buff=0.15, aligned_edge=LEFT)
         thm_box = SurroundingRectangle(thm, color=YELLOW, buff=0.2, corner_radius=0.1)
-        laws = VGroup(law1, law2, gate, VGroup(thm_box, thm)).arrange(DOWN, buff=0.3, aligned_edge=LEFT)
+        laws = VGroup(law1, law2, VGroup(thm_box, thm)).arrange(DOWN, buff=0.3, aligned_edge=LEFT)
         laws.move_to(RIGHT * 3.3 + DOWN * 0.25)
 
         # 3D animation of 5 agents
@@ -1135,7 +1081,7 @@ class CentralizedControl(Base):
 
         w = always_redraw(world)
         self.play(FadeIn(w), Write(law1))
-        self.play(Write(law2), FadeIn(gate))
+        self.play(Write(law2))
         self.play(Create(thm_box), FadeIn(thm))
         self.play(k.animate.set_value(Tn - 1), run_time=6, rate_func=linear)
         self.next_slide(auto_next=True)
@@ -1152,30 +1098,28 @@ class CentralizedResults(Base):
     def construct(self):
         self.header("8. Centralizado: salvaguarda de colisões e resultados")
 
-        a1 = captioned(plot_panel(ASSETS + "apf_inactive.png", height=2.6), "APF inativo")
-        a2 = captioned(plot_panel(ASSETS + "apf_active.png", height=2.6), "APF ativo")
-        apf_imgs = Group(a1, a2).arrange(RIGHT, buff=0.35).to_edge(LEFT, buff=0.4).shift(UP * 0.5)
-        apf_txt = VGroup(
-            Text("Salvaguarda APF na esfera", font_size=26, color=YELLOW),
-            Text("• atua apenas na referência", font_size=20),
-            Text("• repulsão tangencial se $d_{ij}<d_{min}$", font_size=20),
-            Text("• limitada, reprojetada na esfera", font_size=20),
-            Text("• $d_{min}$ = metade do espaçamento da rede", font_size=20),
-        ).arrange(DOWN, aligned_edge=LEFT, buff=0.18)
-        apf_txt.next_to(apf_imgs, RIGHT, buff=0.4)
-        apf_txt.align_to(apf_imgs, UP)
+        # top views of the APF test (thesis Ch. 4): without and with the safeguard
+        a1 = captioned(plot_panel(ASSETS + "apf_top_inactive.png", height=4.6), "APF inativo")
+        a2 = captioned(plot_panel(ASSETS + "apf_top_active.png", height=4.6), "APF ativo")
+        apf_imgs = Group(a1, a2).arrange(RIGHT, buff=0.35)
+        apf_title = Text("Salvaguarda APF na esfera", font_size=26, color=YELLOW)
         f = MathTex(
             r"\mathbf{f}_{ij}=(d_{min}-d_{ij})\frac{\Delta_{ij}^t}{\|\Delta_{ij}^t\|}",
-            font_size=32,
-        ).next_to(apf_txt, DOWN, buff=0.35).align_to(apf_txt, LEFT)
-        self.play(FadeIn(a1), FadeIn(apf_txt[0]))
-        self.play(FadeIn(a2), LaggedStart(*[FadeIn(t) for t in apf_txt[1:]], lag_ratio=0.2))
-        self.play(Write(f))
+            font_size=34,
+        )
+        apf_txt = VGroup(apf_title, f).arrange(DOWN, aligned_edge=LEFT, buff=0.4)
         other = Text(
             "+ atribuição de Munkres dos pontos da rede (custo geodésico total mínimo)",
             font_size=21,
             color=GREY_A,
-        ).next_to(apf_imgs, DOWN, buff=0.45).align_to(apf_imgs, LEFT)
+        )
+        top_row = Group(apf_imgs, apf_txt).arrange(RIGHT, buff=0.5)
+        if top_row.width > 13.4:                          # keep the row inside the frame
+            top_row.set(width=13.4)
+        Group(top_row, other).arrange(DOWN, buff=0.35).move_to(np.array([0, (3.1 - 3.45) / 2, 0]))
+        self.play(FadeIn(a1), FadeIn(apf_title))
+        self.play(FadeIn(a2))
+        self.play(Write(f))
         self.play(FadeIn(other))
         self.next_slide()
         self.clear_body()
@@ -1365,7 +1309,7 @@ class GeneralizedMesh(Base):
         b = captioned(plot_panel(ASSETS + "dijkstra_bust.png", width=W), "malha de busto, 8 sítios")
         f = captioned(plot_panel(ASSETS + "dijkstra_frog.png", width=W), "malha de sapo, 8 sítios")
         imgs = Group(b, f).arrange(RIGHT, buff=0.35)
-        head = Text("Lloyd + Dijkstra", font_size=32, color=YELLOW)
+        head = Text("Lloyd", font_size=32, color=YELLOW)
         Group(head, imgs).arrange(DOWN, buff=0.25).move_to(np.array([0, (3.1 - 3.45) / 2, 0]))
         self.play(FadeIn(head), FadeIn(imgs))
         self.next_slide()
@@ -1474,10 +1418,6 @@ class GeneralizedMPC(Base):
             color=ORANGE,
         )
         eqs = VGroup(cost, cons, col).arrange(DOWN, aligned_edge=LEFT, buff=0.22).to_edge(UP, buff=0.9).shift(RIGHT * 0.2)
-        self.play(Write(cost))
-        self.play(FadeIn(cons))
-        self.play(FadeIn(col))
-        self.next_slide()   # the illustration starts on the next key press
 
         # 2D illustration: Bezier (degree 5) from agent to goal, avoiding a neighbour
         base = np.array([-3.0, -1.6, 0])   # centred: agent at x=-3, goal at x=+3
@@ -1508,22 +1448,25 @@ class GeneralizedMPC(Base):
         a_lab = MathTex(r"\mathbf{p}_i[k]", font_size=30).next_to(a_dot, LEFT, buff=0.12)
         g_dot = Dot(goal, color=BLUE, radius=0.1)
         g_lab = MathTex(r"\mathbf{p}_i^\star", font_size=30, color=BLUE).next_to(g_dot, RIGHT, buff=0.12)
-        nb_path = DashedLine(nb_start, nb_end, color=GREY_B)
         nb_mid = (nb_start + nb_end) / 2
         nb = Dot(nb_mid, color=WHITE, radius=0.1)
         ell = Ellipse(width=2.2, height=1.6, color=ORANGE).move_to(nb_mid)
         nb_dir = (nb_end - nb_start) / np.linalg.norm(nb_end - nb_start)
         nb_arrow = Arrow(nb_mid, nb_mid + 0.85 * nb_dir, buff=0.12, color=GREY_A, stroke_width=4,
                          max_tip_length_to_length_ratio=0.35)
-        nb_lab = MathTex(r"\mathbf{p}_j[k]", font_size=30).next_to(nb, LEFT, buff=0.15)
+        nb_lab = MathTex(r"\mathbf{p}_j[k]", font_size=30).next_to(nb, LEFT, buff=0.15).shift(UP * 0.3)   # clear of the trajectory
         ell_lab = MathTex(r"\Theta_{ij}", font_size=28, color=ORANGE).next_to(ell, RIGHT, buff=0.08).shift(UP * 0.4)
+        nb_goal = nb_end + 0.25 * nb_dir                  # the neighbour's own goal, beyond where it ends up
+        gj_dot = Dot(nb_goal, color=BLUE, radius=0.1)
+        gj_lab = MathTex(r"\mathbf{p}_j^\star", font_size=30, color=BLUE).next_to(gj_dot, RIGHT, buff=0.12)
 
         curve = bez(straight)
         cp = ctrl_poly(straight)
         hz = horizon(straight)
-        self.play(FadeIn(a_dot), FadeIn(a_lab), FadeIn(g_dot), FadeIn(g_lab), Create(nb_path), FadeIn(nb), FadeIn(nb_lab), GrowArrow(nb_arrow))
-        self.play(Create(curve), FadeIn(cp), FadeIn(hz))
-        self.play(Create(ell), FadeIn(ell_lab))
+        # the equations and the whole illustration are on screen from the start ...
+        self.play(Write(cost), FadeIn(cons), FadeIn(col),
+                  FadeIn(VGroup(a_dot, a_lab, g_dot, g_lab, gj_dot, gj_lab, nb, nb_lab, nb_arrow, curve, cp, hz, ell, ell_lab)))
+        self.next_slide()   # ... and the motion starts on the next key press
         self.play(Transform(curve, bez(bent)), Transform(cp, ctrl_poly(bent)), Transform(hz, horizon(bent)), run_time=1.5)
 
         # receding horizon: move agent along, re-solve
@@ -1604,22 +1547,24 @@ class GeneralizedMPC(Base):
         it_lab = Text("iteração 0", font_size=22, color=GREY_B)
         rcol_x = 1.25
 
-        # right column: weight (top), iteration, A + label, F_fwd + label
-        VGroup(w, wt).arrange(DOWN, aligned_edge=LEFT, buff=0.3).move_to(np.array([rcol_x, 1.15, 0]), aligned_edge=LEFT)
-        it_lab.move_to(np.array([rcol_x, -0.4, 0]), aligned_edge=LEFT)
+        # right column: A + label, F_fwd + label (top, shown from the start), then the
+        # iteration counter and the weight (bottom, filled in once the velocity is known)
         for m in st_lab:
             if m.get_right()[0] - m.get_left()[0] > 6.9 - rcol_x:
                 m.set(width=6.9 - rcol_x)
+        A_Y = 2.1
 
         def place_stats(s):
-            s[0].move_to(np.array([rcol_x, -1.0, 0]), aligned_edge=LEFT)
+            s[0].move_to(np.array([rcol_x, A_Y, 0]), aligned_edge=LEFT)
             s[1].next_to(st_lab[0], DOWN, buff=0.3).align_to(s[0], LEFT)
             return s
 
-        st[0].move_to(np.array([rcol_x, -1.0, 0]), aligned_edge=LEFT)
+        st[0].move_to(np.array([rcol_x, A_Y, 0]), aligned_edge=LEFT)
         st_lab[0].next_to(st[0], DOWN, buff=0.1).align_to(st[0], LEFT)
         place_stats(st)
         st_lab[1].next_to(st[1], DOWN, buff=0.1).align_to(st[0], LEFT)
+        it_lab.next_to(st_lab[1], DOWN, buff=0.45).align_to(st[0], LEFT)
+        VGroup(w, wt).arrange(DOWN, aligned_edge=LEFT, buff=0.3).next_to(it_lab, DOWN, buff=0.4).align_to(st[0], LEFT)
 
         self.play(FadeIn(sil), FadeIn(divide), FadeIn(tgt), FadeIn(cap))
         self.play(LaggedStart(*[GrowFromCenter(d) for d in agent_g], lag_ratio=0.05), run_time=1.0)
@@ -1685,6 +1630,7 @@ class Results(Base):
             g = VGroup()
             tg = T[:, i]
             v, _, _ = mesh_state(tg, meshes, R)
+            v[:, 2] = np.maximum(v[:, 2], 1.5)   # as in the sim: no vertex below the 1.5 m ground clearance
             g.add(*[Dot(proj(p), radius=0.018, color=BLUE_E, fill_opacity=0.6) for p in v])
             path = T[:, : i + 1 : 2].T
             if len(path) >= 2:
@@ -1888,8 +1834,7 @@ class Conclusions(Base):
         lim = VGroup(
             Text("Limitações", font_size=24, color=RED_C),
             Text("voos reais só em interior (Crazyflies, alvo virtual) · comunicação instantânea ·", font_size=20, color=GREY_A),
-            Text("posição real do alvo + ruído · colisões penalizadas, não excluídas formalmente ·", font_size=20, color=GREY_A),
-            Text("agentes perdidos ignorados, não são obstáculos", font_size=20, color=GREY_A),
+            Text("posição real do alvo + ruído · colisões penalizadas, não excluídas formalmente ·", font_size=20, color=GREY_A)
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.08)
         lim.next_to(items, DOWN, buff=0.4).align_to(items, LEFT)
         for it in items:
