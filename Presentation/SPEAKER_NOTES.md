@@ -1,8 +1,8 @@
 # Notas do orador — defesa de mestrado (objetivo ≈ 19 min, limite 20 min)
 
-Cada bloco `#### [Cena.k]` é um sub-slide (uma tecla). O `slides.py` lê estes blocos ao renderizar
-e anexa-os como notas do orador do manim-slides (tecla `S` na exportação HTML abre a vista do
-orador). Manter o formato dos títulos ao editar o texto.
+Cada bloco `#### [Cena.k]` é um sub-slide (uma tecla), com 2–3 tópicos a falar. O `slides.py` lê
+estes blocos ao renderizar e anexa-os como notas do orador do manim-slides (tecla `S` na exportação
+HTML abre a vista do orador). Manter o formato dos títulos ao editar o texto.
 
 ## Orçamento de tempo
 
@@ -40,389 +40,274 @@ Pontos de controlo: Roadmap concluído por ~3:45, Centralizado por ~11:15, Resul
 ## 1. TitleCard (0:25)
 
 #### [TitleCard.1] Título
-Bom dia. O meu nome é Filipe Cavalheiro e vou apresentar a minha dissertação de mestrado,
-"Cerco Cooperativo de Drones Não Cooperativos", orientada pelo Professor Bruno Guerreiro.
-Em resumo: como é que um enxame de drones pode circundar um drone intruso em 3D, em segurança e
-sem o destruir.
+- Apresentação: Filipe Cavalheiro, orientação Prof. Bruno Guerreiro
+- Ideia: um enxame circunda um drone intruso em 3D, em segurança e sem o destruir
 
 ## 2. Motivação (1:50)
 
 #### [Motivation.1] Notícias
-Os drones já não são apenas uma ferramenta de investigação ou militar — qualquer pessoa pode
-comprar um. E quando um drone é avistado perto de um aeroporto, as operações param. Estes são dois
-exemplos recentes: Bruxelas, e aeroportos na Bélgica e na Suécia encerrados por causa de drones.
+- Drones ao alcance de qualquer pessoa
+- Drone perto de aeroporto → operações param (Bruxelas, Bélgica, Suécia)
 
 #### [Motivation.2] Números da DFS
-Isto não são casos isolados. Só na Alemanha, o controlo de tráfego aéreo registou 161
-perturbações causadas por drones em 2024 e 225 em 2025. Cada uma significa voos atrasados,
-desviados ou cancelados e, junto a heliportos hospitalares, pode atrasar o transporte de
-emergência. Muitas destas incursões são não intencionais: o operador simplesmente não conhece as
-regras ou a zona restrita.
+- Alemanha: 161 perturbações em 2024, 225 em 2025
+- Voos atrasados/desviados; heliportos hospitalares
+- Muitas incursões não intencionais: o operador não conhece a zona
 
 #### [Motivation.3] Espaço aéreo restrito sobre Lisboa
-E o espaço aéreo restrito não é só a pista. Este é o aeroporto de Lisboa, com as zonas de drones da
-ANAC sobre o mapa da cidade: a vermelho a área proibida, que segue os corredores de aproximação das
-duas pistas, e a laranja a Área 1, onde a altura de voo é limitada. Estes corredores atravessam a
-cidade: o Hospital de Santa Maria e a Cidade Universitária estão dentro da área proibida, e o
-Pulido Valente, os estádios de Alvalade e da Luz e a Gare do Oriente dentro da Área 1 — para além
-de bairros residenciais densos em toda a zona.
+- Zonas ANAC: vermelho = proibida (corredores das pistas), laranja = Área 1 (altura limitada)
+- Atravessam a cidade: Santa Maria, Cidade Universitária, estádios, Oriente
 
 #### [Motivation.4] Porque não as contramedidas habituais
-As contramedidas habituais para um drone em espaço aéreo restrito são de dois tipos. A interferência
-nas ligações de comando e de navegação, o jamming ou spoofing, deixa o drone a cair ou a fugir sem
-controlo e, junto a um aeroporto, interfere com as ajudas à aterragem, os radares e as comunicações.
-A interceção, com redes ou drones intercetores, termina numa captura ou colisão. Sobre esta cidade,
-qualquer uma delas pode fazer cair o drone, ou os destroços, sobre pessoas e infraestruturas. Por
-isso, aqui o intruso não deve ser derrubado: deve ser contido, a uma distância segura.
+- Jamming/spoofing: drone sem controlo + interfere com o aeroporto
+- Interceção (redes, intercetores): captura ou colisão → destroços sobre a cidade
+- Logo: conter a distância segura, não derrubar
 
 #### [Motivation.5] Pergunta
-A pergunta desta tese é então: como circundar um drone que entra em espaço aéreo restrito de
-forma segura e visível, e sem meios destrutivos, para que o operador perceba que tem de sair?
+- Circundar o intruso de forma segura, visível e não destrutiva
+- Para o operador perceber que tem de sair
 
 ## 3. Problema (0:55)
 
-(Slide "Três noções de circundamento" comentado em `slides.py` por falta de tempo; texto antigo:
-"Circundamento" significa coisas diferentes na literatura. Alguns trabalhos exigem que o alvo
-esteja dentro do invólucro convexo dos perseguidores; outros exigem que os conjuntos alcançáveis
-se sobreponham. Aqui queremos a terceira: uma formação visível em torno, ou à frente, do alvo. É
-um aviso e uma barreira, não uma captura.)
-
 #### [Problem.1] Objetivo 3D
-O alvo, a vermelho, é não cooperativo — só temos uma medição com ruído da sua posição. Cada
-perseguidor i deve convergir para um ponto desejado p_i-estrela em torno dele. Os requisitos:
-totalmente 3D, alvo estático ou móvel, agentes o mais uniformemente espaçados possível — porque
-não sabemos para onde o alvo vai, e o espaçamento uniforme cobre todas as direções por igual —,
-movimento com prevenção de colisões e, idealmente, um sistema descentralizado que sobreviva à
-perda de agentes.
+- Alvo não cooperativo: só medição com ruído; cada perseguidor → p_i*
+- Requisitos: 3D, alvo móvel, espaçamento uniforme, sem colisões
+- Idealmente descentralizado e robusto à perda de agentes
 
 #### [Problem.2] Âmbito
-O que fica fora do âmbito: operadores maliciosos que ignorem a formação, captura ou interceção
-física, e o procedimento legal que se segue ao circundamento.
+- Fora do âmbito: operadores maliciosos, captura física, procedimento legal
 
 ## 4. Roadmap (0:35)
 
 #### [Roadmap.1] Duas etapas
-O trabalho está construído em duas etapas, a segunda assente na primeira. Cada etapa responde a
-três perguntas: para onde deve ir cada agente, como lá chega e como o mantemos seguro.
-Centralizado: rede de Fibonacci, controlador geométrico de Lyapunov e uma salvaguarda APF.
-Descentralizado: sem nó central, um algoritmo de Lloyd em qualquer malha de superfície e um único
-MPC com polinómios de Bernstein para o planeamento de trajetórias. Em todas, a estimativa do alvo vem de medições com ruído, de uma
-média móvel e de consenso.
+- Três perguntas: para onde vai cada agente, como chega, como fica seguro
+- Centralizado: Fibonacci + Lyapunov + APF
+- Descentralizado: Lloyd em qualquer malha + MPC de Bernstein; estimativa do alvo por EMA + consenso
 
 ## 5. Estado da arte (0:45)
 
 #### [StateOfTheArt.1] Abordagens
-Três famílias dominam o controlo de formações circulares. Perseguição cíclica: cada agente
-persegue o seguinte; muito pouca comunicação, mas sem termos adicionais os agentes colapsam num
-ponto. Líder–seguidor: intuitivo, mas o líder é um ponto único de falha. Campos de potencial
-artificial: elegantes e baseados em Lyapunov, mas com mínimos locais e, para formações, o número
-de agentes tem de ser conhecido. A lacuna principal: quase tudo isto é planar, e os trabalhos 3D
-atribuem os agentes a setores predefinidos.
+- Perseguição cíclica, líder–seguidor, campos de potencial: vantagens e falhas
+- Lacuna: quase tudo planar; o 3D usa setores predefinidos
 
 ## 6. Fundamentos (1:30)
 
 #### [Background.1] Algoritmo de Lloyd
-A ferramenta que preciso que tenham presente é o algoritmo de Lloyd. Dados os sítios, divide-se
-o domínio de modo que cada ponto pertença ao sítio mais próximo — as células de Voronoi. Depois
-move-se cada sítio para o centroide da sua célula, e repete-se. Converge para uma tesselação
-centroidal de Voronoi: uma configuração uniformemente distribuída. A etapa descentralizada assenta
-nisto.
+- Células de Voronoi → mover sítio para o centroide → repetir
+- Converge para CVT: distribuição uniforme (base da etapa descentralizada)
 
 #### [Background.2] Vizinhos de Delaunay
-O dual do diagrama de Voronoi é a triangulação de Delaunay: dois agentes são vizinhos se
-partilharem uma aresta de Voronoi. Uso-a como grafo de comunicação — ao contrário dos k vizinhos
-mais próximos ou de um raio fixo, adapta-se ao movimento dos agentes e mantém-se conexo.
+- Dual do Voronoi: vizinhos partilham aresta
+- Grafo de comunicação que se adapta ao movimento e fica conexo
 
 #### [Background.3] Consenso
-Neste grafo, cada agente faz a média da sua estimativa do alvo com as dos vizinhos. Partindo de
-medições com ruído, todas as estimativas convergem para um valor comum — sem nó central.
+- Cada agente faz a média da estimativa do alvo com os vizinhos
+- Estimativas convergem sem nó central
 
 #### [Background.4] Métodos de segurança
-Para as colisões há três famílias. Os APF atuam na referência, sem garantia de invariância —
-usados nos capítulos 4 e 5. Os CBF-QP dão invariância positiva de um conjunto seguro, mas atuam
-na entrada instantânea — não usados. O MPC da tese restringe as posições previstas ao longo de um
-horizonte, juntamente com limites de velocidade e aceleração. O CBF-MPC, que combina ambos, é
-trabalho futuro.
+- APF: atua na referência, sem garantia (cap. 4)
+- CBF-QP: invariância, mas na entrada instantânea (não usado)
+- MPC: restringe posições previstas + limites v, a; CBF-MPC é trabalho futuro
 
 ## 7. Centralizado — distribuição (1:05)
 
 #### [CentralizedDistribution.1] Rede de Fibonacci
-No caso centralizado, um nó conhece todos os agentes, pelo que podemos calcular a formação
-diretamente. Uso a rede de Fibonacci: cada ponto tem a sua latitude, e pontos consecutivos são
-rodados pelo ângulo de ouro, cerca de 137,5 graus. Como a razão de ouro é o número "mais
-irracional", os pontos nunca se alinham e o espaçamento mantém-se uniforme para qualquer tamanho.
+- Centralizado: um nó conhece todos → formação calculada diretamente
+- Ângulo de ouro (~137,5°): pontos nunca se alinham, espaçamento uniforme
 
 #### [CentralizedDistribution.2] Comparação
-Comparei-a com uma grelha latitude–longitude e com a amostragem por disco de Poisson, com cerca
-de 1000 pontos. A lat–lon é a mais regular, mas só produz formações com o tamanho de uma grelha.
-O disco de Poisson é irregular, com coeficiente de variação 0,25. Fibonacci: CV 0,0105, a menor
-energia de Riesz e cerca de 700 vezes mais rápido que o disco de Poisson — 0,1 milissegundos. A
-única restrição é um número ímpar de pontos.
+- vs lat–lon (só tamanhos de grelha) e disco de Poisson (CV 0,25)
+- Fibonacci: CV 0,0105, menor energia de Riesz, ~700x mais rápido (0,1 ms)
+- Única restrição: número ímpar de pontos
 
 ## 8. Centralizado — controlo (1:50)
 
 #### [CentralizedControl.1] Decomposição
-Para chegar ao ponto, divido a posição relativa ao alvo numa distância r_i e numa direção q_i na
-esfera unitária. O objetivo passa a ser dois subobjetivos desacoplados: r_i para r-estrela e q_i
-para q_i-estrela.
+- Posição relativa = distância r_i × direção q_i na esfera
+- Dois subobjetivos desacoplados: r_i → r*, q_i → q_i*
 
 #### [CentralizedControl.2] Função de erro
-Para a direção, o erro clássico é e_r = S(q-estrela) q, o produto externo de q-estrela e q. A sua
-norma é sen(teta): atinge o máximo aos 90 graus e volta a zero junto ao antípoda — o controlador
-quase não veria erro quando está o mais errado possível. O erro proposto por Ramp et al., que uso,
-divide-o por raiz de 2(1 + q·q-estrela) e tem norma sen(teta/2): é monótono e nunca indica
-falsamente convergência.
+- Erro clássico: norma sen θ → volta a zero no antípoda (falsa convergência)
+- Erro de Ramp et al.: norma sen(θ/2), monótono
 
 #### [CentralizedControl.3] Leis de controlo e teorema
-O controlador geométrico roda q ao longo da esfera com ganho k_geo. O controlador radial reduz a
-distância, mas o seu ganho é multiplicado por exp(-|e_q|²): os agentes primeiro alinham-se e
-depois aproximam-se — vê-se na animação, incluindo um agente que começa quase no antípoda. Com
-V = Psi como função de Lyapunov, a derivada de V é menos k_geo |e_q|² e, com LaSalle em conjuntos
-de subnível, o equilíbrio é assintoticamente estável para todas as direções iniciais exceto o
-antípoda — quase global. O erro radial decai exponencialmente com taxa de pelo menos k_r sobre e.
+- Geométrico roda q; radial com ganho exp(−|e_q|²): primeiro alinhar, depois aproximar
+- Lyapunov + LaSalle: estabilidade quase global (exceto o antípoda)
+- Erro radial exponencial, taxa ≥ k_r/e; animação: agente quase no antípoda converge
 
 ## 9. Centralizado — segurança e resultados (2:00)
 
 #### [CentralizedResults.1] Salvaguarda APF
-Este controlador, por si só, não evita colisões enquanto os agentes atravessam a esfera. Por
-isso, uma salvaguarda APF modifica apenas a referência: se dois agentes estiverem mais próximos
-do que d_min, metade do espaçamento da rede, é adicionada uma repulsão tangencial e o resultado é
-reprojetado na esfera. À esquerda sem, à direita com: os agentes desviam-se um do outro. Os
-pontos da rede são atribuídos com o algoritmo de Munkres, minimizando a distância geodésica total.
+- Repulsão tangencial abaixo de d_min, reprojetada na esfera (só na referência)
+- Esquerda sem, direita com; atribuição por Munkres (geodésica total mínima)
 
 #### [CentralizedResults.2] Arquitetura completa
-Antes dos resultados, a arquitetura completa do método centralizado. Um nó central gera a rede de
-Fibonacci e atribui os pontos com o Munkres, a partir da posição de todos os agentes. Em cada
-agente, o controlador geométrico leva a direção até ao ponto atribuído e a salvaguarda APF
-corrige-a; o erro do controlador geométrico alimenta o controlador radial, que só fecha o raio
-quando a direção está alinhada; a referência é a estimativa do alvo mais o raio vezes a direção, e
-o controlador de Mellinger — posição e atitude — segue-a. A estimativa
-do alvo vem da medição com ruído, filtrada pela média móvel exponencial e partilhada por consenso
-na rede de Delaunay.
+- Nó central: Fibonacci + Munkres
+- Agente: geométrico + APF → radial → referência → Mellinger
+- Alvo: medição com ruído → EMA → consenso Delaunay
 
 #### [CentralizedResults.3] 31 agentes, alvo móvel
-Resultados com 31 agentes e um alvo móvel com 5 % de ruído de medição. A formação constitui-se e
-segue o alvo. Com o alvo móvel há uma oscilação limitada em torno de r-estrela (2 m) e um erro de
-seguimento de cerca de um metro, porque o controlador não usa a velocidade do alvo. A distância
-entre agentes mantém-se sempre acima do mínimo.
+- Formação constitui-se e segue o alvo (ruído 5 %)
+- Oscilação limitada em r* e erro ~1 m: não usa a velocidade do alvo
+- Distância entre agentes sempre acima do mínimo
 
 #### [CentralizedResults.4] Teste real
-Este método foi também testado em voo com Crazyflies e OptiTrack. Aqui, três drones executam o
-método centralizado, rede de Fibonacci mais controlador geométrico, em torno de um alvo virtual
-— a magenta — que se move numa circunferência. A verde está o drone real e a laranja a simulação
-do mesmo voo desenhada sobre a imagem da câmara; diferem cerca de 10 centímetros RMS. A fase do
-controlador está em tempo real; a descolagem, o regresso e a aterragem passam a 3x (36 s no total);
-a tecla seguinte avança quando quiser.
+- 3 Crazyflies + OptiTrack, alvo virtual (magenta) em circunferência
+- Verde real, laranja simulação: ~10 cm RMS
+- Fases fora do controlador a 3x; tecla avança
 
 ## — Descentralizado na esfera (cap. 5): fora da apresentação (cena `Decentralized` fora de `scenes.txt`)
 
 #### [Decentralized.1] Lloyd local na esfera
-Descentralizar quebra duas coisas: a rede de Fibonacci precisa do número total de agentes, e o
-Munkres precisa da posição de todos. Assim, cada agente constrói a sua célula de Voronoi a partir
-dos vizinhos e move o seu objetivo para o centroide — o algoritmo de Lloyd na esfera, com
-distância geodésica. Aqui, 12 agentes espalham-se e a variação do espaçamento diminui.
+- Fibonacci precisa de N, Munkres de todas as posições
+- Cada agente: Voronoi com vizinhos → centroide (Lloyd geodésico)
 
 #### [Decentralized.2] Perda de agentes
-Agora perdem-se quatro agentes. Ninguém replaneia globalmente: os oito restantes continuam
-simplesmente a executar o Lloyd e redistribuem-se por toda a esfera. O tamanho da formação pode
-mudar sem qualquer reprojeto.
+- 4 perdidos; os 8 restantes redistribuem-se sem replaneamento global
 
 #### [Decentralized.3] Invólucro convexo vs semiplano
-Implementei as células de Voronoi de duas formas. A versão com invólucro convexo é rápida —
-0,03 s por execução — e convergiu sempre, mas numa esfera fechada pode escolher o arco errado e
-criar células degeneradas. A versão de semiplano constrói cada célula a partir de restrições de
-bissetriz: mais uniforme, CV 0,073 contra 0,120, sem casos degenerados, mas mais lenta — 1,37 s —
-e convergiu em 93 de 100 execuções.
+- Convexo: rápido (0,03 s) mas pode criar células degeneradas
+- Semiplano: mais uniforme (CV 0,073), mais lento (1,37 s), 93/100
 
 #### [Decentralized.4] Arquitetura completa
-A arquitetura descentralizada é a mesma, exceto num bloco: desaparece o nó central, e a rede de
-Fibonacci com o Munkres dá lugar ao algoritmo de Lloyd, que cada agente corre com as posições dos
-vizinhos dados pela rede de Delaunay.
+- Igual, mas sem nó central: Lloyd com vizinhos Delaunay substitui Fibonacci + Munkres
 
 #### [Decentralized.5] Resultados
-12 agentes, alvo móvel, raio desejado de 2 m, 4 perdidos aos 10 segundos, semiplano. Com o alvo
-em movimento, os agentes aproximam-se da esfera mais devagar do que com o alvo estático: aos 30 s a
-distância média ainda é cerca de 4,3 m, porque o controlador não usa a velocidade do alvo. Mas a
-distribuição dos pontos desejados mantém-se uniforme — o CV fica abaixo de 0,1 e o espaçamento
-passa de 2,0 para 2,2 m depois da perda — e a distância mínima entre agentes fica em cerca de
-1,7 m, sem quase-colisões. Não é preciso reprojetar nada quando o tamanho da formação muda.
+- 12 agentes, 4 perdidos aos 10 s; aproximação lenta com alvo móvel
+- CV < 0,1; distância mínima ~1,7 m, sem quase-colisões
 
 ## 10. Descentralizado — malhas e controlador de malha (1:30)
 
 #### [GeneralizedMesh.1] Qualquer malha
-Descentralizar quebra duas coisas: a rede de Fibonacci precisa do número total de agentes, e o
-Munkres precisa da posição de todos. Assim, cada agente corre o algoritmo de Lloyd só com os
-vizinhos da rede de Delaunay. E não tem de ser numa esfera: tratando a malha como um grafo pesado, o Dijkstra dá geodésicas
-por caminho mais curto, e o Lloyd funciona em qualquer malha bem definida — aqui um busto e um
-sapo do conjunto de dados Thingi10K, com 8 sítios cada.
+- Sem nó central: Lloyd só com vizinhos Delaunay
+- Malha como grafo pesado → Dijkstra → Lloyd em qualquer malha (busto, sapo)
 
 #### [GeneralizedMesh.2] Controlador de malha
-Isto permite o comportamento principal. Longe da fronteira, os agentes formam um disco plano:
-uma barreira, um aviso à frente da zona restrita. A malha é uma interpolação entre três formas
-pré-calculadas — disco, cone e esfera — comandada pela distância com sinal do alvo à fronteira.
-As cores indicam a distância de cada vértice para lá da fronteira: nenhum vértice sai para o
-lado de fora.
+- Longe da fronteira: disco plano = barreira/aviso
+- Interpolação disco–cone–esfera pela distância com sinal do alvo à fronteira
+- Cores: nenhum vértice passa a fronteira
 
 #### [GeneralizedMesh.3] Disco para cone
-À medida que o alvo se aproxima e atravessa a fronteira, o disco deforma-se num cone em torno
-dele; o cone fica completo quando o alvo está meio raio para lá da fronteira.
+- Alvo atravessa → cone completo a meio raio para lá da fronteira
 
 #### [GeneralizedMesh.4] Cone para esfera
-Mais para dentro, o cone fecha-se numa esfera — um envolvimento — completa quando o alvo está um
-raio para lá da fronteira; a partir daí a esfera segue o alvo.
+- Mais dentro → esfera (envolvimento) a um raio; depois segue o alvo
 
 #### [GeneralizedMesh.5] O alvo sai
-E se o alvo sair, o processo inverte-se e a formação regressa à barreira.
+- Processo inverte-se → volta à barreira
 
 ## 11. Descentralizado — MPC e velocidade (2:00)
 
 #### [GeneralizedMPC.1] MPC de Bernstein
-Os pontos já não estão numa esfera, pelo que o controlador geométrico é substituído por um MPC.
-Minimiza a distância ao objetivo de Lloyd mais um termo de aceleração, sujeito à consistência do
-estado inicial, a limites de velocidade e aceleração e a um envelope elipsoidal de colisão com os
-vizinhos, cujos horizontes previstos são partilhados pela rede. A trajetória é um polinómio de
-Bernstein de grau 5, pelo que as derivadas são lineares nos pontos de controlo. Só o primeiro
-passo é aplicado, e depois resolve-se de novo. Uma nota honesta: o termo de colisão é uma
-penalização elevada, não uma restrição rígida, pelo que não há garantia formal de segurança.
+- Custo: distância ao objetivo de Lloyd + aceleração; limites v, a; envelope elipsoidal com vizinhos
+- Polinómio de Bernstein grau 5: derivadas lineares; aplica 1.º passo e resolve de novo
+- Nota: colisão é penalização, não restrição rígida
 
 #### [GeneralizedMPC.2] Sem velocidade: CVT uniforme
-Por fim, a velocidade do alvo. Sem ela, os 12 pontos de Lloyd numa malha esférica distribuem-se
-uniformemente, com células de Voronoi calculadas com Dijkstra. O alinhamento
-direcional médio é praticamente zero e metade dos agentes está à frente do alvo.
+- 12 pontos uniformes (Voronoi por Dijkstra)
+- Alinhamento ~0, metade à frente do alvo
 
 #### [GeneralizedMPC.3] Com velocidade: CVT ponderada
-Quando a velocidade é conhecida, cada vértice recebe um peso que cresce com o ângulo à direção
-atrás do alvo, e as arestas da malha ficam mais longas à frente. As células da frente encolhem, os
-agentes deslocam-se para a frente e o algoritmo de Lloyd volta a convergir em poucas iterações, com mais agentes à frente. Com sigma
-1,2 e 12 agentes, o alinhamento sobe para cerca de 0,32 e 8 de 12 agentes ficam no hemisfério da
-frente, como na tese.
+- Peso cresce com o ângulo à direção de trás → células da frente encolhem
+- σ = 1,2: alinhamento ~0,32, 8/12 à frente
 
 #### [GeneralizedMPC.4] Arquitetura completa
-Juntando tudo: a estimação do alvo mantém-se; o controlador de malha posiciona e deforma a malha a
-partir da estimativa do alvo; o Lloyd, uma CVT geodésica na malha e ponderada pela velocidade,
-substitui a rede de Fibonacci e o Munkres do nó central e dá o objetivo de cada agente; e o MPC de Bernstein substitui os controladores
-geométrico e radial, gerando a referência do controlador de Mellinger.
+- Estimação do alvo igual; controlador de malha deforma a malha
+- Lloyd ponderado substitui Fibonacci + Munkres; MPC substitui geométrico + radial → Mellinger
 
 ## 12. Resultados (3:10)
 
 #### [Results.1] Repetição: disco na fronteira
-Esta é a simulação do cenário do capítulo 6 com o controlador de malha da tese, ao dobro da
-velocidade: 12 agentes, o alvo voa numa circunferência, entrando e saindo da região restrita
-(x > 0). Cada tecla avança até à fase seguinte. Ao 1 s, os agentes formam um disco na fronteira.
+- Cenário cap. 6 a 2x: 12 agentes, alvo em circunferência entra/sai de x > 0
+- 1 s: disco na fronteira
 
 #### [Results.2] Cone
-Aos 2,5 s, com o alvo a atravessar a fronteira, a malha é um cone.
+- 2,5 s: alvo a atravessar → cone
 
 #### [Results.3] Esfera fechada
-Aos 4 s, o alvo está dentro e a malha é uma esfera fechada em torno dele.
+- 4 s: alvo dentro → esfera fechada
 
 #### [Results.4] Perda de agentes
-Aos 10 s, quatro agentes ficam sem energia e caem — os outros oito redistribuem-se na esfera.
+- 10 s: 4 sem energia, 8 redistribuem-se
 
 #### [Results.5] Regresso à barreira
-Aos 13 s, o alvo sai e a formação regressa à barreira plana.
+- 13 s: alvo sai → barreira plana
 
 #### [Results.6] Fim da simulação
-E espera aí até ao fim da simulação.
+- Deixar correr até ao fim
 
 #### [Results.7] Análise quantitativa
-Após o transitório inicial, a distância mínima entre agentes mantém-se entre 3 e 4 metros, bem
-acima do limiar de 1 m. As velocidades respeitam sempre o limite de 3 m/s. A formação recupera
-após a perda. Dois pontos fracos: um agente passa muito perto do alvo entre os 2 e os 5 s, porque
-o MPC não tem restrição agente–alvo; e o erro ao objetivo chega a cerca de 4 m quando os agentes
-estão limitados em velocidade, com um perfil em escada porque a atualização de Voronoi corre a
-1 Hz.
+- Distância mínima 3–4 m (> 1 m); velocidade sempre ≤ 3 m/s; recupera após a perda
+- Fraquezas: agente perto do alvo (2–5 s, sem restrição agente–alvo)
+- Erro ao objetivo até ~4 m, em escada (Voronoi a 1 Hz)
 
 #### [Results.8] Teste real
-E aqui quatro drones executam o método descentralizado: a CVT geodésica na malha — os pontos azuis —
-dá os objetivos em torno do alvo virtual, a magenta, e o MPC de Bernstein planeia as trajetórias.
-Descolagem, aproximação, e depois a formação segue o alvo. As trajetórias reais e simuladas
-coincidem a poucos centímetros. No regresso, o CF02 real cai; a simulação completa o seu voo e o
-anel vermelho marca a última posição registada. A fase de formação está em tempo real; a
-descolagem, a aproximação, o regresso e a aterragem passam a 3x (44 s no total); a tecla seguinte
-avança quando quiser.
+- 4 Crazyflies: CVT na malha (azul) + MPC, alvo virtual magenta
+- Real e simulado coincidem a poucos cm
+- CF02 cai no regresso (anel vermelho = última posição); fases fora da formação a 3x
 
 #### [Results.9] Aeroporto de Lisboa: barreira na parede
-Por fim, a mesma arquitetura sobre a zona proibida real do aeroporto de Lisboa, a partir dos
-dados oficiais da ANAC; é uma simulação com o modelo do X500, a 3x. Os doze perseguidores mantêm
-uma barreira na parede, 30 metros no exterior da zona, e deslizam com o alvo; aos 13,9 s o alvo
-atravessa a parede e fecham a esfera.
+- Zona proibida real (ANAC), modelo X500, a 3x
+- Barreira 30 m fora da zona; 13,9 s: alvo atravessa a parede → esfera
 
 #### [Results.10] Perda de perseguidores
-Aos 25 segundos, quatro perseguidores ficam sem energia e os outros oito redistribuem-se.
+- 25 s: 4 sem energia, 8 redistribuem-se
 
 #### [Results.11] O alvo entra na zona proibida
-Aos 34,1 s o alvo entra na zona proibida e a formação achata-se numa barreira na fronteira.
+- 34,1 s: formação achata-se em barreira na fronteira
 
 #### [Results.12] Barreira na fronteira
-E fica a um metro dela até ao fim: os perseguidores nunca entram na zona.
+- A 1 m da fronteira até ao fim: nunca entram na zona
 
 ## 13. Conclusões (0:55)
 
 #### [Conclusions.1] Conclusões
-Para concluir: um enxame consegue circundar um alvo não cooperativo em 3D, em simulação e em
-voos reais com Crazyflies.
-Centralizado: a rede de Fibonacci com o controlador de Lyapunov é a opção mais simples, escala
-até 31 agentes e tem uma prova de convergência quase global. Descentralizado: consenso mais Lloyd
-em qualquer malha funciona sem nó central, faz barreira e envolvimento, um único MPC impõe os
-limites dinâmicos, e a formação sobrevive à perda de agentes. As limitações são claras: voos reais
-apenas em interior e com alvo virtual, comunicação instantânea, posição real do alvo mais ruído, e colisões penalizadas em
-vez de formalmente excluídas.
+- Centralizado: simples, 31 agentes, convergência quase global
+- Descentralizado: Lloyd em qualquer malha, barreira e envolvimento, MPC, robusto à perda
+- Limitações: interior, alvo virtual, comunicação ideal, colisões só penalizadas
 
 ## 14. Trabalho futuro (0:30)
 
 #### [FutureWork.1] Trabalho futuro
-Próximos passos: passar para hardware real com PX4 e ROS 2, comunicação e perceção realistas; e,
-do lado do método, usar a velocidade do alvo no MPC, formações baseadas em alcançabilidade e um
-CBF-MPC para garantias formais de segurança.
+- Hardware real: PX4 + ROS 2, comunicação e perceção realistas
+- Método: velocidade do alvo no MPC, alcançabilidade, CBF-MPC
 
 ## 15. Obrigado (0:10)
 
 #### [ThankYou.1] Obrigado
-Obrigado pela vossa atenção. Terei todo o gosto em responder às vossas questões.
+- Agradecer; abrir para questões
 
 #### [ThankYou.2] Questões (ciclo)
-(Animação em ciclo enquanto decorrem as questões.)
+- (Animação em ciclo durante as questões)
 
 ---
 
 ## Slides extra (apenas durante as questões)
 
 #### [BackupLyapunov.1] Esboço da prova
-Argumento completo de estabilidade: Psi é contínua e limitada em S², a derivada de V é ≤ 0, os
-conjuntos de subnível D_c com c < 2 são compactos, positivamente invariantes e excluem o
-antípoda; LaSalle em cada D_c; os D_c esgotam S² menos o antípoda. Subsistema radial: cascata,
-com taxa limitada inferiormente por k_r/e porque |e_q|² = sen²(θ/2) < 1.
+- V̇ ≤ 0; subníveis D_c (c < 2) compactos, invariantes, sem antípoda → LaSalle
+- Radial em cascata, taxa ≥ k_r/e
 
 #### [BackupControllers.1] Comparação de controladores
-Porquê Lyapunov em vez de fmincon e APF (3 agentes, r* = 2 m, 30 s): o fmincon nunca chega a
-0,1 m em 30 s; o APF converge em 4,46 s, mas precisa de conhecer N à partida e não tem garantia
-de estabilidade como método de distribuição; o Lyapunov demora 17,6 s (primeiro alinhar, depois
-aproximar), mas tem erro de seguimento quase nulo e o menor tempo de computação (7,8 s).
+- fmincon: nunca chega a 0,1 m; APF: 4,46 s mas precisa de N, sem garantia
+- Lyapunov: 17,6 s, erro quase nulo, menor computação (7,8 s)
 
 #### [BackupDirect.1] Métodos de cálculo direto
-Comparação dos três métodos diretos com cerca de 1000 pontos: a grelha latitude–longitude é a mais
-regular mas só existe para tamanhos de grelha; o disco de Poisson é irregular (CV 0,25); a rede
-de Fibonacci tem espaçamento quase uniforme (CV 0,011) e a menor energia de Riesz.
+- Lat–lon só para grelhas; Poisson CV 0,25; Fibonacci CV 0,011, menor Riesz
 
 #### [BackupDirect.2] Tempo de execução
-Em 100 ensaios, a rede de Fibonacci demora cerca de 0,1 ms, cerca de 700 vezes menos que o disco
-de Poisson, e com muito menor dispersão.
+- Fibonacci ~0,1 ms, ~700x mais rápido que Poisson
 
 #### [BackupIterative.1] Métodos de cálculo iterativo
-Os três métodos iterativos com 30 pontos e 100 execuções: o Thomson (energia mínima) nunca
-convergiu no critério e tem o pior espaçamento; o Lloyd com invólucro convexo converge sempre em
-cerca de 20 iterações; o Lloyd com semiplanos é o mais uniforme (CV 0,073) mas converge em 93 de
-100 execuções.
+- Thomson nunca converge; Lloyd convexo sempre (~20 it.)
+- Lloyd semiplano: mais uniforme (CV 0,073), 93/100
 
 #### [BackupIterative.2] Tempo de execução
-O semiplano é cerca de 40 vezes mais lento que o invólucro convexo; por isso os dois foram
-testados no sistema completo.
+- Semiplano ~40x mais lento → ambos testados no sistema completo
 
 #### [BackupDecentralized.1] Falha do invólucro convexo
-Na esfera fechada, o invólucro convexo pode escolher o arco de círculo máximo mais curto quando a
-fronteira de Voronoi verdadeira é o mais longo; o Lloyd move então os sítios para uma partição
-errada e vários sítios podem colapsar juntos. A construção por semiplanos evita isto.
+- Pode escolher o arco curto em vez do longo → partição errada, sítios colapsam
+- Semiplanos evitam isto
 
 #### [BackupParameters.1] Parâmetros da simulação descentralizada
-Parâmetros da simulação do capítulo 6, conforme a tabela da tese.
+- Parâmetros do cap. 6 (tabela da tese)

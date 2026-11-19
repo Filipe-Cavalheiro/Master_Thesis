@@ -32,7 +32,9 @@ def _load_notes(path="SPEAKER_NOTES.md"):
     txt = open(path, encoding="utf-8").read()
     pat = re.compile(r"^#### \[(\w+)\.(\d+)\][^\n]*\n(.*?)(?=^#### |^## |^---|\Z)", re.S | re.M)
     for m in pat.finditer(txt):
-        notes.setdefault(m.group(1), {})[int(m.group(2))] = " ".join(m.group(3).split())
+        # keep one line per bullet (the HTML export renders the notes as Markdown)
+        lines = [ln.strip() for ln in m.group(3).strip().splitlines() if ln.strip()]
+        notes.setdefault(m.group(1), {})[int(m.group(2))] = "\n".join(lines)
     return notes
 
 
@@ -977,8 +979,8 @@ class CentralizedControl(Base):
         qa = pa / np.linalg.norm(pa)
         sketch = VGroup(
             sphere_wire(sk, 1.0, n_lat=3, n_lon=4, front_op=0.3, back_op=0.06),
-            Dot(sk(np.zeros(3)), color=RED, radius=0.08),
             Line(sk(np.zeros(3)), sk(pa), color=GREEN_C, stroke_width=3),
+            Dot(sk(np.zeros(3)), color=RED, radius=0.08),
             Dot(sk(pa), color=WHITE, radius=0.09),
             Dot(sk(qa), color=YELLOW, radius=0.08),
             MathTex(r"\mathbf{p}_T", font_size=30, color=RED).next_to(sk(np.zeros(3)), LEFT, buff=0.15),
@@ -1025,14 +1027,12 @@ class CentralizedControl(Base):
         if labs.get_bottom()[1] < -3.25:
             labs.set(height=labs.height - (-3.25 - labs.get_bottom()[1]))
             labs.next_to(axes, RIGHT, buff=0.4).align_to(axes, UP).shift(UP * 0.75)
-        dot_bad = Dot(axes.c2p(PI * 0.97, np.sin(PI * 0.97)), color=RED_C)
         self.play(Create(axes), FadeIn(ticks), FadeIn(xl))
         self.play(Create(classic), FadeIn(lab_c))
-        self.play(FadeIn(dot_bad))
         self.play(Create(proposed), FadeIn(lab_p))
         self.play(FadeIn(mono))
         self.next_slide()
-        self.play(FadeOut(VGroup(axes, xl, ticks, classic, proposed, labs, dot_bad, top)))
+        self.play(FadeOut(VGroup(axes, xl, ticks, classic, proposed, labs, top)))
 
         # --- control laws + theorem ------------------------------------------
         law1 = MathTex(r"\dot{\mathbf{q}}_i=-k_{geo}\,S(\mathbf{e}_{q_i})\,\mathbf{q}_i", font_size=36)
