@@ -17,14 +17,20 @@ Param.arena = 'free_world'; % simulation arena: 'lab', 'free_world'
 Param.k_rad = 0.7; % radius reduction gain
 Param.k_geo = 100;
 
-%target motion reference
-target_vel = 0.25;
-target_ref = @(t) [ ...
-    -5 + 15*sin(target_vel*t); ...
-    15*cos(target_vel*t); ...
-    5 ];
+% Scenario selection
+Param.moving_target = false; % true: target moves on a circle, false: static target
+Param.drop_agents   = false; % true: remove round(nD/3) agents at Tend/3
 
-% target_ref = @(t) [0;0;5];
+%target motion reference
+if Param.moving_target
+    target_vel = 0.25;
+    target_ref = @(t) [ ...
+        -5 + 15*sin(target_vel*t); ...
+        15*cos(target_vel*t); ...
+        5 ];
+else
+    target_ref = @(t) [0;0;5];
+end
 
 Param.initial_target_pos = target_ref(0);
 
@@ -48,18 +54,6 @@ Param.noise_std = 0.05; % a 5% error on reading target position
 Param.k_neighbours = 20;
 Param.gamma = 0.2;
 Param.comm_range = 1;
-
-% animation
-Param.animation.animate = true;
-Param.animation.trail_length = 150;
-Param.animation.step = 10;
-% === Create PDF ===
-Param.animation.create_pdf = false;
-% === Video settings ===
-Param.animation.save_to_mp4 = false;
-Param.animation.frameStep = 10;
-Param.animation.sim_dt = Param.dTi * Param.animation.frameStep;
-Param.animation.videoFPS = 1 / Param.animation.sim_dt;   
 
 % M690B drone
 % (guessing parameters! needs identification or estimation from geometry)

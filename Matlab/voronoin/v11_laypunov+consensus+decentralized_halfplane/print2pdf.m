@@ -5,7 +5,7 @@ function print2pdf(outfilename, doprint)
         fig = gcf;
 
         % Base output directory
-        outdir = '.\';
+        outdir = pwd;
 
         % Subfolders
         figdir = fullfile(outdir, 'FIGS');

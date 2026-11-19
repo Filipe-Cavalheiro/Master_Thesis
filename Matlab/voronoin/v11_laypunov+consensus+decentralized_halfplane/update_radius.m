@@ -6,7 +6,7 @@ function Rad = update_radius(Rad, e_q, q, q_d, chaser, target, Param)
     %   target - target drone
     %   Param - Parameters
     % ---------- Radius dynamics (purely scalar) ----------
-    V = 4;
+    V = 2;
 
     if V == 1
          % V1 only position

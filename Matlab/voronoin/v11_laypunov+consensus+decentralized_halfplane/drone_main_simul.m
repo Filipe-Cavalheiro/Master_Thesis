@@ -6,7 +6,7 @@
 clear; clc; close all;
 drone_init;
 clearvars iD;
-
+   
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Simulation initialization
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -18,7 +18,7 @@ for iD = 1:Param.nD
     omega{iD} = [0; 0; 0];
     
     % desired values
-    q_d{iD} = projectToSphere(q{iD}, Rad{iD}, Param.initial_target_pos);
+    q_d{iD} = projectToSphere(q{iD}, Param.sphere_radius, Param.initial_target_pos);
     
     omega_d{iD} = [0; 0; 0];
 end
@@ -39,6 +39,11 @@ agents_history = cell(Nsim+1,Param.nD);
 cells_history = cell(Nsim,Param.nD);
 numAgents_history = zeros(Nsim,1);
 avgAgentVal_history = zeros(Param.nD,Nsim);
+
+current_pos = zeros(3,Param.nD);
+for i = 1:Param.nD
+    current_pos(:, i) = q{i};
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Target drone initialization
@@ -63,7 +68,7 @@ for k = 1:Nsim
     fprintf("Computing simulation interation: %04d\n", k);
 
     % drop some agents mid simulation
-    if k == round(Nsim/3)
+    if Param.drop_agents && k == round(Nsim/3)
         removeIdx = randperm(size(q_d,2), round(Param.nD/3));
         q_d(removeIdx) = [];
         new_q_d(removeIdx) = [];
@@ -110,12 +115,22 @@ for k = 1:Nsim
 
         % --- build local point set ---
         neigh_pos = [q_d{iD}'; cell2mat(q_d(neighbours))'];
+                
         neigh_pos_sphere = projectToSphere(neigh_pos', Param.sphere_radius, target.x(1:3));
         agents_dists = geo_distances(neigh_pos_sphere, Param.sphere_radius, target.x(1:3));
         sorted_agents_dists = sort(agents_dists,2);
         sorted_agents_dists(:,end) = [];
         avgAgentVal_history(iD,k) = mean(mean(sorted_agents_dists,2));
-    
+
+        % % Ensure it's on the same side as original agent
+        % % since it is a sphere it can be projected on the wrong side of the
+        % % sphere
+        % if dot(candidate, q_d{iD}) < 0
+        %     candidate = -candidate;
+        % end
+        % 
+        % new_q_d{iD} = candidate;     
+
         % --- Store
         Rad_hist{iD}(k) = Rad{iD};
         q_hist{iD}(:,k) = q{iD};
@@ -157,10 +172,40 @@ for k = 1:Nsim
     q_d = new_q_d;
 end
 
-legend_size = 22;
-legend_size_dim = 16;
+legend_size = 24;
+legend_size_dim = 18;
 
-%% Target Estimation
+%% Distance to target for all drones
+t = (0:Nsim-1) * Param.dTi;                  % [s]
+
+figure('Color','w','Position',[100 100 900 600]);
+hold on; grid on; box on;
+
+colors = lines(Param.nD);
+dist_target = zeros(Param.nD, Nsim);
+for iD = 1:Param.nD
+    dist_target(iD,:) = vecnorm(target_true_hist(1:3,:) - chaser{iD}(1:3,1:Nsim), 2, 1);
+    plot(t, dist_target(iD,:), 'Color', colors(iD,:), 'LineWidth', 2, ...
+         'DisplayName', sprintf('Drone %d', iD));
+end
+
+% Mean over all drones
+plot(t, mean(dist_target,1), 'k--', 'LineWidth', 3, 'DisplayName', 'Mean');
+
+% Sphere radius reference (constant)
+plot(t, Param.sphere_radius*ones(size(t)), 'r:', 'LineWidth', 3, ...
+     'DisplayName', '$r^\star$');
+
+set(gca, 'FontSize', 14, 'LineWidth', 1.5, 'TickLabelInterpreter', 'latex');
+xlabel('Time [s]', 'Interpreter', 'latex', 'FontSize', legend_size);
+ylabel('Distance to target [m]', 'Interpreter', 'latex', 'FontSize', legend_size);
+
+lgd = legend('Location', 'best');
+lgd.FontSize = legend_size_dim;
+lgd.Interpreter = 'latex';
+
+print2pdf("radial_hist_12_agents", 1)
+%%
 figure;
 hold on;
 grid on;
@@ -208,43 +253,10 @@ xlabel('X');
 ylabel('Y');
 zlabel('Z');
 
-title('Consensus Tracking of Moving Target (EMA + Noisy Measurements)');
-
 % Optional: dynamic legend
 legend_entries = [{'True target'}, ...                  
     arrayfun(@(i) sprintf('Drone %d est', i), 1:Is, 'UniformOutput', false)];
 legend(legend_entries{:});
-
-%% Distance to target for all drones
-t = (0:Nsim-1) * Param.dTi;                  % [s]
-
-figure('Color','w','Position',[100 100 900 600]);
-hold on; grid on; box on;
-
-colors = lines(Param.nD);
-dist_target = zeros(Param.nD, Nsim);
-for iD = 1:Param.nD
-    dist_target(iD,:) = vecnorm(target_true_hist(1:3,:) - chaser{iD}(1:3,1:Nsim), 2, 1);
-    plot(t, dist_target(iD,:), 'Color', colors(iD,:), 'LineWidth', 2, ...
-         'DisplayName', sprintf('Drone %d', iD));
-end
-
-% Mean over all drones
-plot(t, mean(dist_target,1), 'k--', 'LineWidth', 3, 'DisplayName', 'Mean');
-
-% Sphere radius reference (constant)
-plot(t, Param.sphere_radius*ones(size(t)), 'r:', 'LineWidth', 3, ...
-     'DisplayName', '$r^\star$');
-
-set(gca, 'FontSize', 14, 'LineWidth', 1.5, 'TickLabelInterpreter', 'latex');
-xlabel('Time [s]', 'Interpreter', 'latex', 'FontSize', legend_size);
-ylabel('Distance to target [m]', 'Interpreter', 'latex', 'FontSize', legend_size);
-
-lgd = legend('Location', 'best');
-lgd.FontSize = legend_size_dim;
-lgd.Interpreter = 'latex';
-
-print2pdf("radial_hist_12_agents", 1)
 
 %% Complete trajectory over 30 s
 t_end = 30;                                  % [s]
@@ -415,5 +427,6 @@ xlabel('Time [s]','Interpreter','latex','FontSize',legend_size);
 ylabel('CV$(d_{NN})$','Interpreter','latex','FontSize',legend_size);
 
 print2pdf("qd_separation_12_agents", 1)
+
 %%
-% animate_simulation(chaser, q_hist, q_d_hist, c_sphere, cells_history, numAgents_history, Param);
+% animate_simulation(chaser, q_hist, q_d_hist, c_sphere, cells_history, numAgents_history, Param, Nsim);

@@ -9,6 +9,7 @@ clear all;
 Param.Tend = 30;
 Param.dTi = 0.01;  % inner-loop and simulation sampling period
 Nsim = round(Param.Tend/Param.dTi)+1;
+Param.Nsim = Nsim;
 Param.g = 9.81;     % earth gravity
 Param.nD = 12; % number of drones
 Param.sphere_radius = 2;  % sphere radius
@@ -16,14 +17,20 @@ Param.arena = 'free_world'; % simulation arena: 'lab', 'free_world'
 Param.k_rad = 0.7; % radius reduction gain
 Param.k_geo = 100;
 
-%target motion reference
-% target_vel = 0.25;
-% target_ref = @(t) [ ...
-%     -5 + 15*sin(target_vel*t); ...
-%     15*cos(target_vel*t); ...
-%     5 ];
+% Scenario selection
+Param.moving_target = false; % true: target moves on a circle, false: static target
+Param.drop_agents   = false; % true: remove round(nD/3) agents at Tend/3
 
-target_ref = @(t) [0;0;5];
+%target motion reference
+if Param.moving_target
+    target_vel = 0.25;
+    target_ref = @(t) [ ...
+        -5 + 15*sin(target_vel*t); ...
+        15*cos(target_vel*t); ...
+        5 ];
+else
+    target_ref = @(t) [0;0;5];
+end
 
 Param.initial_target_pos = target_ref(0);
 

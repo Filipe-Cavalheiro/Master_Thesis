@@ -68,7 +68,7 @@ for k = 1:Nsim
     fprintf("Computing simulation interation: %04d\n", k);
 
     % drop some agents mid simulation
-    if k == round(Nsim/3)
+    if Param.drop_agents && k == round(Nsim/3)
         removeIdx = randperm(size(q_d,2), round(Param.nD/3));
         q_d(removeIdx) = [];
         new_q_d(removeIdx) = [];
@@ -204,7 +204,7 @@ lgd = legend('Location', 'best');
 lgd.FontSize = legend_size_dim;
 lgd.Interpreter = 'latex';
 
-print2pdf("radial_hist_12_agents.pdf", 1)
+print2pdf("radial_hist_12_agents", 1)
 %%
 figure;
 hold on;
@@ -304,7 +304,7 @@ lgd = legend([h_target h_chaser], ...
     {'Target (true)', 'Chasers'}, ...
     'Interpreter', 'latex', 'FontSize', legend_size_dim, 'Location', 'best');
 
-print2pdf("trajectory_12_agents.pdf", 1)
+print2pdf("trajectory_12_agents", 1)
 %% Tracking error: drone position vs. Mellinger reference q{iD}
 t_vec = (0:Nsim-1) * Param.dTi;              % [s]
 
@@ -331,7 +331,7 @@ xlabel('Time [s]', 'Interpreter', 'latex', 'FontSize', legend_size);
 ylabel('$\|\mathbf{p}_i - \mathbf{q}_i\|$ [m]', 'Interpreter', 'latex', 'FontSize', legend_size);
 legend('Interpreter', 'latex', 'FontSize', legend_size_dim, 'Location', 'best');
 
-print2pdf("tracking_error_12_agents.pdf", 1)
+print2pdf("tracking_error_12_agents", 1)
 
 %% Inter-agent Euclidean distance
 t_vec = (0:Nsim-1) * Param.dTi;              % [s]
@@ -368,7 +368,7 @@ xlabel('Time [s]', 'Interpreter', 'latex', 'FontSize', legend_size);
 ylabel('$\|\mathbf{p}_i - \mathbf{p}_j\|$ [m]', 'Interpreter', 'latex', 'FontSize', legend_size);
 legend('Interpreter', 'latex', 'FontSize', legend_size_dim, 'Location', 'best');
 
-print2pdf("inter_agent_dist_12_agents.pdf", 1)
+print2pdf("inter_agent_dist_12_agents", 1)
 
 %% Separation / uniformity of desired positions q_d over time
 t_vec = (0:Nsim-1) * Param.dTi;              % [s]
@@ -426,7 +426,7 @@ set(gca,'FontSize',14,'LineWidth',1.5,'TickLabelInterpreter','latex');
 xlabel('Time [s]','Interpreter','latex','FontSize',legend_size);
 ylabel('CV$(d_{NN})$','Interpreter','latex','FontSize',legend_size);
 
-print2pdf("qd_separation_12_agents.pdf", 1)
+print2pdf("qd_separation_12_agents", 1)
 
 %%
 % animate_simulation(chaser, q_hist, q_d_hist, c_sphere, cells_history, numAgents_history, Param, Nsim);
