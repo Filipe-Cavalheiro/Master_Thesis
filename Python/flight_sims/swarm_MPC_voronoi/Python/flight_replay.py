@@ -43,6 +43,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # flight_sims/ (sim_meta)
+import sim_meta  # noqa: E402
+
 PYTHON_DIR = Path(__file__).resolve().parent                    # this simulation (plant, arena, MPC)
 REPO = next(p for p in PYTHON_DIR.parents if (p / ".git").exists())
 LOGS_DIR = REPO / "Results"                                     # repository Results folder, one subfolder per run
@@ -1051,6 +1054,9 @@ def dry_run(folder, run_code, args):
                            + datetime.now().strftime("_%Y%m%d_%H%M%S"))
     save_dir.mkdir(parents=True, exist_ok=True)
     sim_df.to_csv(save_dir / "sim.csv", index=False)
+    sim_meta.write_sim_meta(save_dir / "sim.csv", run_code, settings=sim_meta.module_settings(S), mode="dry_run",
+                            drones=sim_meta.drones_from_sim_csv(sim_df),
+                            extra={"drones": args.drones, "target_drone_id": target_id})
     t = np.arange(0.0, T, 0.02)
     sim = sim_tracks(sim_df, ids, {i: t for i in ids})
     for i in ids:
@@ -1115,6 +1121,11 @@ def replay(folder, run_code, log_path, meta, args):
     out = log_path.with_name(log_path.stem + "_sim.csv")
     sim_df.to_csv(out, index=False)
     print(f"Simulated flight saved to {out}")
+    sim_meta.write_sim_meta(out, run_code, settings=sim_meta.module_settings(S), mode="replay",
+                            replayed_log=log_path, drones=sim_meta.drones_from_sim_csv(sim_df),
+                            extra={"rerun": bool(args.rerun), "keep_lost": bool(getattr(args, "keep_lost", False)),
+                                   "plant_gains": gains, "drone_model": drone_model,
+                                   "flight_meta": meta is not None})
     # the simulated flight to rewatch later (python animation_display.py: the newest .pkl)
     save_results_pkl(log_path.parent / "simulation" / "simulation_results.pkl", history, ids, phases, real,
                      {"log": str(log_path), "run_code": run_code,
@@ -1133,6 +1144,7 @@ def run(args):
     drones, traj, no_show, no_plot.
     """
     warnings.filterwarnings("ignore", category=UserWarning, module="pandas")
+    sim_meta.seed_rng(getattr(args, "seed", None))
     log_path = meta = None
     if not args.dry_run:
         code = args.folder
@@ -1161,6 +1173,7 @@ def add_arguments(parser):
                         help="replay: re-run the flight code (formation, MPC, landing spots) from the takeoff points "
                              "instead of feeding the drones the setpoints of the flight")
     parser.add_argument("--no-plot", action="store_true", help="no figures")
+    parser.add_argument("--seed", type=int, help="random seed (default: a new one, saved in <sim log>_meta.json)")
     parser.add_argument("--keep-lost", action="store_true",
                         help="replay: a drone the flight lost (no setpoints after the loss) keeps its last setpoint; "
                              "by default its Return and landing are completed as the flight code would fly them")

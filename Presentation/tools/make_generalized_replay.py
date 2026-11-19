@@ -26,11 +26,11 @@ os.chdir(SIM)
 import Structs_sim as SS  # noqa: E402
 
 
-def local_traj(traj, _orig=SS.lisbon_local_traj):
+def local_traj(traj, height=5.0, _orig=SS.lisbon_local_traj):
     if traj != 2:
-        return _orig(traj)
+        return _orig(traj, height)
     w, r = 0.25, 15.0
-    return {"pos": lambda t: np.array([-5 + r * np.sin(w * t), r * np.cos(w * t), 5.0]),
+    return {"pos": lambda t: np.array([-5 + r * np.sin(w * t), r * np.cos(w * t), height]),
             "vel": lambda t: np.array([r * w * np.cos(w * t), -r * w * np.sin(w * t), 0.0])}
 
 

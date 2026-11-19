@@ -52,7 +52,9 @@ from scipy.spatial.transform import Rotation
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+sys.path.insert(1, str(HERE.parent))   # flight_sims/ (sim_meta)
 
+import sim_meta  # noqa: E402
 from Structs import Param, DroneState, SimulationData  # noqa: E402
 from drone_motion import drone_motion, passive_motion, ground_contact  # noqa: E402
 from helper_funcs import get_initial_real_offset  # noqa: E402
@@ -72,7 +74,9 @@ def main():
                          f"(LOG: its flight log; default: the newest {FLIGHT_CODE} run in Results/). "
                          "Without it: the Main Controller (hover) alone, with the parameters of Structs.py")
     ap.add_argument("--no-show", action="store_true", help="save the figures without opening them")
+    ap.add_argument("--seed", type=int, help="random seed (default: a new one, saved in <sim log>_meta.json)")
     args = ap.parse_args()
+    sim_meta.seed_rng(args.seed)
 
     import matplotlib
     if args.no_show:
@@ -158,8 +162,10 @@ def simulate_isolated():
     # Results
     # =========================================================================
     out = out_dir / "sim.csv"
-    pd.DataFrame(rows, columns=CSV_COLS).to_csv(out, index=False)
+    sim_df = pd.DataFrame(rows, columns=CSV_COLS)
+    sim_df.to_csv(out, index=False)
     print(f"Simulated flight saved to {out}")
+    sim_meta.write_sim_meta(out, FLIGHT_CODE, param=param, drones=sim_meta.drones_from_sim_csv(sim_df))
     data = {"position_history": position_history, "p_d_hist": p_d_hist, "ids": ids, "phases": {}}
     return data, param
 
@@ -259,8 +265,11 @@ def simulate_flight(args):
     # =========================================================================
     # Results
     # =========================================================================
-    pd.DataFrame(rows, columns=CSV_COLS).to_csv(sim_csv, index=False)
+    sim_df = pd.DataFrame(rows, columns=CSV_COLS)
+    sim_df.to_csv(sim_csv, index=False)
     print(f"Simulated flight saved to {sim_csv}")
+    sim_meta.write_sim_meta(sim_csv, FLIGHT_CODE, param=param, mode="replay", replayed_log=log_path,
+                            drones=sim_meta.drones_from_sim_csv(sim_df))
     compare(log_path, sim_csv)
     data = {"position_history": position_history, "p_d_hist": p_d_hist, "ids": list(ids), "phases": phases}
     return data, param

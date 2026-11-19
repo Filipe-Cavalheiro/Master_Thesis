@@ -314,7 +314,7 @@ The goal velocity passed to the planner is the estimated target velocity, withou
 
 Until this point, the formation-generation process has relied exclusively on the estimated position of the target, apart from the goal velocity. Although this information is sufficient to construct a spatial formation around the target, it does not use the target's current direction of motion to place the agents. Incorporating velocity information introduces additional system knowledge, allowing the formation to be adapted according to the target's movement.
 
-Velocity can either be measured directly or estimated from the temporal variation of the position; in this thesis it is part of the consensus estimate $\hat{\mathbf{v}}_{T}$ of Section~\ref{sec.6:estimation}, and it gives the instantaneous direction of motion $\hat{\mathbf{v}}_T/\|\hat{\mathbf{v}}_T\|$. The inclusion of this directional information allows the formation to depart from an equally distributed arrangement around the target. In particular, the method aims to assign greater importance to the region located in front of the moving target, while reducing the relative importance of the region directly behind it. This is achieved by modifying the metric of the geodesic \gls{CVT} of Section~\ref{sec.6:goal_assignment} through velocity-dependent vertex weights.
+Velocity can either be measured directly or estimated from the temporal variation of the position; in this thesis it is part of the consensus estimate $\hat{\mathbf{v}}_{T}$ of Section~\ref{sec.6:estimation}, and it gives the instantaneous direction of motion $\hat{\mathbf{v}}_T/\|\hat{\mathbf{v}}_T\|$. The inclusion of this directional information allows the formation to depart from an equally distributed arrangement around the target. In particular, the method aims to assign greater importance to the region located in front of the moving target, while reducing the relative importance of the region directly behind it. The reason is the operator of the target. A remotely piloted drone is usually flown in the direction its camera points, since the operator steers by what the camera shows, so the direction of motion is a good approximation of the operator's view. Since the formation is meant as a visible warning to that operator (Section~\ref{sec.6:architecture}), placing more agents along the velocity vector puts more of the formation in the operator's field of view, which makes this agglomeration of agents in front of the target desirable. This is achieved by modifying the metric of the geodesic \gls{CVT} of Section~\ref{sec.6:goal_assignment} through velocity-dependent vertex weights.
 
 \subsection{Velocity-Dependent Metric}
 
@@ -923,7 +923,7 @@ In the Lisbon simulations, each chaser follows the full nonlinear rigid-body qua
 
 \section{Simulation Results: Straight Boundary} \label{sec.6:simulation_results}
 
-In this section, the simulation results of a first scenario are presented and discussed. The scenario consists of a target that moves in the same circular trajectory as previously defined~\eqref{eq.4:sim_target_motion}, alternating between inside and outside the restricted airspace. Here the restricted airspace is bounded by a single straight boundary, which plays the role of the wall \gls{wall} (there is no prohibited zone behind it, so the barrier on the red border, the joint transition of the wall frame and the airspace projection are not exercised), and ``inside the restricted airspace'' means past the wall. These simulations were obtained with an earlier version of the planner, whose cost contained only the goal and smoothness terms ($\gls{w_v}=0$, with the goal held fixed over the horizon instead of the reference of Equation~\eqref{eq.6:reference}). The Lisbon airport scenario of Section~\ref{sec.6:lisbon} exercises the complete method. A total of 12 agents are initially deployed on the mesh. The Voronoi update is the only component of the system that is not executed at every time step due to its computational cost, instead, it is performed every 100 time steps (once per second).
+In this section, the simulation results of a first scenario are presented and discussed. The target flies the circular trajectory of Equation~\eqref{eq.4:sim_target_motion}, with a radius of 15\,m, but at an altitude of 10\,m instead of 5\,m and with an angular velocity of 0.12\,rad/s (1.8\,m/s) instead of 0.25\,rad/s. The higher altitude keeps the whole mesh, including the disc on the wall, whose radius is about $1.41\,\gls{r_desired}\approx7.1$\,m, above the ground clearance \gls{clearance}, so no goal is raised to the clearance height (Section~\ref{sec.6:mesh_controller}). The lower speed keeps the target well below the maximum speed of the chasers. The scenario is placed in the Lisbon scene of Section~\ref{sec.6:lisbon}, in a local frame on the wall of a straight 6\,km edge of the prohibited zone, and the circle crosses the wall \gls{wall} back and forth, so ``inside the restricted airspace'' means past the wall. The target never comes closer than about 20\,m to the red border, so the barrier on the red border, the joint transition of the wall frame and the airspace projection are not exercised; they are evaluated in the Lisbon airport scenario of Section~\ref{sec.6:lisbon}. The simulation uses the complete method of this chapter, with the same code and settings as the Lisbon scenario (Table~\ref{tab.6:all_params}) and random seed~1. A total of 12 agents are initially deployed on the mesh. The Voronoi update is the only component of the system that is not executed at every time step due to its computational cost, instead, it is performed every 100 time steps (once per second).
 
 During the simulation, the loss of four agents mid-flight, $t = 10$ sec, due to no control input (simulating power loss) is also introduced to demonstrate the resilience of the system and redistribution of the rest of the agents on the mesh, note that the agents that lose power do not become obstacles they simply are ignored by the other agents, this is one of multiple possible future enhancements. As in the previous version, all agents operate in a fully decentralized manner and communicate through a spatial network (with the assumption of instant communication). This allows them to collaboratively estimate the target's position, as well as exchange information about their own positions and horizon with neighboring agents in order to update the Voronoi diagram and be aware of possible collisions. A complete table of simulation parameters can be seen in Table~\ref{tab.6:all_params}
 
@@ -943,39 +943,38 @@ During the simulation, the loss of four agents mid-flight, $t = 10$ sec, due to 
     Gravity \gls{gravity} & $9.81~\mathrm{m/s^2}$ \\
     Number of drones \gls{n_D} & $12$ \\
     Formation radius \gls{r_desired} & $5~\mathrm{m}$ \\
+    Target trajectory & circle of $15~\mathrm{m}$ at $0.12~\mathrm{rad/s}$ ($1.8~\mathrm{m/s}$), altitude $10~\mathrm{m}$ \\
     \hline
 
-    \multicolumn{2}{c}{\textit{Target Estimation and Fault Parameters}} \\
+    \multicolumn{2}{c}{\textit{Formation, Estimation and Fault Parameters}} \\
     \hline
-    Lost agent during simulation & $4$ \\
+    Lost agents during simulation & $4$ \\
     Time of loss of agents & $10~\mathrm{s}$ \\
-    EMA smoothing factor \gls{alpha_EMA} & $0.2$ \\
-    Measurement noise & $\gls{target_pos} \pm 5\%$ \\
+    Mesh vertices \gls{N_M} & $1001$ \\
+    \gls{CVT} update period & $1~\mathrm{s}$ \\
+    Velocity weighting width \gls{sigma} & $1.2$ \\
+    EMA smoothing factor \gls{alpha_EMA} / measurement noise \gls{meas_std} & $0.2$ / $0.05~\mathrm{m}$ \\
     \hline
 
     \multicolumn{2}{c}{\textit{MPC and ADMM Parameters}} \\
     \hline
     Safety radius \gls{safety_radius} & $1~\mathrm{m}$ \\
-    Bernstein polynomial degree \gls{bern_degree} & $5$ \\
-    MPC horizon samples \gls{Horizon} & $5$ \\
-    Obstacle penalty \gls{rho_obs} & $100.0$ \\
-    Inequality penalty \gls{rho_ineq} & $20.0$ \\
-    Goal weight \gls{w_g} & $1000.0$ \\
-    Smoothness weight \gls{w_s} & $1.0$ \\
-    Maximum \gls{ADMM} iterations \gls{iter_opti} & $100$ \\
-    Maximum speed \gls{v_max} & $3~\mathrm{m/s}$ \\
-    Maximum acceleration \gls{a_max} & $5~\mathrm{m/s^2}$ \\
-    Velocity weighting width \gls{sigma} & $1.2$ \\
+    Bernstein degree \gls{bern_degree} / samples \gls{Horizon} / horizon \gls{horizon_time} & $5$ / $5$ / $1~\mathrm{s}$ \\
+    Weights \gls{w_g} / \gls{w_v} / \gls{w_s} & $1000$ / $300$ / $0.1$ \\
+    Minimum time constant $\tau_{r,0}$ & $0.5~\mathrm{s}$ \\
+    Penalty parameters \gls{rho_obs} / \gls{rho_ineq} & $100$ / $20$ \\
+    Maximum \gls{ADMM} iterations \gls{iter_opti} & $15$ \\
+    Maximum speed \gls{v_max} / acceleration \gls{a_max} & $3~\mathrm{m/s}$ / $5~\mathrm{m/s^2}$ \\
     \hline
 
-    \multicolumn{2}{c}{\textit{Nonlinear Controller Parameters}} \\
+    \multicolumn{2}{c}{\textit{Vehicle and Nonlinear Controller Parameters}} \\
     \hline
-    Mass \gls{drone_mass} & $5~\mathrm{kg}$ \\
+    Vehicle & Holybro X500 \\
+    Mass \gls{drone_mass} & $2.28~\mathrm{kg}$ \\
     Inertia matrix \gls{drone_inertial_matrix}
-        & $\mathrm{diag}(0.02,\;0.02,\;0.03)$ \\
-    Drag coefficient \gls{p_drag_coef} & $0$ \\
+        & $\mathrm{diag}(0.024,\;0.024,\;0.044)~\mathrm{kg\,m^2}$ \\
     Proportional gain \gls{K_p}
-        & $\mathrm{diag}(150,\;150,\;150)$ \\
+        & $\mathrm{diag}(1,\;1,\;1)$ \\
     Velocity gain \gls{K_v}
         & $\mathrm{diag}(15,\;15,\;15)$ \\
     Integral gain \gls{K_i}
@@ -984,6 +983,7 @@ During the simulation, the loss of four agents mid-flight, $t = 10$ sec, due to 
         & $\mathrm{diag}(8,\;8,\;8)$ \\
     Angular rate gain \gls{K_Omega}
         & $\mathrm{diag}(0.5,\;0.5,\;0.5)$ \\
+    Ground clearance \gls{clearance} & $1.5~\mathrm{m}$ \\
     \hline
 
     \end{tabular}
@@ -996,12 +996,12 @@ Figures~\ref{fig.6:multiple time steps close up} and~\ref{fig.6:composed_12_agen
 
 \begin{figure}[htbp]
     \centering
-    \subfloat[1 sec]{\includegraphics[width=0.3\textwidth]{5-Figures/Chapter6/Results/close_up_100_12_agents.pdf}}\hfil
-    \subfloat[2.5 sec]{\includegraphics[width=0.3\textwidth]{5-Figures/Chapter6/Results/close_up_250_12_agents.pdf}}\hfil
-    \subfloat[4 sec]{\includegraphics[width=0.3\textwidth]{5-Figures/Chapter6/Results/close_up_400_12_agents.pdf}} \\
-    \subfloat[10 sec]{\includegraphics[width=0.3\textwidth]{5-Figures/Chapter6/Results/close_up_1000_12_agents.pdf}}\hfil
-    \subfloat[13 sec]{\includegraphics[width=0.3\textwidth]{5-Figures/Chapter6/Results/close_up_1300_12_agents.pdf}}\hfil
-    \subfloat[19 sec]{\includegraphics[width=0.3\textwidth]{5-Figures/Chapter6/Results/close_up_1900_12_agents.pdf}}
+    \subfloat[1 sec (wall)]{\includegraphics[width=0.3\textwidth]{5-Figures/Chapter6/Results/close_up_100_12_agents.pdf}}\hfil
+    \subfloat[3 sec (cone)]{\includegraphics[width=0.3\textwidth]{5-Figures/Chapter6/Results/close_up_300_12_agents.pdf}}\hfil
+    \subfloat[7 sec (sphere)]{\includegraphics[width=0.3\textwidth]{5-Figures/Chapter6/Results/close_up_700_12_agents.pdf}} \\
+    \subfloat[12 sec (sphere, after the loss)]{\includegraphics[width=0.3\textwidth]{5-Figures/Chapter6/Results/close_up_1200_12_agents.pdf}}\hfil
+    \subfloat[23.5 sec (cone)]{\includegraphics[width=0.3\textwidth]{5-Figures/Chapter6/Results/close_up_2350_12_agents.pdf}}\hfil
+    \subfloat[28 sec (wall)]{\includegraphics[width=0.3\textwidth]{5-Figures/Chapter6/Results/close_up_2800_12_agents.pdf}}
     \caption[Close up view of agents at multiple time steps]{Close up view of agents $(\times)$, target $(\cdot)$, desired points $(\diamond)$ and mesh, at multiple time steps.}
     \label{fig.6:multiple time steps close up}
 \end{figure}
@@ -1010,12 +1010,12 @@ Figures~\ref{fig.6:multiple time steps close up} and~\ref{fig.6:composed_12_agen
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.9\textwidth]{5-Figures/Chapter6/Results/composed_12_agents.pdf}
-    \caption[Composed view of all 6 time steps]{Composed view of the mesh and the target $(\cdot)$ at the six time steps of Figure~\ref{fig.6:multiple time steps close up}, with the wall $x=0$ (dashed).}
+    \caption[Composed view of all 6 time steps]{Composed view of the mesh and the target $(\cdot)$ at the six time steps of Figure~\ref{fig.6:multiple time steps close up}, with the wall (dashed) drawn on the floor of the plot.}
     \label{fig.6:composed_12_agents}
 \end{figure}
 
 \paragraph{Mesh evolution (Figures~\ref{fig.6:multiple time steps close up} and~\ref{fig.6:composed_12_agents}).}
-At $t=1$\,s the target is outside the restricted airspace and the agents are distributed over the planar circular mesh. At $t=2.5$\,s the target is close to the boundary and the mesh has deformed into a cone, with its centre displaced towards the target. At $t=4$\,s the target has penetrated the airspace by at least a mesh radius and the mesh is a closed sphere with the target near its centre. At $t=10$\,s, after  the loss of four agents, the remaining agents remain on the spherical mesh and the formation is still closed around the target. At $t=13$\,s and $t=19$\,s the target has left the restricted airspace and the mesh has returned to the planar configuration, remaining at the boundary while the target moves away. Figure~\ref{fig.6:composed_12_agents} overlays these instants and shows that the sequence disc-cone-sphere-(cone)-disc is continuous and follows the target's circular path.
+At $t=1$\,s the target is outside the restricted airspace and the agents are distributed over the planar circular mesh on the wall. At $t=3$\,s the target is within $\gls{r_desired}/2$ of the wall and the mesh has deformed into a cone, with its centre displaced towards the target. At $t=7$\,s the target has penetrated the airspace by more than a mesh radius and the mesh is a closed sphere with the target at its centre. At $t=12$\,s, after the loss of four agents, the remaining eight agents have redistributed on the spherical mesh and the formation is still closed around the target. At $t=23.5$\,s the target is about to leave the airspace and the mesh is a cone again, and at $t=28$\,s the target is outside and the mesh has returned to the planar configuration on the wall, remaining there while the target moves away. Figure~\ref{fig.6:composed_12_agents} overlays these instants and shows that the sequence disc-cone-sphere-cone-disc is continuous and follows the target's circular path.
 
 \begin{figure}[htbp]
     \centering
@@ -1028,7 +1028,7 @@ At $t=1$\,s the target is outside the restricted airspace and the agents are dis
     \subfloat[Tracking Error]{\includegraphics[width=0.45\columnwidth]{5-Figures/Chapter6/Results/low_level_tracking_error_12_agents.pdf}}
     \\
     \subfloat[Trajectory of all Drones]{\includegraphics[width=0.7\columnwidth]{5-Figures/Chapter6/Results/trajectory_12_agents.pdf}}
-    \caption[Simulation for 12 drones with a moving target (Dijkstra)]{Simulation results for the 12-drone moving targe with loss of agents (Dijkstra).}
+    \caption[Simulation for 12 drones with a moving target (Dijkstra)]{Simulation results for the 12-drone moving target with loss of agents (Dijkstra). The grey dashed lines mark the changes of formation (wall, cone, sphere), computed from the mean target estimate of the chasers: the mesh is counted as a cone as soon as it is no longer a flat disc, and as a sphere as soon as it is no longer a pure cone.}
     \label{fig.6:multiple_results_joined_12_agents_loss_dijkstra}
 \end{figure}
 
@@ -1036,22 +1036,22 @@ At $t=1$\,s the target is outside the restricted airspace and the agents are dis
 \label{sec:6:results_analysis_loss}
 
 \paragraph{Radial distance to the target (Figure~\ref{fig.6:multiple_results_joined_12_agents_loss_dijkstra}(a)).}
-While the target is inside the restricted airspace, the agents converge towards the nominal mesh radius $\gls{r_desired}=5$\,m (dashed line). The initial transient, in which the agents start at about $12$\,m from the target, is not uniform. Some agents overshoot below \gls{r_desired} and one of them approaches the target very closely between $t\approx 2$ and $5$\,s. This occurs because the MPC only tracks the goals provided by the Voronoi step and has no agent--target separation constraint. After the power loss at $t=10$\,s, the four affected agents no longer appear in the plot and the remaining eight settle again around \gls{r_desired}. As the target leaves the airspace, the distance rises to a maximum of roughly $20$\,m at $t\approx 19$\,s. This is expected, since in this phase the mesh remains at the boundary instead of following the target, and it is not a tracking failure. When the target re-enters, the distance returns to \gls{r_desired} at $t\approx 25$\,s and increases again at the end of the simulation as the target exits once more.
+The agents start on the planar mesh, between 5.2 and 8.6\,m from the target, and stay on the wall while the target is outside the restricted airspace (until $t\approx1.7$\,s). During the cone phase ($1.7$--$4.8$\,s) the distances spread out, and one agent comes as close as 1.5\,m to the target at $t\approx3.2$\,s, because the MPC tracks the goals provided by the Voronoi step and has no agent--target separation constraint. Once the mesh is a complete sphere ($t\approx6.6$\,s), the agents converge to the nominal mesh radius $\gls{r_desired}=5$\,m (dashed line) and, between 12 and 20\,s, stay between 4.9 and 5.1\,m from the target. The loss of four agents at $t=10$\,s, which were then about 5\,m from the target and are no longer drawn after the loss, barely changes the distance of the remaining eight. From $t\approx20$\,s the sphere shrinks back towards the cone as the target approaches the wall from inside, and the distances drop to about 3.3\,m during the cone phase ($22.0$--$25.1$\,s). After the target leaves the airspace the mesh stays on the wall and the distance rises to between 11.0 and 12.2\,m at $t=30$\,s. This is expected, since in this phase the mesh remains at the boundary instead of following the target, and it is not a tracking failure.
 
 \paragraph{Inter-agent distance (Figure~\ref{fig.6:multiple_results_joined_12_agents_loss_dijkstra}(b)).}
-The minimum pairwise distance (blue) starts below the safety threshold, because the agents are initially deployed close to each other, and rises above it within the first seconds. From then on it remains above the threshold for the entire simulation, settling at about $3$--$4$\,m. The margin with respect to the threshold is therefore large, which shows that the collision-aware constraint is conservative for this scenario. The maximum distance (red) decreases from its initial value to about $10$\,m once the agents are on the mesh, and the mean (dashed) remains roughly constant at about $6$--$7$\,m. A small step is visible in the mean at $t\approx 10$\,s, caused by the removal of the four agents from the set of active pairs. The figure does not show the agents that lost power, so it does not assess whether the remaining agents keep a safe distance from them.
+The minimum pairwise distance (blue) starts at 1.6\,m, above the safety radius $\gls{safety_radius}=1$\,m (dotted), because the agents are initially deployed close to each other on the planar mesh, and it never drops below the safety radius. It grows as the mesh opens into the cone and the sphere, settles at about 3.6\,m on the sphere and at about 3.9\,m on the wall in the last seconds, and its smallest value after the first second is 2.1\,m. The maximum distance (red) decreases from 13.4\,m on the planar mesh to about 9.8\,m on the sphere, which is close to the sphere diameter, and returns to about 10.5\,m on the wall at the end. The mean (dashed) remains between 6.4 and 7.3\,m. A small step is visible at $t=10$\,s, caused by the removal of the four agents from the set of active pairs. The figure does not show the agents that lost power, so it does not assess whether the remaining agents keep a safe distance from them.
 
 \paragraph{Velocity components (Figure~\ref{fig.6:multiple_results_joined_12_agents_loss_dijkstra}(c)).}
-All three components remain inside the imposed bounds $[-\gls{v_max}, \gls{v_max}]$ (dashed lines) during the entire simulation. The bounds are reached in two situations. In the first, the agents move from their initial positions to the mesh in the first seconds, which saturates mainly $v_x$ and $v_y$. In the second, the agents follow the target along its circular trajectory, during which $v_y$ saturates at its upper bound for roughly ten seconds. During these periods the agents are velocity-limited, which contributes to the tracking error discussed below. The $v_z$ component stays close to zero with short oscillations, consistent with a target trajectory that changes altitude only slightly. The spikes that appear after $t=10$\,s correspond to the redistribution of the remaining agents after the power loss, and the flat segments at zero correspond to periods in which the agents are already at their goals.
+All three components remain inside the bounds $[-\gls{v_max}, \gls{v_max}]$ (dashed lines) during the entire simulation, with a largest magnitude of 2.98\,m/s. The \gls{MPC} constrains the norm of the velocity, which reaches at most 3.10\,m/s, about 3\% above \gls{v_max}, for a short time at $t\approx7.3$\,s: the constraint is imposed on the planned trajectory at the horizon samples, and the drone tracks that plan with a small error. The speed is close to the limit in two intervals, $5.8$--$9.4$\,s and $21.1$--$22.6$\,s, which correspond to the changes of formation described below, when the agents move between the cone and the sphere. Outside these intervals the agents move with the target, at up to about 2\,m/s, mainly along $v_x$ and $v_y$, and $v_z$ stays close to zero except during the changes of formation, when agents move to the top and the bottom of the sphere. The short spikes visible every second correspond to the Voronoi update, when the goals change, and the flat segments at the end correspond to the agents at rest on the wall.
 
 \paragraph{Tracking error (Figure~\ref{fig.6:multiple_results_joined_12_agents_loss_dijkstra}(d)).}
-The tracking error is the distance between each agent and its desired Lloyd point (goal) \gls{p_i_desired}. Its staircase profile results from the Voronoi update running only once per second, since the goal is held constant between updates and then changes abruptly. The error is largest at the beginning and around $t=10$\,s, where it reaches a peak for one agent of roughly $8$--$9$\,m, because the goals change significantly when the agents are lost. In the following seconds it decreases to almost zero at $t\approx 14$\,s, when the target moves slowly relative to the formation. It then rises to about $4$\,m at $t\approx 20$\,s, when the target moves fastest and the agents are velocity-limited, and returns to near zero at $t\approx 25$\,s. This correlation with the velocity saturation of Figure~\ref{fig.6:multiple_results_joined_12_agents_loss_dijkstra}(c) indicates that the error is driven by the target's motion and the agents' velocity limit, and not by instability of the controller. The spread between agents is small during the smooth phases, which indicates consistent behaviour across the swarm.
+The tracking error is the distance between each agent and its desired Lloyd point (goal) \gls{p_i_desired}. Its saw-tooth profile results from the Voronoi update running only once per second, since the goal is held constant between updates and then changes abruptly. The largest errors coincide with the changes of formation marked in the figure. While the formation is on the wall and in the first cone phase, the error stays below about 1.3\,m after the first Voronoi update. When the cone turns into the sphere ($t\approx4.8$\,s), the mesh changes shape and the goals move from the cone onto the sphere, some of them to the far side of the target, so the agents must travel several metres to their new goals and then readjust their positions on the new mesh. The error therefore rises to a maximum of 3.0\,m at $t\approx6.5$\,s, while the agents move at close to \gls{v_max} (Figure~\ref{fig.6:multiple_results_joined_12_agents_loss_dijkstra}(c)), and decreases once they are distributed on the sphere. The loss of four agents at $t=10$\,s produces a second peak of 2.6\,m, as the goals are redistributed among the remaining eight agents on the same mesh, which decays within about two seconds. Between 12 and 20\,s, with the sphere settled, the mean error is 0.30\,m and the maximum stays at about 1\,m. The error rises again from $t\approx20$\,s, when the sphere starts to shrink back towards the cone, and reaches 4.1\,m at $t\approx22$\,s, the change from the sphere to the cone. After the change to the wall at $t\approx25.1$\,s it decays, with a mean of 0.15\,m in the last five seconds. The error is thus driven mainly by the changes of the mesh, and not by instability of the controller.
 
 \paragraph{Trajectories (Figure~\ref{fig.6:multiple_results_joined_12_agents_loss_dijkstra}(e)).}
-The black curve is the target's circular path, with the start and end markers indicating its direction. The agents start away from the target (circular markers) and converge to the vicinity of the target's path, after which their trajectories remain entangled around it as they continuously reassign positions on the mesh. The four agents that lose power stop at their final positions (visible as the trajectories that end early), while the other eight continue to follow the target. The trajectories are smooth, with no abrupt direction changes, which is consistent with the smoothness term in the MPC cost. Some excursions away from the path occur when the target leaves the airspace and the agents return to the planar barrier.
+The black curve is the target's path along part of the circle, with the start and end markers indicating its direction, and the dashed red line is the wall. The agents start on the planar mesh in front of the target ($\times$) and follow it into the airspace, after which their trajectories surround the target's path as they reassign positions on the mesh. The four agents that lose power stop being drawn at $t=10$\,s, while the other eight continue to follow the target. The trajectories are smooth, with no abrupt direction changes, which is consistent with the smoothness term in the MPC cost. At the end, the agents move back to the planar barrier on the wall while the target moves away.
 
 \paragraph{Summary.}
-Taken together, the results show that the formation converges to the target, deforms as a function of its position relative to the airspace boundary, and recovers after the loss of agents, with the velocity bounds always respected and the minimum inter-agent distance always above the safety threshold after the initial transient. The main weaknesses are the initial close approach to the target, the tracking error caused by the $1$\,Hz Voronoi update and velocity saturation.
+Taken together, the results show that the formation converges to the target, deforms as a function of its position relative to the airspace boundary, and recovers after the loss of agents, with the velocity components always within their bounds, the speed at most 3\% above \gls{v_max}, and the minimum inter-agent distance always above the safety radius. The main weaknesses are the close approach to the target during the cone phase, the tracking error at the changes of formation and after the loss of agents, when the goals move to a mesh of a different shape or are redistributed, and the $1$\,Hz Voronoi update.
 
 \section{Lisbon Airport Scenario} \label{sec.6:lisbon}
 

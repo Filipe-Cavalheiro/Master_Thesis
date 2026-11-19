@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # flight_sims/ (root_results)
 import root_results
+import sim_meta
 
 from Structs_sim import (Param, Voronoi, SimulationData, SimulationConfig, results_file_path, sim_config,
                          simulation_data)
@@ -33,6 +34,8 @@ def main(param: Param | None = None, plant=None):
     # =========================================================================
     if param is None:
         param = Param()
+    if sim_meta.SEED is None:      # not seeded by the caller (cli --seed, figure scripts)
+        sim_meta.seed_rng()
     # also copy the results of this run (figures, .pkl, replay log) into
     # <repo>/Results/swarm_MPC_voronoi_<date>/
     root_results.mirror_on_exit("swarm_MPC_voronoi", Path(__file__).resolve().parent / "Results")
@@ -310,6 +313,12 @@ def main(param: Param | None = None, plant=None):
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, "wb") as f:
             pickle.dump(data, f)
+        sim_meta.write_sim_meta(
+            file_path, FLIGHT_CODE, param=param,
+            drones={str(iD + 1): {"initial_position": position_history[iD, :, 0].tolist(),
+                                  "lost": bool(iD not in set(int(i) for i in active_ids))}
+                    for iD in range(param.sim.nD)},
+            extra={"target_initial_position": target_true_hist[0:3, 0].tolist()})
 
     if param.display.verbose:
         sim_data = simulation_data(data)
@@ -351,6 +360,7 @@ def cli():
             sim.traj = args.traj
         if args.scene is not None:
             sim.scene = args.scene
+        sim_meta.seed_rng(args.seed)
         main(Param(sim))
         return
     args.folder = FLIGHT_CODE

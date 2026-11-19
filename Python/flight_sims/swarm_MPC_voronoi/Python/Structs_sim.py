@@ -57,6 +57,7 @@ class SimulationConfig:
         # Target path: 1 hover, 2 circle, 3 Lissajous, 4 3D Lissajous, 5 intrusion across a
         # straight red border, 6 intrusion through a red border joint (in both scenes)
         self.traj = 2
+        self.lisbon_traj_height = 5.0   # [m] altitude of the Lisbon trajectories 1-4 (5, 6: their own)
 
         # MPC: plan a 1 s horizon to the goal (ADMM, with vel/acc limits,
         # inter-agent avoidance and the airspace). False: the goal position
@@ -198,11 +199,12 @@ class ControllerConfig:
         self.c2 = 2
         self.c3 = 2
 
-def lisbon_local_traj(traj):
-    """Trajectories 1-4 of the Lisbon scene in the wall frame (x past the wall, y along it, z up), (3,) arrays."""
+def lisbon_local_traj(traj, height=5.0):
+    """Trajectories 1-4 of the Lisbon scene in the wall frame (x past the wall, y along it, z up), (3,) arrays,
+    at altitude `height` [m]."""
     if traj == 1:
         # Hover in the grey band, 10 m past the wall
-        return {"pos": lambda t: np.array([10.0, 0.0, 5.0]),
+        return {"pos": lambda t: np.array([10.0, 0.0, height]),
                 "vel": lambda t: np.zeros(3)}
     # Speeds: the target stays well under the MPC limit v_max (3 m/s), with room
     # for the chasers on the outer side of the formation (radius 5 m), which fly
@@ -212,17 +214,17 @@ def lisbon_local_traj(traj):
         # Circle of 15 m around (-5, 0, 5): crosses the wall back and forth;
         # 0.12 rad/s: target 1.8 m/s, outer chasers ~2.4 m/s
         w, r = 0.12, 15.0
-        return {"pos": lambda t: np.array([-5 + r * np.sin(w * t), r * np.cos(w * t), 5.0]),
+        return {"pos": lambda t: np.array([-5 + r * np.sin(w * t), r * np.cos(w * t), height]),
                 "vel": lambda t: np.array([r * w * np.cos(w * t), -r * w * np.sin(w * t), 0.0])}
     if traj == 3:
         # Lissajous centred on the wall; 0.2 rad/s: target up to 2.2 m/s (was 1 rad/s, 11 m/s)
         w = 0.2
-        return {"pos": lambda t: np.array([5 * np.sin(w * t), 5 * np.sin(2 * w * t), 5.0]),
+        return {"pos": lambda t: np.array([5 * np.sin(w * t), 5 * np.sin(2 * w * t), height]),
                 "vel": lambda t: np.array([5 * w * np.cos(w * t), 10 * w * np.cos(2 * w * t), 0.0])}
     if traj == 4:
         # 3D Lissajous centred on the wall, as 3 with 0.2 m in height
         w = 0.2
-        return {"pos": lambda t: np.array([5 * np.sin(w * t), 5 * np.sin(2 * w * t), 5 + 0.2 * np.cos(2 * w * t)]),
+        return {"pos": lambda t: np.array([5 * np.sin(w * t), 5 * np.sin(2 * w * t), height + 0.2 * np.cos(2 * w * t)]),
                 "vel": lambda t: np.array([5 * w * np.cos(w * t), 10 * w * np.cos(2 * w * t),
                                            -0.4 * w * np.sin(2 * w * t)])}
     raise ValueError(f"Unknown trajectory {traj}")
@@ -259,12 +261,14 @@ class TrajectoryConfig:
         traj=5,
         radius=2.2,
         speed=0.5,
-        height=1.3
+        height=1.3,
+        lisbon_height=5.0
     ):
 
         self.target_traj_radius = radius
         self.default_speed = speed
         self.default_height = height
+        self.lisbon_height = lisbon_height     # [m] altitude of the Lisbon trajectories 1-4
         self.airspace = airspace
 
         self.ref_target_traj = self.make_traj(traj)
@@ -293,7 +297,7 @@ class TrajectoryConfig:
             # Paths of V16 in the wall frame (wall at x = 0, see wall_frame_origin):
             # the target crosses the wall into the grey band and back, the
             # formation morphs wall <-> sphere; the red zone is never reached.
-            local = lisbon_local_traj(traj)
+            local = lisbon_local_traj(traj, self.lisbon_height)
             origin, n_in, tangent = self.wall_frame_origin()
             R = np.array([[n_in[0], tangent[0], 0.0],
                           [n_in[1], tangent[1], 0.0],
@@ -381,7 +385,7 @@ def results_file_path(display, latest=False):
 
 # SimulationConfig values stored with the results (.pkl, "sim"): what the
 # figures need to be redrawn (animation_display.py) for the run's own scene
-SAVED_SIM_KEYS = ("scene", "traj", "nD", "Tend", "dTi", "Nsim", "nD_drop_time", "sphere_radius", "v_max", "a_max",
+SAVED_SIM_KEYS = ("scene", "traj", "lisbon_traj_height", "nD", "Tend", "dTi", "Nsim", "nD_drop_time", "sphere_radius", "v_max", "a_max",
                   "obstacle_avoidance_dim", "arena_wall_x")
 
 
@@ -396,6 +400,8 @@ def param_from_config(cfg):
     sim.scene, sim.traj = cfg.get("scene", sim.scene), cfg.get("traj", sim.traj)
     if "arena_wall_x" in cfg:
         sim.arena_wall_x = cfg["arena_wall_x"]
+    if "lisbon_traj_height" in cfg:
+        sim.lisbon_traj_height = cfg["lisbon_traj_height"]
     param = Param(sim)
     for k, v in cfg.items():
         setattr(param.sim, k, v)
@@ -447,6 +453,7 @@ class GraphicalDisplay:
         # .pkl of the run, relative to the Python folder (or absolute). None: saved to
         # DEFAULT_RESULTS_FILE; animation_display.py (redraw) loads the newest .pkl in Results/
         self.results_file = DEFAULT_RESULTS_FILE
+        self.close_up_steps = [100, 250, 400, 1000, 1300, 1900]  # steps of the close-up and composed figures
         self.trail_length = 100
         self.step = 5
 
@@ -500,7 +507,8 @@ class Param:
             configure_arena_experiment(self)
         elif self.sim.scene == "lisbon":
             self.airspace = RestrictedAirspace(self.sim)
-            self.traj = TrajectoryConfig(self.airspace, traj=self.sim.traj)
+            self.traj = TrajectoryConfig(self.airspace, traj=self.sim.traj,
+                                         lisbon_height=self.sim.lisbon_traj_height)
         else:
             raise ValueError(f"Unknown scene {self.sim.scene!r} (lisbon, arena)")
 

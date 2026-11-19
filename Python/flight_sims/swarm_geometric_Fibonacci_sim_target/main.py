@@ -62,7 +62,9 @@ from scipy.spatial.transform import Rotation
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+sys.path.insert(1, str(HERE.parent))   # flight_sims/ (sim_meta)
 
+import sim_meta  # noqa: E402
 from Structs import Param, DroneState, SimulationData  # noqa: E402
 from drone_motion import drone_motion, passive_motion, ground_contact  # noqa: E402
 from helper_funcs import (linear_motion_ref, apf_safe_guard, update_radius,  # noqa: E402
@@ -84,7 +86,9 @@ def main():
     ap.add_argument("--ctrl-period", type=float,
                     help="with --IRL_log: period of the controller loop, s (default: measured in the flight if logged, else dTi)")
     ap.add_argument("--no-show", action="store_true", help="save the figures without opening them")
+    ap.add_argument("--seed", type=int, help="random seed (default: a new one, saved in <sim log>_meta.json)")
     args = ap.parse_args()
+    sim_meta.seed_rng(args.seed)
 
     import matplotlib
     if args.no_show:
@@ -264,7 +268,9 @@ def simulate_isolated():
         target_true_hist[:, k:k + 1] = np.concatenate([target.position, target.velocity, target.attitude,
                                                       target.ang_vel, target.ei, target.eI])
 
-    save_sim_csv(rows, out_dir / "sim.csv")
+    sim_df = save_sim_csv(rows, out_dir / "sim.csv")
+    sim_meta.write_sim_meta(out_dir / "sim.csv", FLIGHT_CODE, param=param,
+                            drones=sim_meta.drones_from_sim_csv(sim_df))
     data = {
         "position_history": position_history,
         "target_true_hist": target_true_hist,
@@ -467,6 +473,9 @@ def simulate_flight(args):
     # Results
     # =========================================================================
     sim_df = save_sim_csv(rows, sim_csv)
+    sim_meta.write_sim_meta(sim_csv, FLIGHT_CODE, param=param, mode="replay", replayed_log=log_path,
+                            drones=sim_meta.drones_from_sim_csv(sim_df), extra={"meta_of_flight": meta is not None, "flight_constants": c,
+                                                                       "ctrl_period": ctrl_period})
     stream = {i: (np.asarray(ts, float), np.asarray(vs, float).reshape(-1, 3)) for i, (ts, vs) in stream.items()}
     compare(c, log_path, sim_df, sched, stream, ctrl_period, out_dir / "comparison", meta, sp_log)
 

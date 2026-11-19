@@ -10,6 +10,62 @@ from Structs_sim import Param, SimulationData, Voronoi
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from voronoi_mesh_funcs import pre_compute_desired_pos
 
+def formation_phases(data: SimulationData, param: Param, min_duration=0.5):
+    """
+    Formation type of the mesh over time ("wall", "cone", "sphere", "red border",
+    voronoi_mesh_funcs.formation_type) from the mean target estimate of the
+    active chasers, as a list of (start time [s], formation). Phases shorter
+    than min_duration (estimate noise at a threshold) are merged into the
+    previous one.
+    """
+    from voronoi_mesh_funcs import formation_type
+    est = np.asarray(data.perceived_target_hist)[:, :3, :param.sim.Nsim]       # (nD, 3, N)
+    alive = ~np.isnan(np.asarray(data.p_d_hist)[:, :, :param.sim.Nsim]).any(axis=1)   # (nD, N)
+    est = np.where(alive[:, None, :], est, np.nan)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        target = np.nanmean(est, axis=0)                                         # (3, N)
+    t = np.arange(target.shape[1]) * param.sim.dTi
+    kinds = [formation_type(target[:, k], param.airspace, param.sim.sphere_radius) for k in range(len(t))]
+
+    phases = []
+    for k, kind in enumerate(kinds):
+        if not phases or kind != phases[-1][1]:
+            phases.append((t[k], kind))
+    merged = []
+    for i, (t0, kind) in enumerate(phases):
+        t1 = phases[i + 1][0] if i + 1 < len(phases) else t[-1]
+        if merged and (t1 - t0 < min_duration or kind == merged[-1][1]):
+            continue
+        merged.append((t0, kind))
+    # drop repeated kinds left by the merge
+    return [p for i, p in enumerate(merged) if i == 0 or p[1] != merged[i - 1][1]]
+
+
+def mark_formation_phases(axes, phases, label_ax=None, fontsize=14):
+    """
+    Grey dashed vertical line at every change of formation, with the name of
+    the new formation (as Figure 6.13 marks the wall, the red border and the
+    loss); the first formation is written at the start of the plot.
+    """
+    import matplotlib.transforms as mtransforms
+    axes = np.atleast_1d(axes)
+    label_ax = axes[0] if label_ax is None else label_ax
+    trans = mtransforms.blended_transform_factory(label_ax.transData, label_ax.transAxes)
+    x0, x1 = label_ax.get_xlim()
+    y_label, last_t = 0.98, None
+    for i, (t0, kind) in enumerate(phases):
+        if i > 0:
+            for ax in axes:
+                ax.axvline(t0, color="0.45", ls="--", lw=1.2, zorder=0.5)
+        # a label too close to the previous one goes one line lower
+        close = last_t is not None and (t0 - last_t) < 0.08 * (x1 - x0)
+        y_label = (0.90 if y_label == 0.98 else 0.98) if close else 0.98
+        label_ax.text(t0, y_label, " " + kind, transform=trans, color="0.35", fontsize=fontsize,
+                      ha="left", va="top", clip_on=False)
+        last_t = t0
+
+
 def create_figures(data: SimulationData, param: Param):
     voronoi = Voronoi(param)
     origin_p_d, swarm_center, voronoi = pre_compute_desired_pos(voronoi, param)
@@ -98,7 +154,7 @@ def create_figures(data: SimulationData, param: Param):
     print("Exited on q")
 
 def composed_plot(data: SimulationData, voronoi: Voronoi, param: Param):
-    fig = plt.figure()
+    fig = plt.figure(figsize=(9, 7))
     ax = fig.add_subplot(111, projection='3d')
 
     ax.grid(True)
@@ -111,7 +167,7 @@ def composed_plot(data: SimulationData, voronoi: Voronoi, param: Param):
     position_history = data.position_history
 
     # Remove steps above simulation time
-    steps = np.array([100, 250, 400, 1000, 1300, 1900])
+    steps = np.array(getattr(param.display, "close_up_steps", [100, 250, 400, 1000, 1300, 1900]))
     steps = steps[steps < param.sim.Nsim]
 
     # === Create legend handles ===
@@ -142,6 +198,7 @@ def composed_plot(data: SimulationData, voronoi: Voronoi, param: Param):
     save_location = current_folder + param.display.save_location
     print("Saving composed plot")
 
+    drawn_pts = []      # meshes and targets: the axis limits (add_collection3d does not autoscale)
     for step in steps:
 
         idx = np.arange(
@@ -173,6 +230,8 @@ def composed_plot(data: SimulationData, voronoi: Voronoi, param: Param):
         )
 
         ax.add_collection3d(mesh)
+        drawn_pts.append(voronoi.vertices)
+        drawn_pts.append(target_pos.reshape(1, 3))
 
         # --------------------------------------------------
         # Time label above the mesh
@@ -193,26 +252,19 @@ def composed_plot(data: SimulationData, voronoi: Voronoi, param: Param):
             marker='o'
         )
 
-    # Make X, Y, Z use the same scale
-    xlim = ax.get_xlim3d()
-    ylim = ax.get_ylim3d()
-    zlim = ax.get_zlim3d()
-
-    center = np.array([
-        np.mean(xlim),
-        np.mean(ylim),
-        np.mean(zlim)
-    ])
-
-    half_range = max(
-        np.ptp(xlim),
-        np.ptp(ylim),
-        np.ptp(zlim)
-    ) / 3
+    # Make X, Y, Z use the same scale, around the drawn meshes and targets
+    pts = np.vstack(drawn_pts)
+    center = (pts.min(axis=0) + pts.max(axis=0)) / 2
+    half_range = np.ptp(pts, axis=0).max() / 2 + 1.0
 
     ax.set_xlim3d(center[0] - half_range, center[0] + half_range)
     ax.set_ylim3d(center[1] - half_range, center[1] + half_range)
     ax.set_zlim3d(center[2] - half_range, center[2] + half_range)
+    # the wall (dashed) and the zone borders on the floor of the plot
+    _draw_airspace(ax, param, z_offset=center[2] - half_range)
+    ax.set_xlim3d(center[0] - half_range, center[0] + half_range)
+    ax.set_ylim3d(center[1] - half_range, center[1] + half_range)
+    ax.legend(fontsize=10, loc='upper right')
     ax.view_init(elev=30, azim=120)
     ax.set_box_aspect([1, 1, 1])
 
@@ -229,7 +281,7 @@ def detailed_close_up(data: SimulationData, voronoi: Voronoi, param: Param):
     desired_positions = data.p_d_hist
 
     # Time steps to inspect
-    steps = np.array([100, 250, 400, 1000, 1300, 1900])
+    steps = np.array(getattr(param.display, "close_up_steps", [100, 250, 400, 1000, 1300, 1900]))
     steps = steps[steps < param.sim.Nsim]
 
     # Agents that remain active after the drop
@@ -758,6 +810,7 @@ def radial_hist_plot(data: SimulationData, param: Param):
     ax.set_ylabel("Distance to target [m]", fontsize=16)
 
     ax.grid(True)
+    mark_formation_phases(ax, formation_phases(data, param))
 
     print("saving radial_hist plot")
     current_folder = os.path.dirname(os.path.abspath(__file__))
@@ -970,6 +1023,7 @@ def inter_agent_dist_plot(data: SimulationData, param: Param):
     for spine in ax.spines.values():
         spine.set_visible(True)
     ax.tick_params(width=1.5, labelsize=14)
+    mark_formation_phases(ax, formation_phases(data, param))
 
     ax.legend(loc="best", fontsize=12)
     fig.tight_layout()
@@ -1046,7 +1100,7 @@ def low_level_tracking_error_plot(data: SimulationData, param: Param):
     ax.set_ylabel("Tracking error distance [m]", fontsize=20)
 
     ax.grid(True)
-    ax.legend()
+    mark_formation_phases(ax, formation_phases(data, param))
 
     plt.tight_layout()
 
@@ -1220,6 +1274,7 @@ def velocity_plot(data: SimulationData, param: Param):
 
     axes[-1].set_xlabel("Time [s]")
     axes[0].legend(loc="upper right")
+    mark_formation_phases(axes, formation_phases(data, param), fontsize=17)
 
     print("saving velocity plot")
     current_folder = os.path.dirname(os.path.abspath(__file__))
@@ -1623,7 +1678,7 @@ def trajectory_plot(data, param):
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection="3d")
     _draw_trajectory_3d(ax, data, param)
-    ax.legend()
+    ax.legend(loc="center left", bbox_to_anchor=(1.08, 0.5), fontsize=10)
     plt.tight_layout()
 
     print("saving trajectory plot")

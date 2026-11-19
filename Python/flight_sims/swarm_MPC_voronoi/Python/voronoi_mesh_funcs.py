@@ -165,6 +165,40 @@ def random_safe_sites(vertices, n, param: Param):
     raise ValueError(f"Cannot place {n} drones on the initial mesh outside the safety envelope")
 
 
+def mesh_blend_parameter(dist_surface, sphere_r):
+    """
+    Blend parameter u of the formation mesh from the distance of the target
+    past the wall (dist_surface, after the red-border correction):
+    u = 0 disc on the wall, 0 < u <= 1 disc -> cone, 1 < u < 2 cone -> sphere,
+    u >= 2 sphere.
+    """
+    if dist_surface < -(sphere_r / 2):
+        return 0
+    elif dist_surface >= -(sphere_r / 2) and dist_surface < (sphere_r / 2):
+        return 0.5 + (dist_surface / sphere_r)
+    elif dist_surface >= (sphere_r / 2):
+        return dist_surface / (sphere_r / 2)
+    return 2
+
+
+def formation_type(target_pos, airspace, sphere_r):
+    """
+    Formation of the mesh around target_pos, as pos_based_mesh_transform builds
+    it: "wall" (flat disc on the wall), "cone" as soon as it is not a flat disc,
+    "sphere" as soon as it is not a pure cone, and "red border" (disc on the
+    red border) as soon as the target is within sphere_r / 2 of the red border.
+    """
+    _, dist_surface, past_red, _ = airspace.wall_frame(np.asarray(target_pos, dtype=float).reshape(3, 1))
+    if past_red > 0:
+        dist_surface = dist_surface - past_red
+    if past_red + sphere_r / 2 > 0:
+        return "red border"
+    u = mesh_blend_parameter(dist_surface, sphere_r)
+    if u == 0:
+        return "wall"
+    return "cone" if u <= 1 else "sphere"
+
+
 def pos_based_mesh_transform(
     target_pos: np.ndarray, #3x1
     voronoi: Voronoi,
@@ -212,15 +246,7 @@ def pos_based_mesh_transform(
 
     sphere_r = param.sim.sphere_radius
 
-    # --- Compute u_target ---
-    if dist_surface < -(sphere_r / 2):
-        u_target = 0
-    elif dist_surface >= -(sphere_r / 2) and dist_surface < (sphere_r / 2):
-        u_target = 0.5 + (dist_surface / sphere_r)
-    elif dist_surface >= (sphere_r / 2):
-        u_target = dist_surface / (sphere_r / 2)
-    else:
-        u_target = 2
+    u_target = mesh_blend_parameter(dist_surface, sphere_r)
 
     # --- Split stages ---
     if u_target <= 1:

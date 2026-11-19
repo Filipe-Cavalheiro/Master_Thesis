@@ -54,7 +54,9 @@ from scipy.spatial.transform import Rotation
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+sys.path.insert(1, str(HERE.parent))   # flight_sims/ (sim_meta)
 
+import sim_meta  # noqa: E402
 from Structs import Param, DroneState, SimulationData  # noqa: E402
 from agent_motion import agent_motion, passive_motion, ground_contact  # noqa: E402
 from helper_funcs import get_initial_real_offset  # noqa: E402
@@ -81,7 +83,9 @@ def main():
                     help="with --IRL_log: TRAJ_EASE_TIME of the flight [s] (default: detected from the log; "
                          "0 before 10 Nov)")
     ap.add_argument("--no-show", action="store_true", help="save the figures without opening them")
+    ap.add_argument("--seed", type=int, help="random seed (default: a new one, saved in <sim log>_meta.json)")
     args = ap.parse_args()
+    sim_meta.seed_rng(args.seed)
 
     import matplotlib
     if args.no_show:
@@ -162,8 +166,10 @@ def simulate_isolated():
         sp = np.asarray(param.traj.ref_target_traj["pos"](t[k]), float).ravel()
         rows.append([t[k], "Main Controller", "1", *h[0:3], *h[3:6], *attitude_rpy(h[6:15]), *sp])
     out = out_dir / "sim.csv"
-    pd.DataFrame(rows, columns=CSV_COLS).to_csv(out, index=False)
+    sim_df = pd.DataFrame(rows, columns=CSV_COLS)
+    sim_df.to_csv(out, index=False)
     print(f"Simulated flight saved to {out}")
+    sim_meta.write_sim_meta(out, FLIGHT_CODE, param=param, drones=sim_meta.drones_from_sim_csv(sim_df))
 
     data = {"agent_true_hist": agent_true_hist, "removed_initial_pos": False}
     return data, param
@@ -250,6 +256,9 @@ def simulate_flight(args):
     sim_df = pd.DataFrame(rows, columns=CSV_COLS)
     sim_df.to_csv(sim_csv, index=False)
     print(f"{len(events)} setpoints; simulated flight saved to {sim_csv}")
+    sim_meta.write_sim_meta(sim_csv, FLIGHT_CODE, param=param, mode="replay", replayed_log=log_path,
+                            drones=sim_meta.drones_from_sim_csv(sim_df),
+                            extra={"return": args.ret, "ease": args.ease, "flight_constants": c})
     compare(log_path, sim_df, real_setpoints(c, phases, t_end, mode, p0_ret), phases, drone,
             out_dir / "comparison")
 
