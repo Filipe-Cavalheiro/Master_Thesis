@@ -168,4 +168,6 @@ cd Presentation  && manim-slides render -ql slides.py $(cat scenes.txt)   # see 
 
 ## License
 
-GNU GPL v3, see `LICENSE`.
+- **Code** (MATLAB, Python, Crazyflie, Gazebo, presentation scripts): GNU GPL v3, see [`LICENSE`](LICENSE).
+- **Thesis document** (the text and figures in `Thesis_report/`, and the compiled PDF): GNU Free Documentation License 1.3 or later, with no Invariant Sections, no Front-Cover Texts and no Back-Cover Texts, see [`LICENSE-GFDL`](LICENSE-GFDL). The full license text is also printed as the last annex of the thesis.
+- **NOVAthesis template** files (`Thesis_report/novathesisFiles/`, class and build files): LaTeX Project Public License, see [`Thesis_report/LICENSE`](Thesis_report/LICENSE).
