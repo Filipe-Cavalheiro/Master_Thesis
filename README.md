@@ -4,7 +4,23 @@
 
 MSc thesis in Electrical and Computer Engineering, NOVA FCT, by Filipe Cavalheiro (adviser: Prof. Bruno J. Guerreiro). Submitted 2026-09-30.
 
-A swarm of chaser drones surrounds a moving, non-cooperative target drone. The chasers are spread over a surface around the target: a sphere (Fibonacci lattice) or a general surface (Voronoi / CVT mesh). Each chaser reaches its point through decentralized control with collision avoidance (APF, CBF, distributed MPC). This repository holds the MATLAB prototypes, the Python simulations, the Crazyflie + OptiTrack flight code, the flight results, the thesis report and the defence presentation.
+A swarm of chaser drones surrounds a moving, non-cooperative target drone. The chasers are spread over a surface around the target: a sphere (Fibonacci lattice) or a general surface (Voronoi / CVT mesh). Each chaser reaches its point through decentralized control with collision avoidance (APF, CBF, distributed MPC). This repository holds the MATLAB prototypes, the Python simulations, the Crazyflie + OptiTrack flight code, the thesis report and the defence presentation.
+
+## What the repository does
+
+**Real flight vs simulation, on the same video.** Four Crazyflies fly the Voronoi formation with the distributed MPC around a virtual target, filmed with a phone tracked by OptiTrack. The overlay tool draws the simulated drones (orange), the real OptiTrack positions (green rings), the formation mesh and the virtual target over the video, and the dashboard compares real and simulated trajectories over the whole flight (a few cm RMS apart):
+
+![Overlay dashboard: real video with the simulated drones, 3D and top views, positions and real-minus-sim error](docs/images/overlay_dashboard.jpg)
+
+![The same instant: real video, simulated camera view, overlay](docs/images/overlay_strip.jpg)
+
+**Simulations.** A swarm keeps a formation around a moving target that it can only estimate (distributed estimation), avoids collisions, and changes the formation shape on the fly. With the restricted-airspace layer, it forms a wall in front of the Lisbon airport's prohibited zone.
+
+| Formation that changes shape (sphere, cone, disc) along the target's path | 12 drones with the distributed MPC around a moving target |
+|---|---|
+| ![Formation morphing between surfaces](Presentation/assets/images/g_composed_12_agents.png) | ![Trajectories of 12 drones and the target](Presentation/assets/images/g_trajectory_12_agents.png) |
+| **31 drones on the Fibonacci sphere, following a moving target** | **Restricted airspace: the Lisbon airport zones and the drones' wall** |
+| ![31 drones encircling a moving target](Presentation/assets/images/c31dyn_trajectory.png) | ![Lisbon airport restricted zones and the wall](Presentation/assets/images/g_lisbon_airspace.png) |
 
 ## Repository layout
 
@@ -18,10 +34,7 @@ This README is an overview. Each category is explained in more detail in the REA
 | `Python/flight_sims/` | Python simulations (full 3D quadrotor dynamics, Mellinger control) | per simulation, see the table below |
 | `Python/demos_and_helpers/` | Small demos (Bernstein polynomials, weighted CVT, QP with constraints, weighted mesh) and the `video_overlay` tools (phone calibration, flight-video overlay and dashboard) | [`video_overlay`](Python/demos_and_helpers/video_overlay/README.md), [`CVT_weighted_verticies`](Python/demos_and_helpers/CVT_weighted_verticies/README.md), [`weighted_mesh_demo`](Python/demos_and_helpers/weighted_mesh_demo/README.md) |
 | `Crazy_Flie/` | Real flights with Crazyflie drones: `Optitrack/` (current) and `Lighthouse/` (older, Lighthouse positioning) | [`Crazy_Flie/README.md`](Crazy_Flie/README.md), [`Optitrack/README.md`](Crazy_Flie/Optitrack/README.md) |
-| `Results/` | One folder per real flight / dry run: `<flight code>_trajectory_<date>_<time>/` (CSV log, camera pose, figures) | [`Results/README.md`](Results/README.md) |
-| `burocracy/` | Thesis proposal, work plan, defence request | — |
-| `moodle_CMIEEC2526/` | Backup of the course Moodle pages (local only, git-ignored) | — |
-| `Random_stuff/` | Access forms, drone-regulation files, the phone-holder model for OptiTrack | [phone holder](Random_stuff/Phone_optitrack_holder/freecad/README.md) |
+| `docs/images/` | Images used in this README | — |
 
 ### Python simulations (`Python/flight_sims/`)
 
@@ -107,9 +120,7 @@ Useful options:
 
 Check `sync.json`: `correlation` should be ≥ 0.5 and well above `next_best_correlation`. If it isn't, film the pan/tilt gestures more clearly or use `--offset`.
 
-The phone camera calibration is already in `Results/phone_calib/` (used by default). Redo it only if the phone's rigid body or markers change in Motive; see "Phone camera correction" in `Python/demos_and_helpers/video_overlay/README.md`.
-
-Example run, with every output: `Results/swarm_take_off_hover_land_trajectory_20261110_161917/`.
+The overlay needs the phone camera calibration in `Results/phone_calib/` (used by default; it is not in the repository). Make it once, and again whenever the phone's rigid body or markers change in Motive: see ["Phone camera correction in Motive"](Python/demos_and_helpers/video_overlay/README.md#phone-camera-correction-in-motive-one-time-alternative-to-the-hand-eye-step) in the video overlay README.
 
 ## Real flights (Crazyflie + OptiTrack)
 
@@ -137,7 +148,7 @@ The swarm scripts find the drones that are switched on, check tracking and batte
 
 ### Logs and analysis
 
-Every flight writes `Results/<flight code>_trajectory_<date>_<time>/` (OptiTrack and estimator position, velocity, attitude, rates, flight phase; plus the phone pose when `CAMERA_RIGID_BODY_ID` is set).
+Every flight writes `Results/<flight code>_trajectory_<date>_<time>/` (created by the flight scripts; flight logs are not in the repository) (OptiTrack and estimator position, velocity, attitude, rates, flight phase; plus the phone pose when `CAMERA_RIGID_BODY_ID` is set).
 
 ```bash
 cd Crazy_Flie/Optitrack

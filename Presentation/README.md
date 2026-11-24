@@ -22,7 +22,7 @@ per-slide script and timing budget.
 | `assets/images/` | thesis figures converted from `Thesis_report/5-Figures` (PDF -> PNG, 200-450 dpi) + logos |
 | `assets/data/generalized_sim_12agents.npz` | thesis Ch. 6 scenario (12 agents, 4 lost at 10 s) simulated with `Python/flight_sims/swarm_MPC_voronoi`, every 5th sample; made by `tools/make_generalized_replay.py` |
 | `assets/videos/*.mp4` | real-flight clips shown at the end of the `CentralizedResults` and `Results` scenes, cut from `../Results/*/overlay/overlay.mp4` by `assets/videos/make_clips.sh` |
-| `assets/images/lisbon_map.png`, `assets/data/lisbon_zones.npz` | Motivation airspace slide: dark top view of the Lisbon OSM meshes of the Gazebo world, LPPT ANAC zones (clipped to the map) and infrastructure points, ENU frame; made by `tools/make_lisbon_map.py` |
+| `assets/images/lisbon_map.png`, `assets/data/lisbon_zones.npz` | Motivation airspace slide: dark top view of Lisbon OpenStreetMap meshes, LPPT ANAC zones (clipped to the map) and infrastructure points, ENU frame; made by `tools/make_lisbon_map.py` (the meshes it reads are not in the repository, so the committed image is the one to use) |
 | `assets/data/lisbon_traj5.npz` | thesis Ch. 6 Lisbon-airport simulation (trajectory 5, 12 chasers, 4 lost at 25 s) in the wall frame, exported by `assets/data/make_lisbon_data.py` |
 | `SPEAKER_NOTES.md` | speaker script (pt-PT) + timing |
 
