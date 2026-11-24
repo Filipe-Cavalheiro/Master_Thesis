@@ -1,5 +1,5 @@
 # The single Python environment of the repository: simulations (Python/),
-# video overlay, Crazyflie flights (Crazy_Flie/) and Gazebo/sim/run_gazebo_sim.py.
+# video overlay and Crazyflie flights (Crazy_Flie/).
 # (Presentation/ has its own environment for Manim: see Presentation/README.md.)
 #
 #   python3 -m venv .venv
@@ -17,6 +17,3 @@ opencv-python==5.0.0.93     # video overlay
 cflib==0.1.32               # Crazyflie radio (Crazy_Flie/)
 natnet==0.3.0               # OptiTrack / Motive (Crazy_Flie/, video_overlay recording scripts)
 
-# Not installable with pip: the Gazebo Harmonic Python bindings (gz.sim8,
-# gz.transport13, gz.msgs10, gz.math7) come with the system Gazebo install;
-# run_gazebo_sim.py loads them from /usr/lib/python3/dist-packages.

@@ -4,7 +4,7 @@
 
 MSc thesis in Electrical and Computer Engineering, NOVA FCT, by Filipe Cavalheiro (adviser: Prof. Bruno J. Guerreiro). Submitted 2026-09-30.
 
-A swarm of chaser drones surrounds a moving, non-cooperative target drone. The chasers are spread over a surface around the target: a sphere (Fibonacci lattice) or a general surface (Voronoi / CVT mesh). Each chaser reaches its point through decentralized control with collision avoidance (APF, CBF, distributed MPC). This repository holds the MATLAB prototypes, the Python simulations, a Gazebo simulation, the Crazyflie + OptiTrack flight code, the flight results, the thesis report and the defence presentation.
+A swarm of chaser drones surrounds a moving, non-cooperative target drone. The chasers are spread over a surface around the target: a sphere (Fibonacci lattice) or a general surface (Voronoi / CVT mesh). Each chaser reaches its point through decentralized control with collision avoidance (APF, CBF, distributed MPC). This repository holds the MATLAB prototypes, the Python simulations, the Crazyflie + OptiTrack flight code, the flight results, the thesis report and the defence presentation.
 
 ## Repository layout
 
@@ -17,7 +17,6 @@ This README is an overview. Each category is explained in more detail in the REA
 | `Matlab/` | Early prototypes: Fibonacci-sphere controllers (v1–v9: Lyapunov, APF, consensus, CBF) and their Voronoi continuation (`voronoin/`, v10–v14), CBF/HOCBF studies, consensus, point-spreading method comparisons (Fibonacci, lat/lon, Poisson disk, Thomson, Voronoi), geometric mesh transforms, Mellinger + minimum-snap, CAPTURE drone models | [`Matlab/README.md`](Matlab/README.md) |
 | `Python/flight_sims/` | Python simulations (full 3D quadrotor dynamics, Mellinger control) | per simulation, see the table below |
 | `Python/demos_and_helpers/` | Small demos (Bernstein polynomials, weighted CVT, QP with constraints, weighted mesh) and the `video_overlay` tools (phone calibration, flight-video overlay and dashboard) | [`video_overlay`](Python/demos_and_helpers/video_overlay/README.md), [`CVT_weighted_verticies`](Python/demos_and_helpers/CVT_weighted_verticies/README.md), [`weighted_mesh_demo`](Python/demos_and_helpers/weighted_mesh_demo/README.md) |
-| `Gazebo/` | Lisbon restricted-airspace world (Gazebo Harmonic, PX4 X500 models) with Gazebo as the drone plant of the Python simulation | [`Gazebo/README.md`](Gazebo/README.md) |
 | `Crazy_Flie/` | Real flights with Crazyflie drones: `Optitrack/` (current) and `Lighthouse/` (older, Lighthouse positioning) | [`Crazy_Flie/README.md`](Crazy_Flie/README.md), [`Optitrack/README.md`](Crazy_Flie/Optitrack/README.md) |
 | `Results/` | One folder per real flight / dry run: `<flight code>_trajectory_<date>_<time>/` (CSV log, camera pose, figures) | [`Results/README.md`](Results/README.md) |
 | `burocracy/` | Thesis proposal, work plan, defence request | — |
@@ -36,7 +35,7 @@ This README is an overview. Each category is explained in more detail in the REA
 
 ### Setup: one Python environment for everything
 
-A single environment at the repository root (`.venv`, from `requirements.txt`) runs the simulations, the Crazyflie flights, the video overlay and the Gazebo simulation. Only `Presentation/` has its own, for Manim.
+A single environment at the repository root (`.venv`, from `requirements.txt`) runs the simulations, the Crazyflie flights and the video overlay. Only `Presentation/` has its own, for Manim.
 
 ```bash
 python3 -m venv .venv
@@ -148,17 +147,6 @@ python flight_sim.py swarm_MPC_voronoi --target sim   # simulate the flight from
 python flight_sim.py swarm_voronoi_sim_target --dry-run --drones 3   # no log: simulate before flying
 ```
 
-## Gazebo
-
-Needs Gazebo Harmonic and its Python bindings (system Python; the script loads them itself), with the root `.venv` active.
-
-```bash
-Gazebo/run_world.sh                                         # Lisbon airspace world
-python Gazebo/sim/run_gazebo_sim.py --nd 3 --traj 5 --mode replay
-```
-
-> `run_world.sh` can only regenerate the world with the 3D map `terrain.3mf`, which is not in the repository. Without it, it opens the world already generated. See [`Gazebo/README.md`](Gazebo/README.md).
-
 ## Thesis and presentation
 
 ```bash
@@ -168,6 +156,6 @@ cd Presentation  && manim-slides render -ql slides.py $(cat scenes.txt)   # see 
 
 ## License
 
-- **Code** (MATLAB, Python, Crazyflie, Gazebo, presentation scripts): GNU GPL v3, see [`LICENSE`](LICENSE).
+- **Code** (MATLAB, Python, Crazyflie, presentation scripts): GNU GPL v3, see [`LICENSE`](LICENSE).
 - **Thesis document** (the text and figures in `Thesis_report/`, and the compiled PDF): GNU Free Documentation License 1.3 or later, with no Invariant Sections, no Front-Cover Texts and no Back-Cover Texts, see [`LICENSE-GFDL`](LICENSE-GFDL). The full license text is also printed as the last annex of the thesis.
 - **NOVAthesis template** files (`Thesis_report/novathesisFiles/`, class and build files): LaTeX Project Public License, see [`Thesis_report/LICENSE`](Thesis_report/LICENSE).

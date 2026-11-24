@@ -11,6 +11,9 @@ moodle_CMIEEC2526
 /TODO.txt
 /burocracy/
 
+# Gazebo world (not used in the thesis; kept locally only)
+/Gazebo/
+
 # flight / simulation runs (one folder per run); only the root folder, not the Results/ of the simulations
 /Results/
 
