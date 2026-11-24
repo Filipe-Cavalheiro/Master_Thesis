@@ -134,15 +134,3 @@ advances automatically (`auto_next`) into the next scene, so no blank "extra" ke
 Speaker notes from `SPEAKER_NOTES.md` (`#### [Scene.k]` blocks) are attached to the slides at
 render time: press `S` in the HTML export to open the reveal.js speaker view.
 After editing the notes, re-render the affected scene(s) and re-run `convert`.
-
-## Left for the author
-
-* The last sub-slide of `CentralizedResults` and of `Results` plays the camera + simulation overlay of a Crazyflie/OptiTrack flight
-  (`Results/swarm_geometric_Fibonacci_sim_target_trajectory_20261113_182427` and
-  `Results/swarm_MPC_voronoi_sim_target_trajectory_20261113_144433`, whole flights, 36 s and 44 s: the main controller phase in real time, take off, approach, return and landing at 3x, see `assets/videos/make_clips.sh`;
-  the next key press skips the rest of a video). These flights are not in the thesis text, and the `Conclusions` slide
-  still lists "simulation only" as a limitation: adjust it if you want the two to agree.
-* The motivation headlines (RTP, Público) and logos are reused from the APCA presentation;
-  the DFS numbers (161 in 2024, 225 in 2025) are from thesis Ch. 1.
-* Rehearse with a timer: the budget is in `SPEAKER_NOTES.md`; animations play automatically on
-  each key press, so the timing mostly depends on speech.
