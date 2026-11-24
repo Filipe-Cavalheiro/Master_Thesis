@@ -16,6 +16,7 @@ moodle_CMIEEC2526
 
 # Crazyflie connection cache (regenerated automatically)
 /cache/
+/Crazy_Flie/**/cache/
 
 # flight / simulation runs (one folder per run); only the root folder, not the Results/ of the simulations
 /Results/
