@@ -30,8 +30,8 @@ motion of each agent as if it were influenced by an artificial potential field,
 where attractive potentials pull the agent toward desired goals and repulsive
 potentials push it away from obstacles or other agents.
 
-Let $q_i \in \mathbb{S}^2$ denote the position of agent $i$. The total artificial
-potential $U_i(q_i)$ is typically defined as the sum of an attractive potential
+Let $\mathbf{q}_i \in \mathbb{S}^2$ denote the position of agent $i$. The total artificial
+potential $U_i(\mathbf{q}_i)$ is typically defined as the sum of an attractive potential
 $U_i^{\mathrm{att}}$ and a repulsive potential $U_i^{\mathrm{rep}}$,
 \begin{equation}
     U_i(\gls{q_i}) = U_i^{\mathrm{att}}(\gls{q_i}) + U_i^{\mathrm{rep}}(\gls{q_i}).
@@ -61,7 +61,7 @@ attractive force is
 \paragraph{Repulsive Potential}
 
 To avoid collisions, a repulsive potential is introduced between agent $i$
-and neighboring agents $j$. Let $d_{ij} = \| q_i - q_j \|$ denote the distance
+and neighboring agents $j$. Let $d_{ij} = \| \mathbf{q}_i - \mathbf{q}_j \|$ denote the distance
 between agents. A typical repulsive potential is defined as
 \begin{equation}
     U_i^{\mathrm{rep}} =
@@ -84,7 +84,7 @@ The corresponding repulsive force is
         \gls{apf_rep_gain}
         \left( \frac{1}{d_{ij}} - \frac{1}{\gls{d_min}} \right)
         \frac{1}{d_{ij}^2}
-        \frac{q_i - q_j}{d_{ij}},
+        \frac{\mathbf{q}_i - \mathbf{q}_j}{d_{ij}},
         & d_{ij} < \gls{d_min}, \\[6pt]
         0, & d_{ij} \ge \gls{d_min}.
     \end{cases}
@@ -109,7 +109,7 @@ and let the safe set be defined as
 \begin{equation}
 \mathcal{C}=\{\mathbf{x}\in\mathbb{R}^n:h(\mathbf{x})\geq0\}.
 \end{equation}
-The function $h(\mathbf{x})$ is selected such that $h(\mathbf{x})\geq0$ represents the desired safe region, while $h(\mathbf{x})<0$ represents an unsafe state. A \gls{CBF} provides a condition on the system input that maintains the forward invariance of $\mathcal{C}$. For a continuously differentiable $h(x)$ with relative degree one, a commonly used \gls{CBF} condition is
+The function $h(\mathbf{x})$ is selected such that $h(\mathbf{x})\geq0$ represents the desired safe region, while $h(\mathbf{x})<0$ represents an unsafe state. A \gls{CBF} provides a condition on the system input that maintains the forward invariance of $\mathcal{C}$. For a continuously differentiable $h(\mathbf{x})$ with relative degree one, a commonly used \gls{CBF} condition is
 
 \begin{equation}
 L_fh(\mathbf{x})+L_gh(\mathbf{x})\mathbf{u}+\alpha(h(\mathbf{x}))\geq0,
@@ -346,28 +346,28 @@ body-frame angular velocity \gls{chaser_ang_vel}.
 The \gls{RUAV} dynamics are given by
 \begin{equation}
     \begin{aligned}
-        &\gls{chaser_vel} = v \\
-        &\dot{\gls{chaser_ori}} = E(\gls{chaser_ori})^{-1}\, \gls{chaser_ang_vel} \\
-        &\gls{chaser_acc} = \gls{drone_mass}^{-1}\, R_{IB}(\gls{chaser_ori})^{T}
-            \big(\gls{p_force} + \gls{p_drag_force}\big) - \gls{gravity}\, e_3 \\
+        &\gls{chaser_vel} = \mathbf{v} \\
+        &\dot{\gls{chaser_ori}} = \mathbf{E}(\gls{chaser_ori})^{-1}\, \gls{chaser_ang_vel} \\
+        &\gls{chaser_acc} = \gls{drone_mass}^{-1}\, \mathbf{R}_{IB}(\gls{chaser_ori})^{T}
+            \big(\gls{p_force} + \gls{p_drag_force}\big) - \gls{gravity}\, \mathbf{e}_3 \\
         &\dot{\gls{chaser_ang_vel}} = \gls{drone_inertial_matrix}^{-1}
             \Big(-S(\gls{chaser_ang_vel}) \big(\gls{drone_inertial_matrix}\,
             \gls{chaser_ang_vel}\big) + \gls{p_torque} + \gls{p_drag_torque}\Big)
     \end{aligned}
     \label{eq.3:ruav_dynamics}
 \end{equation}
-where $e_3 = [0\ 0\ 1]^T$ is the inertial-frame vertical unit vector, so gravity
+where $\mathbf{e}_3 = [0\ 0\ 1]^T$ is the inertial-frame vertical unit vector, so gravity
 requires no rotation since it already acts in the inertial frame.
 
-Throughout this thesis, $R_{IB}(\Phi)$ is defined so that it rotates a vector
-expressed in the inertial frame into the body frame; equivalently, $R_{IB}(\Phi)^T$
+Throughout this thesis, $\mathbf{R}_{IB}(\gls{chaser_ori})$ is defined so that it rotates a vector
+expressed in the inertial frame into the body frame; equivalently, $\mathbf{R}_{IB}(\gls{chaser_ori})^T$
 rotates a body-frame vector into the inertial frame. Under this convention,
-$R_{IB}(\Phi)$ and the inverse Jacobian $E(\Phi)^{-1}$ used above are given by
+$\mathbf{R}_{IB}(\gls{chaser_ori})$ and the inverse Jacobian $\mathbf{E}(\gls{chaser_ori})^{-1}$ used above are given by
 Equation~\eqref{eq.3:rotation_matrix} and Equation~\eqref{eq.3:jacobian_matrix}
 respectively, where for simplicity $c=\cos(\cdot)$, $s=\sin(\cdot)$, $t=\tan(\cdot)$.
 
 \begin{equation}
-\mathbf{R}_{IB}(\Phi) =
+\mathbf{R}_{IB}(\gls{chaser_ori}) =
 \begin{bmatrix}
 c_\theta c_\psi &
 c_\theta s_\psi &
@@ -383,7 +383,7 @@ c_\phi c_\theta
 \end{equation}
 
 \begin{equation}
-\mathbf{E(\Phi)^{-1}} =
+\mathbf{E}(\gls{chaser_ori})^{-1} =
 \begin{bmatrix}
 1 & s_\phi t_\theta & c_\phi t_\theta \\
 0 & c_\phi & -s_\phi \\
@@ -391,20 +391,20 @@ c_\phi c_\theta
 \end{bmatrix}
 \label{eq.3:jacobian_matrix}
 \end{equation}
-Note that $E(\Phi)^{-1}$, rather than $E(\Phi)$ itself, is what appears directly in
+Note that $\mathbf{E}(\gls{chaser_ori})^{-1}$, rather than $\mathbf{E}(\gls{chaser_ori})$ itself, is what appears directly in
 the attitude kinematics of Equation~\eqref{eq.3:ruav_dynamics}, since it maps
 body-frame angular velocity to the rate of change of the Euler angles.
 
 The aerodynamic drag force \gls{p_drag_force} and torque \gls{p_drag_torque} are,
 respectively,
 \begin{equation}
-\gls{p_drag_force} = -a_T\, R_{IB}(\Phi)\, v_{air}, \qquad
+\gls{p_drag_force} = -a_T\, \mathbf{R}_{IB}(\gls{chaser_ori})\, \mathbf{v}_{\mathrm{air}}, \qquad
 \gls{p_drag_torque} = -a_R\, \gls{chaser_ang_vel},
 \end{equation}
-where $v_{air} = \gls{chaser_vel} - v_w$, $v_w$ is the wind velocity expressed in
+where $\mathbf{v}_{\mathrm{air}} = \gls{chaser_vel} - \mathbf{v}_w$, $\mathbf{v}_w$ is the wind velocity expressed in
 the inertial frame, and $a_T$, $a_R$ are the translational and rotational air
-friction coefficients respectively. Note $v_{air}$ is rotated into the body frame
-by $R_{IB}(\Phi)$ before scaling, consistent with the convention above, so that
+friction coefficients respectively. Note $\mathbf{v}_{\mathrm{air}}$ is rotated into the body frame
+by $\mathbf{R}_{IB}(\gls{chaser_ori})$ before scaling, consistent with the convention above, so that
 \gls{p_drag_force} is expressed in the body frame like \gls{p_force}.
 
 For a quadrotor, the propulsive force \gls{p_force} and torque \gls{p_torque}
@@ -420,7 +420,7 @@ produced by the rotors take the form
 \tau_{a,x} & \tau_{a,y} & \tau_{a,z}
 \end{bmatrix}^{T},
 \end{equation}
-since the four rotors generate a collective thrust only along the body $e_3$ axis,
+since the four rotors generate a collective thrust only along the body $\mathbf{e}_3$ axis,
 together with a torque about all three body axes.
 
 This full nonlinear model is used throughout the rest of this thesis for
@@ -447,7 +447,7 @@ Consider a nonlinear dynamical system of the form
 \end{equation}
 where $\mathbf{x} \in \mathbb{R}^n$ denotes the system state. An equilibrium point $\mathbf{x}_e$ satisfies $f(\mathbf{x}_e) = 0$ and can be shifted to the origin via an appropriate change of variables.
 
-Let $V : \mathbb{R}^n \rightarrow \mathbb{R}$ be a continuously differentiable, positive-definite $V(\mathbf{x}) \geq 0$ function with $V(0) = 0$ if and only if $\mathbf{x} = 0$. If its time derivative along system trajectories satisfies $\dot{V}(x) \le 0, \;  \forall x$ and $\dot{V}(\mathbf{x}) < 0$ for all $x \neq 0$, then the equilibrium is asymptotically stable.
+Let $V : \mathbb{R}^n \rightarrow \mathbb{R}$ be a continuously differentiable, positive-definite $V(\mathbf{x}) \geq 0$ function with $V(\mathbf{0}) = 0$ if and only if $\mathbf{x} = \mathbf{0}$. If its time derivative along system trajectories satisfies $\dot{V}(\mathbf{x}) \le 0, \;  \forall \mathbf{x}$ and $\dot{V}(\mathbf{x}) < 0$ for all $\mathbf{x} \neq \mathbf{0}$, then the equilibrium is asymptotically stable.
 
 \section{Lloyd's algorithm and Voronoi diagrams} \label{annex:Lloyd's algorithm}
 

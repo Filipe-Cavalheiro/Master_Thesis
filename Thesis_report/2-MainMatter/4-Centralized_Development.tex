@@ -22,11 +22,9 @@ This chapter is structured into two principal components. The first concerns met
 
 The first issue concerns the positioning of agents on the surface of a mesh (typically a sphere). This positioning defines the final desired configuration of the agents during target encirclement and therefore requires methods capable of generating points with near-uniform separation on the spherical surface. As previously mentioned in the Chapter~\ref{cha:introduction}, the adoption of a near-uniform distribution is motivated by the uncertainty associated with the target dynamics, since only the target position is assumed to be known. Because the maneuvering capabilities and future motion of the target are unknown, an approximately uniform distribution of agents around the target provides balanced spatial coverage and reduces directional bias in the encirclement configuration. Consequently, regardless of the target's motion direction, the collective reachability set of the agents remains approximately evenly distributed around the target, improving the robustness of the encirclement strategy.
 
-This section presents a direct computation method that was identified as the most effective for distributing points on a manifold, following an evaluation of multiple candidate approaches. The other direct computation methods tested are compared in Annex~\ref{annex:Other Direct computation agent spacing on the two-sphere}, while positioning strategies that did not yield satisfactory results are discussed in Annex~\ref{annex:Alternative Agent Positioning Strategies}. For simplicity the two-sphere/unit sphere will be the main manifold considered since the problem at hand is encircling a target, where $\mathbb{S}^2 = \{\mathbf{x} \in \mathbb{R}^3 : \|\mathbf{x}\| = 1\}$ denotes the unit sphere (the 2-norm will be defined as $\|.\|$ from now on). 
+This section presents the Fibonacci lattice, the direct computation method that was identified as the most effective for distributing points on a manifold, following an evaluation of multiple candidate approaches. The other direct computation methods tested are compared in Annex~\ref{annex:Other Direct computation agent spacing on the two-sphere}, while positioning strategies that did not yield satisfactory results are discussed in Annex~\ref{annex:Alternative Agent Positioning Strategies}. For simplicity the two-sphere/unit sphere will be the main manifold considered since the problem at hand is encircling a target, where $\mathbb{S}^2 = \{\mathbf{x} \in \mathbb{R}^3 : \|\mathbf{x}\| = 1\}$ denotes the unit sphere (the 2-norm will be defined as $\|.\|$ from now on). 
 
-\subsection{Fibonacci Lattice}
 \label{sec.2:Fibonacci Lattice}
-
 The Fibonacci lattice, also heavily inspired and influenced by \cite{Latitude_Longitude_vs_fibonacci}, is named after the Fibonacci ratios, which was discovered in ancient India \cite{fibonacci_history}. The construction is based on the Fibonacci sequence, in which each term from the third onward is the sum of the two preceding terms:
 \[
 0, 1, 1, 2, 3, 5, 8, 13, 21, \ldots
@@ -79,13 +77,13 @@ This section describes the control strategy implemented, with the objective of n
   \label{fig.4:simple_controller_architecture}
 \end{figure}
 
-Since spherical projections are used repeatedly throughout the analysis, the operator $\Pi^{r,p}(\cdot)$ is defined to denote the projection onto a sphere of radius $r > 0$ located at $p \in \mathbb{R}^3$, being for example $\Pi^{1,0}(\cdot)$ the projection to the unit sphere at the origin. This operator is defined as $\Pi^{r,p} : \mathbb{R}^3 \to \Gamma^2(r,p)$, being $\Gamma^2(r,p) \;=\; \left\{ x \in \mathbb{R}^3 \;\middle|\; \lVert x - p \rVert_2 = r \right\}$ for $r > 0$ and $p \in \mathbb{R}^3$, and is formally defined by Equation~\eqref{eq.4:sphere_projections}
+Since spherical projections are used repeatedly throughout the analysis, the operator $\Pi^{r,\mathbf{p}}(\cdot)$ is defined to denote the projection onto a sphere of radius $r > 0$ located at $\mathbf{p} \in \mathbb{R}^3$, being for example $\Pi^{1,\mathbf{0}}(\cdot)$ the projection to the unit sphere at the origin. This operator is defined as $\Pi^{r,\mathbf{p}} : \mathbb{R}^3 \to \Gamma^2(r,\mathbf{p})$, being $\Gamma^2(r,\mathbf{p}) \;=\; \left\{ \mathbf{x} \in \mathbb{R}^3 \;\middle|\; \lVert \mathbf{x} - \mathbf{p} \rVert_2 = r \right\}$ for $r > 0$ and $\mathbf{p} \in \mathbb{R}^3$, and is formally defined by Equation~\eqref{eq.4:sphere_projections}
 
 \begin{equation}
-\Pi^{r,p}(i)
+\Pi^{r,\mathbf{p}}(\mathbf{x})
 \;=\;
-p + r \frac{i - p}{\|i - p\|},
-\qquad i \neq p,
+\mathbf{p} + r \frac{\mathbf{x} - \mathbf{p}}{\|\mathbf{x} - \mathbf{p}\|},
+\qquad \mathbf{x} \neq \mathbf{p},
 \label{eq.4:sphere_projections}
 \end{equation}
 The points $\gls{q_i}, \gls{q_i_desired} \in \Gamma^2$ are defined as 
@@ -101,7 +99,7 @@ The next sections will focus on specific parts of this architecture starting wit
 
 \subsection{Lyapunov control} \label{subsection.4:Lyapunov control}
 
-The Lyapunov controller, formally presented in Section~\ref{sec.3:Lyapunov Stability and Lyapunov-Based Control}, is here used as a geometric controller, based on~\cite{rampAttitudeAngularVelocity2015}. This approach first required computing a Fibonacci lattice as a set of reference points $ \gls{p_i_desired} \in \Gamma^2$ distributed on a sphere of radius \gls{r_desired}.
+The Lyapunov controller, formally presented in Section~\ref{sec.3:Lyapunov Stability and Lyapunov-Based Control}, is here used as a geometric controller, based on~\cite{rampAttitudeAngularVelocity2015}. The hierarchical architecture and the Lyapunov-based encirclement controller presented in this section were also published in~\cite{cavalheiroHierarchicalNonlinearControl2026}. This approach first required computing a Fibonacci lattice as a set of reference points $ \gls{p_i_desired} \in \Gamma^2$ distributed on a sphere of radius \gls{r_desired}.
 
 Before detailing the path planner's implementation, it is useful to first introduce the complete path planning and Mellinger controller block diagram, shown in Figure~\ref{fig.4:path_planning_mellinger_RUAV}.
 
@@ -158,7 +156,7 @@ reduced attitude controllers commonly use the classical error between the desire
 \begin{equation}
     \psi_r(\gls{q}, \gls{q_desired}) = 1 - \gls{q}^\top \gls{q_desired},
     \qquad
-    e_r = S(\gls{q_desired}) \gls{q},
+    \mathbf{e}_r = S(\gls{q_desired}) \gls{q},
     \label{eq.4:err_ref_dynamic}
 \end{equation}
 this type of error function exhibits degraded performance for large initial attitude errors, particularly when the relative angle exceeds $\pi/2$. In such cases, the magnitude of the error vector decreases as the misalignment increases, reducing the control authority and slowing convergence, visible in Figure~\ref{fig.4:Comparison between error calculations}. To address this limitation, an alternative error is adopted as Equation~\eqref{eq.4:new_err_ref_dynamic}.
@@ -212,8 +210,9 @@ The control law above generates reference commands for the drone's low-level (in
     $\gls{q_i} = \gls{q_i_desired}$ of the closed-loop system
     \eqref{eq.4:geometric_control} is almost-globally asymptotically stable,
     i.e., asymptotically stable on $\mathbb{S}^2 \setminus \{- \gls{q_i_desired}\}$,
-    with the antipodal configuration $\gls{q_i} = -\gls{q_i_desired}$ being an
-    unstable equilibrium.
+    where the closed-loop vector field is undefined at the antipodal
+    configuration $\gls{q_i} = -\gls{q_i_desired}$, which is therefore excluded
+    from the domain of the result.
     \label{Theorem.4:geometric_control_almost_globally_asymptotically_stable}
 \end{theorem}
 
@@ -267,23 +266,24 @@ The control law above generates reference commands for the drone's low-level (in
     directly on $\mathbb{S}^2$. Instead, for any $0 < \ell < 2$ define the sublevel
     set
     \begin{equation*}
-        D_\ell \triangleq \left\{ \gls{q_i} \in \mathbb{S}^2 \;:\;
+        \mathcal{D}_\ell \triangleq \left\{ \gls{q_i} \in \mathbb{S}^2 \;:\;
         \Psi(\gls{q_i}, \gls{q_i_desired}) \le \ell \right\}.
     \end{equation*}
     Since $\Psi$ is continuous on $\mathbb{S}^2$ and
-    $\Psi(-\gls{q_i_desired}, \gls{q_i_desired}) = 2$, the set $D_\ell$ is compact and excludes an open neighborhood of $-\gls{q_i_desired}$ for every $\ell < 2$.
-    Since $\dot V \le 0$, $D_\ell$ is positively invariant, and on $D_\ell$ the
-    closed-loop vector field is smooth. LaSalle's invariance principle therefore applies on $D_\ell$: every trajectory initialized in $D_\ell$ converges to the largest invariant set contained in
+    $\Psi(-\gls{q_i_desired}, \gls{q_i_desired}) = 2$, the set $\mathcal{D}_\ell$ is compact and excludes an open neighborhood of $-\gls{q_i_desired}$ for every $\ell < 2$.
+    Since $\dot V \le 0$, $\mathcal{D}_\ell$ is positively invariant, and on $\mathcal{D}_\ell$ the
+    closed-loop vector field is smooth. LaSalle's invariance principle therefore applies on $\mathcal{D}_\ell$: every trajectory initialized in $\mathcal{D}_\ell$ converges to the largest invariant set contained in
     \begin{equation*}
-        \left\{ \gls{q_i} \in D_\ell \;:\; \gls{e_q_i} = 0 \right\}.
+        \left\{ \gls{q_i} \in \mathcal{D}_\ell \;:\; \gls{e_q_i} = 0 \right\}.
     \end{equation*}
     From \eqref{eq.4:new_err_ref_dynamic}, $\gls{e_q_i} = 0$ if and only if
-    $\gls{q_i} = \gls{q_i_desired}$ (the unique minimizer of $\Psi$), which is therefore the only invariant point in this set. Consequently, every trajectory initialized in $D_\ell$ converges asymptotically to $\gls{q_i_desired}$. Since $\Psi(\gls{q_i}, \gls{q_i_desired}) < 2$ for every $\gls{q_i} \neq -\gls{q_i_desired}$, the sets $D_\ell$ exhaust $\mathbb{S}^2 \setminus \{-\gls{q_i_desired}\}$ as $\ell$ increases toward $2$. Hence every trajectory initialized in $\mathbb{S}^2 \setminus \{-\gls{q_i_desired}\}$ converges asymptotically to $\gls{q_i_desired}$. LaSalle's principle establishes this convergence (attractivity) but not stability in the sense of Lyapunov; the latter follows from Lyapunov's stability theorem (Section~\ref{sec.3:Lyapunov Stability and Lyapunov-Based Control}), since $V$ is positive definite about $\gls{q_i} = \gls{q_i_desired}$ and $\dot V \le 0$ in a neighborhood of it. Being both Lyapunov stable and attractive, $\gls{q_i} = \gls{q_i_desired}$ is asymptotically stable on $\mathbb{S}^2 \setminus \{-\gls{q_i_desired}\}$.
+    $\gls{q_i} = \gls{q_i_desired}$ (the unique minimizer of $\Psi$), which is therefore the only invariant point in this set. Consequently, every trajectory initialized in $\mathcal{D}_\ell$ converges asymptotically to $\gls{q_i_desired}$. Since $\Psi(\gls{q_i}, \gls{q_i_desired}) < 2$ for every $\gls{q_i} \neq -\gls{q_i_desired}$, the sets $\mathcal{D}_\ell$ exhaust $\mathbb{S}^2 \setminus \{-\gls{q_i_desired}\}$ as $\ell$ increases toward $2$. Hence every trajectory initialized in $\mathbb{S}^2 \setminus \{-\gls{q_i_desired}\}$ converges asymptotically to $\gls{q_i_desired}$. LaSalle's principle establishes this convergence (attractivity) but not stability in the sense of Lyapunov; the latter follows from Lyapunov's stability theorem (Section~\ref{sec.3:Lyapunov Stability and Lyapunov-Based Control}), since $V$ is positive definite about $\gls{q_i} = \gls{q_i_desired}$ and $\dot V \le 0$ in a neighborhood of it. Being both Lyapunov stable and attractive, $\gls{q_i} = \gls{q_i_desired}$ is asymptotically stable on $\mathbb{S}^2 \setminus \{-\gls{q_i_desired}\}$.
 
     \paragraph{Conclusion.}
     Every trajectory initialized in $\mathbb{S}^2 \setminus \{-\gls{q_i_desired}\}$
-    converges asymptotically to $\gls{q_i_desired}$, and the antipodal
-    configuration $\gls{q_i} = -\gls{q_i_desired}$ is an unstable equilibrium.
+    converges asymptotically to $\gls{q_i_desired}$, while at the antipodal
+    configuration $\gls{q_i} = -\gls{q_i_desired}$ the error $\gls{e_q_i}$, and
+    hence the control law, is undefined.
     The equilibrium $\gls{q_i} = \gls{q_i_desired}$ is therefore asymptotically stable on $\mathbb{S}^2 \setminus \{-\gls{q_i_desired}\}$. 
 \end{proof}
 
@@ -401,8 +401,8 @@ directly: every trajectory initialized with $\gls{q_i}(0) \neq
     \qquad \text{as } t \to \infty,
     \qquad \forall i = 1,\dots,\gls{n_D}.
 \end{equation*}
-Together with the instability of each antipodal configuration $\gls{q_i} =
--\gls{q_i_desired}$ established in
+Excluding each antipodal configuration $\gls{q_i} =
+-\gls{q_i_desired}$, at which the control law is undefined as noted in
 Theorem~\ref{Theorem.4:geometric_control_almost_globally_asymptotically_stable},
 the equilibrium $\gls{q_i} = \gls{q_i_desired}$, $\gls{r_i} =
 \gls{r_desired}$ is asymptotically stable on
@@ -440,20 +440,20 @@ The safeguard operates directly on the spherical manifold $\Gamma^2$ and modifie
     \gls{q_i}^{\gls{r_desired}} = \Pi^{\gls{r_desired},\gls{target_pos}}(\gls{chaser_pos}).
 \end{equation}
 
-Pairwise geodesic distances on $\Gamma^2$ are then computed. Let \gls{d_ij_geo} denote the spherical geodesic distance between UAVs $i$ and $j$. A minimum safe separation $\gls{min_dist} > 0$ is defined, chosen here as half of the average geodesic distance between the desired Fibonacci configuration points \gls{p_desired}. For each neighboring \gls{UAV} satisfying $\gls{d_ij_geo} < \gls{min_dist}$, a repulsive tangential displacement is generated. The outward normal direction at \gls{q_i} is given by $\mathbf{n}_i = \frac{\gls{q_i}^{\gls{r_desired}} - \gls{target_pos}}{\|\gls{q_i}^{\gls{r_desired}} - \gls{target_pos}\|}$ being the relative displacement vector given by $\Delta_{ij} = \gls{q_i}^{\gls{r_desired}} - \mathbf{q}_j^{\gls{r_desired}}$ is decomposed into radial and tangential components. Only the tangential component
+Pairwise geodesic distances on $\Gamma^2$ are then computed. Let \gls{d_ij_geo} denote the spherical geodesic distance between UAVs $i$ and $j$. A minimum safe separation $\gls{min_dist} > 0$ is defined, chosen here as half of the average geodesic distance between the desired Fibonacci configuration points \gls{p_desired}. For each neighboring \gls{UAV} satisfying $\gls{d_ij_geo} < \gls{min_dist}$, a repulsive tangential displacement is generated. The outward normal direction at \gls{q_i} is given by $\mathbf{n}_i = \frac{\gls{q_i}^{\gls{r_desired}} - \gls{target_pos}}{\|\gls{q_i}^{\gls{r_desired}} - \gls{target_pos}\|}$ being the relative displacement vector given by $\boldsymbol{\Delta}_{ij} = \gls{q_i}^{\gls{r_desired}} - \mathbf{q}_j^{\gls{r_desired}}$ is decomposed into radial and tangential components. Only the tangential component
 \begin{equation}
-    \Delta_{ij}^t
+    \boldsymbol{\Delta}_{ij}^t
     =
-    \Delta_{ij}
+    \boldsymbol{\Delta}_{ij}
     -
-    (\Delta_{ij}^\top \mathbf{n}_i)\, \mathbf{n}_i
+    (\boldsymbol{\Delta}_{ij}^\top \mathbf{n}_i)\, \mathbf{n}_i
 \end{equation}
 is retained, ensuring that the safeguard does not interfere with radial stabilization. The repulsive contribution from agent $j$ to agent $i$ is defined as
 \begin{equation}
-    f_{ij}
+    \mathbf{f}_{ij}
     =
     (\gls{min_dist} - d_{ij})
-    \frac{\Delta_{ij}^t}{\|\Delta_{ij}^t\|}
+    \frac{\boldsymbol{\Delta}_{ij}^t}{\|\boldsymbol{\Delta}_{ij}^t\|}
 \end{equation}
 if $\gls{d_ij_geo} < \gls{min_dist}$ and zero otherwise. The total artificial potential displacement is obtained by summing all active pairwise contributions:
 \begin{equation}

@@ -326,7 +326,7 @@ The use of numerical solvers was tried as an alternative way of placing the \gls
 \begin{itemize}
     \item \textbf{Decision variables:} the Cartesian coordinates of the \gls{n_D} points \gls{chaser_pos} to be placed on the sphere, stacked into a single vector
     \begin{equation}
-      x = \begin{bmatrix} 
+      \mathbf{x} = \begin{bmatrix} 
         \gls{chaser_pos}_1 & \gls{chaser_pos}_2 & \cdots & \gls{chaser_pos}_{\gls{n_D}} 
       \end{bmatrix}^\top 
       \in 
@@ -334,7 +334,7 @@ The use of numerical solvers was tried as an alternative way of placing the \gls
       \qquad 
       \gls{chaser_i_pos} \in \mathbb{R}^3.
     \end{equation}
-    \item \textbf{Cost function:} the objective is identically zero, $J(x) = 0$. No distance-to-target or effort term is minimized; the solver is used purely to find \emph{any} point that satisfies the constraints below, starting from the drones' current positions \gls{chaser_i_pos} as the initial guess.
+    \item \textbf{Cost function:} the objective is identically zero, $J(\mathbf{x}) = 0$. No distance-to-target or effort term is minimized; the solver is used purely to find \emph{any} point that satisfies the constraints below, starting from the drones' current positions \gls{chaser_i_pos} as the initial guess.
     \item \textbf{Constraints:}
     \begin{align}
         & \|\mathbf{p}_i\| - \gls{r_desired} = 0, \qquad i = 1,\dots,\gls{n_D}\\
@@ -366,7 +366,7 @@ spatial distribution on a spherical surface. The idea is not to drive \gls{q} to
   \begin{cases}
     \gls{r_desired} \arccos \! 
     \left( 
-      \dfrac{\gls{p_i_desired}^{\top}\mathbf{p^\star_j}}{\gls{r_desired}^2} 
+      \dfrac{\gls{p_i_desired}^{\top}\mathbf{p}^\star_j}{\gls{r_desired}^2} 
     \right), 
     & i \neq j, \\[6pt]
     0, & i = j ,
@@ -397,7 +397,7 @@ constraint.
 
 The repulsive artificial potential applied to drone $i$ is given by
 \begin{equation}
-  u_i(k) =
+  \mathbf{u}_i(k) =
   \sum_{j \in \gls{node_neighbour_set}}
   \left(
   \frac{\gls{q_i}(k) - \mathbf{q}_j(k)}{\|\gls{q_i}(k) - \mathbf{q}_j(k)\|}
@@ -410,9 +410,9 @@ The term
 \end{equation*}
 defines the unit vector pointing from drone $j$ to drone $i$, while the magnitude $(\gls{d_min} - \gls{d_ij_geo}(k))$ increases linearly as the distance between the drones decreases below the safety threshold. This results in a symmetric repulsive interaction that pushes neighboring agents apart. To avoid excessively large corrections, the resulting vector is saturated as
 \begin{equation}
-  u_i(k) \leftarrow
-  \min\!\left( \|u_i(k)\|,\, \gls{d_min} \right)
-  \frac{u_i(k)}{\|u_i(k)\|}
+  \mathbf{u}_i(k) \leftarrow
+  \min\!\left( \|\mathbf{u}_i(k)\|,\, \gls{d_min} \right)
+  \frac{\mathbf{u}_i(k)}{\|\mathbf{u}_i(k)\|}
   \label{eq.4:saturation_apf}
 \end{equation}
 which ensures that the displacement applied at each step does not exceed \gls{d_min}. The corrected reference position is then projected back onto the sphere, guaranteeing consistency with the manifold constraint.

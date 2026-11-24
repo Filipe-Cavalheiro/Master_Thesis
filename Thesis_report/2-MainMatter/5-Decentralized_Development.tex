@@ -148,7 +148,7 @@ and the normal vector to the plane containing both sites is
 \frac{S(\gls{ith_voronoi_site}) \mathbf{s}_j}
 {\|S(\gls{ith_voronoi_site}) \mathbf{s}_j\|}.
 \end{equation}
-amd the normal direction to the bisector at $m_{ij}$ is then given by
+amd the normal direction to the bisector at $\mathbf{m}_{ij}$ is then given by
 \begin{equation}
 \mathbf{t}_{ij} =
 \frac{S(\mathbf{n}_{ij}) \mathbf{m}_{ij}}
@@ -163,13 +163,13 @@ The corresponding bisecting plane passes through $\mathbf{m}_{ij}$ and has norma
 \left\{
 \mathbf{x}\in\mathbb{R}^3
 \mid
-\mathbf{(x-m_{ij})\cdot t_{ij}} < 0
+(\mathbf{x}-\mathbf{m}_{ij})\cdot \mathbf{t}_{ij} < 0
 \right\},
 \label{eq:half_plane_voronoi_calculation}
 \end{equation}
 where $\Omega$ denotes the spherical domain.
 
-In practice, the spherical surface is discretized into a finite set of points $x$. The half-plane constraints are then evaluated over this discretization to obtain a binary representation of the corresponding Voronoi region.
+In practice, the spherical surface is discretized into a finite set of points $\mathbf{x}$. The half-plane constraints are then evaluated over this discretization to obtain a binary representation of the corresponding Voronoi region.
 
 For the decentralized implementation, however, the agent does not have access to all sites. Instead, the constraint set is restricted to the agents contained in its communication or sensing neighborhood, denoted by \gls{node_neighbour_set}:
 \begin{equation}
@@ -180,7 +180,7 @@ For the decentralized implementation, however, the agent does not have access to
 \left\{
 x\in\mathbb{R}^3
 \mid
-\mathbf{(x-m_{ij})\cdot t_{ij}} < 0
+(\mathbf{x}-\mathbf{m}_{ij})\cdot \mathbf{t}_{ij} < 0
 \right\}.
 \end{equation}
 This distinction is important: $\gls{ith_voronoi_region}^{\mathrm{loc}}$ coincides with the corresponding cell of the global Voronoi diagram only when the neighborhood contains all sites whose bisectors contribute to the boundary of agent $i$'s Voronoi cell. Thus, the local construction is an approximation of the global Voronoi partition whose accuracy depends on the interaction topology.

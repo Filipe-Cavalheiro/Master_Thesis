@@ -64,7 +64,7 @@ This thesis contributes a framework for the generation, navigation, and maintena
 
 \item \textbf{Comparison of path-planning and control approaches:} an evaluation and comparison of different path-planning approaches for navigating the agents toward the desired formation, considering their ability to achieve coordinated and collision-aware motion.
 
-\item \textbf{Lyapunov-based target-encirclement controller:} development of a Lyapunov-based control strategy for guiding agents toward and maintaining an encirclement configuration around a moving target, providing a stability-based formulation for the formation-control problem.
+\item \textbf{Lyapunov-based target-encirclement controller:} development of a Lyapunov-based control strategy for guiding agents toward and maintaining an encirclement configuration around a moving target, providing a stability-based formulation for the formation-control problem. This contribution was published in~\cite{cavalheiroHierarchicalNonlinearControl2026}.
 
 \item \textbf{Decentralized formation-maintenance architecture:} development of a decentralized architecture in which agents coordinate their relative positions to maintain a well-formed and approximately uniformly distributed mesh around the target, reducing the reliance on a centralized formation controller.
 
@@ -98,10 +98,10 @@ Appendix~\ref{cha:Appendix} presents additional methods and results that were in
 
 This section defines the notation used throughout the remainder of this thesis.
 
-The notation $a \cdot b$ denotes the inner product between $a$ and $b$. While $S(\cdot)$ is the cross-product skew-symmetric matrix satisfying $S(a) b = a \times b$, for $a,b\in\mathbb{R}^3$ and its inverse mapping $S^{-1}(\cdot)$ defined in Equation~\eqref{eq.4:skew_matrix}.
+The notation $\mathbf{a} \cdot \mathbf{b}$ denotes the inner product between $\mathbf{a}$ and $\mathbf{b}$. While $S(\cdot)$ is the cross-product skew-symmetric matrix satisfying $S(\mathbf{a}) \mathbf{b} = \mathbf{a} \times \mathbf{b}$, for $\mathbf{a},\mathbf{b}\in\mathbb{R}^3$ and its inverse mapping $S^{-1}(\cdot)$ defined in Equation~\eqref{eq.4:skew_matrix}.
 
 \begin{equation}
-    S(r)
+    S(\mathbf{r})
 =
 \begin{bmatrix}
 0 & -r_3 & r_2 \\
@@ -109,9 +109,9 @@ r_3 & 0 & -r_1 \\
 -r_2 & r_1 & 0
 \end{bmatrix},
 \qquad
-S^{-1}\left(S(r)\right) = r, r \in \mathbb{R}^3
+S^{-1}\left(S(\mathbf{r})\right) = \mathbf{r}, \mathbf{r} \in \mathbb{R}^3
 \label{eq.4:skew_matrix}
 \end{equation}
 
-Throughout this thesis, regular lowercase letters denote scalars $'x'$, calligraphic uppercase letters denote sets $'\mathcal{C}'$, bold lowercase letters denote vectors $'\mathbf{x}'$, and bold uppercase letters denote matrices $'\mathbf{X}'$. The Euclidean norm is $\|\cdot\|$, $\mathbf{1}$ is a vector of ones, $\mathbf{I}_k$ the $k\times k$ identity matrix, $\otimes$ the Kronecker product, $e_3=[0\;0\;1]^{\mathsf T}$ the vertical unit vector, and $\operatorname{clip}(x,l,h)=\min(\max(x,l),h)$. $\Pi^{r,\mathbf{p}}(\cdot)$ denotes the projection onto the sphere of radius $r$ centered at $\mathbf{p}$ (Chapter~\ref{cha:Centralized Development}) and $\gls{proj}(\cdot)$ the Euclidean projection onto a set $\mathcal{C}$ (Section~\ref{sec.3:ADMM}). Discrete time instants are indexed by $[k]$, and the samples of a prediction horizon by $[m]$. The symbols used are listed in the List of Symbols, and the same symbol denotes the same quantity in every chapter.
+Throughout this thesis, regular lowercase letters denote scalars $'x'$, calligraphic uppercase letters denote sets $'\mathcal{C}'$, bold lowercase letters denote vectors $'\mathbf{x}'$, and bold uppercase letters denote matrices $'\mathbf{X}'$. The Euclidean norm is $\|\cdot\|$, $\mathbf{1}$ is a vector of ones, $\mathbf{I}_k$ the $k\times k$ identity matrix, $\otimes$ the Kronecker product, $\mathbf{e}_3=[0\;0\;1]^{\mathsf T}$ the vertical unit vector, and $\operatorname{clip}(x,l,h)=\min(\max(x,l),h)$. $\Pi^{r,\mathbf{p}}(\cdot)$ denotes the projection onto the sphere of radius $r$ centered at $\mathbf{p}$ (Chapter~\ref{cha:Centralized Development}) and $\gls{proj}(\cdot)$ the Euclidean projection onto a set $\mathcal{C}$ (Section~\ref{sec.3:ADMM}). Discrete time instants are indexed by $[k]$, and the samples of a prediction horizon by $[m]$. The symbols used are listed in the List of Symbols, and the same symbol denotes the same quantity in every chapter.
 

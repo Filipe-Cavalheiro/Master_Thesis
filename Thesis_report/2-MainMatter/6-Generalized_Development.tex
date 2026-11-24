@@ -148,7 +148,7 @@ where $\delta_e$ and $\delta_{e'}$ are the distances from the estimated target p
     \gls{wall_normal} = \mathbf{R}_z(\chi\psi_{ee'})\,\mathbf{n}_{ee'},
     \label{eq.6:normal_rotation}
 \end{equation}
-where $\mathbf{R}_z(\cdot)$ is the rotation about $e_3$. Thus $\gls{wall_normal}=\mathbf{n}_{ee'}$ on the bisector, and \gls{wall_normal} equals the normal of the nearest edge once $|\varsigma|\ge\gls{joint_width}$. On the bisector of a notch, the formation therefore sits on the corner where the two walls meet.
+where $\mathbf{R}_z(\cdot)$ is the rotation about $\mathbf{e}_3$. Thus $\gls{wall_normal}=\mathbf{n}_{ee'}$ on the bisector, and \gls{wall_normal} equals the normal of the nearest edge once $|\varsigma|\ge\gls{joint_width}$. On the bisector of a notch, the formation therefore sits on the corner where the two walls meet.
 
 Given \gls{wall_normal}, the wall frame provides two signed distances, both measured along the normal line through the estimated target position:
 \begin{itemize}
@@ -157,7 +157,7 @@ Given \gls{wall_normal}, the wall frame provides two signed distances, both meas
 \end{itemize}
 The mesh is expressed in the wall frame, whose rotation matrix is
 \begin{equation}
-    \gls{wall_frame}=\begin{bmatrix}\gls{wall_normal} & e_3\times\gls{wall_normal} & e_3\end{bmatrix}.
+    \gls{wall_frame}=\begin{bmatrix}\gls{wall_normal} & \mathbf{e}_3\times\gls{wall_normal} & \mathbf{e}_3\end{bmatrix}.
     \label{eq.6:wall_frame}
 \end{equation}
 Its first axis points into the red zone, the second is horizontal and tangent to the wall, and the third is vertical.
