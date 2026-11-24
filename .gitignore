@@ -18,6 +18,11 @@ moodle_CMIEEC2526
 /cache/
 /Crazy_Flie/**/cache/
 
+# Developer notes and editor autosaves
+/Thesis_report/CHANGES_AI.md
+/Thesis_report/.Build/AUDIT.md
+*.asv
+
 # flight / simulation runs (one folder per run); only the root folder, not the Results/ of the simulations
 /Results/
 

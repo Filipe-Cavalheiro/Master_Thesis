@@ -159,9 +159,9 @@ for k = 1:Param.Nsim
         [estimated_target_variables(:,iD), ema_estimated] = estimate_target_variables(...
             target, iD, ema_estimated, ...
             active_ids_idx, connection_Laplacian, Param);
-        % NEED TO REMOVE THIS LINE ---------------------------------------
+        % Debug override: uses the true target position instead of the
+        % consensus estimate above (delete this line to use the estimate)
         estimated_target_variables(:,iD) = target_true_hist(1:3,k);
-        % ----------------------------------------------------------------
         perceived_target_hist{k,iD} = [estimated_target_variables(:,iD); target_true_hist(4:18,k)];
 
         % get desired chaser state
