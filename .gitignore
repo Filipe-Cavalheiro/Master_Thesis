@@ -14,6 +14,9 @@ moodle_CMIEEC2526
 # Gazebo world (not used in the thesis; kept locally only)
 /Gazebo/
 
+# Crazyflie connection cache (regenerated automatically)
+/cache/
+
 # flight / simulation runs (one folder per run); only the root folder, not the Results/ of the simulations
 /Results/
 
