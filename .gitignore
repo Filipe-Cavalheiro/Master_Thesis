@@ -7,6 +7,10 @@ Random_stuff
 **/.venv/
 moodle_CMIEEC2526
 
+# personal notes / admin documents (contain personal data)
+/TODO.txt
+/burocracy/
+
 # flight / simulation runs (one folder per run); only the root folder, not the Results/ of the simulations
 /Results/
 
